@@ -494,7 +494,7 @@
   ════════════════════════════════════ -->
   <div id="login-screen" class="screen active">
     <div class="logo-block">
-      <div class="logo-icon">🏪</div>
+      <div class="logo-icon" id="logo-tap" onclick="handleLogoTap()">🏪</div>
       <h1>Saf Queue</h1>
       <p>Smart queue management</p>
     </div>
@@ -599,6 +599,22 @@
 
 <!-- Toast -->
 <div id="toast"></div>
+
+<!-- Admin Modal -->
+<div id="admin-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);z-index:1000;align-items:center;justify-content:center;padding:24px">
+  <div style="background:#141d2e;border:1px solid #1e2d47;border-radius:16px;padding:28px;width:100%;max-width:360px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <h3 style="font-size:18px;font-weight:700">⚡ Admin Panel</h3>
+      <button onclick="closeAdminModal()" style="background:none;border:none;color:#64748b;font-size:20px;cursor:pointer">✕</button>
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="display:block;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Admin Secret</label>
+      <input id="admin-secret-modal" type="password" placeholder="Enter admin secret" style="width:100%;background:#111827;border:1px solid #1e2d47;border-radius:10px;padding:12px 14px;color:#f1f5f9;font-family:inherit;font-size:14px;outline:none"/>
+    </div>
+    <button onclick="adminModalLogin()" style="width:100%;background:linear-gradient(135deg,#6366f1,#818cf8);color:white;border:none;border-radius:10px;padding:13px;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer">Admin Login</button>
+    <div id="admin-modal-err" style="color:#ef4444;font-size:13px;text-align:center;margin-top:10px"></div>
+  </div>
+</div>
 
 <!-- PWA Install Banner -->
 <div id="install-banner" style="display:none;position:fixed;bottom:80px;left:16px;right:16px;background:#141d2e;border:1px solid #6366f1;border-radius:14px;padding:14px 16px;align-items:center;justify-content:space-between;gap:12px;z-index:998;box-shadow:0 8px 32px rgba(99,102,241,0.3)">
@@ -882,5 +898,74 @@ function installApp() {
 window.addEventListener('appinstalled', () => {
   const b = document.getElementById('install-banner');
   if (b) b.style.display = 'none';
+});
+</script>
+<script>
+// ── Admin hidden access (3 taps on logo) ──────────────────
+let tapCount = 0;
+let tapTimer = null;
+
+function handleLogoTap() {
+  tapCount++;
+  clearTimeout(tapTimer);
+
+  if (tapCount >= 3) {
+    tapCount = 0;
+    openAdminModal();
+    return;
+  }
+
+  // Reset after 1.5s if not 3 taps
+  tapTimer = setTimeout(() => { tapCount = 0; }, 1500);
+}
+
+function openAdminModal() {
+  const modal = document.getElementById('admin-modal');
+  modal.style.display = 'flex';
+  document.getElementById('admin-secret-modal').focus();
+  document.getElementById('admin-modal-err').textContent = '';
+  document.getElementById('admin-secret-modal').value = '';
+}
+
+function closeAdminModal() {
+  document.getElementById('admin-modal').style.display = 'none';
+}
+
+function adminModalLogin() {
+  const secret = document.getElementById('admin-secret-modal').value.trim();
+  const errEl  = document.getElementById('admin-modal-err');
+  if (!secret) return;
+
+  // Verify secret by calling admin API
+  fetch('https://saf-queue-worker.byker-software.workers.dev/admin/shops', {
+    headers: {
+      'Content-Type':   'application/json',
+      'x-admin-secret': secret,
+    }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      // Save secret and redirect to admin page
+      localStorage.setItem('admin_secret', secret);
+      closeAdminModal();
+      window.location.href = '/admin.html';
+    } else {
+      errEl.textContent = 'Galat secret. Dobara try karein.';
+    }
+  })
+  .catch(() => {
+    errEl.textContent = 'Connection error.';
+  });
+}
+
+// Enter key support in admin modal
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('admin-secret-modal');
+  if (input) {
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') adminModalLogin();
+    });
+  }
 });
 </script>
