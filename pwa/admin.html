@@ -366,6 +366,13 @@ body {
       </div>
     </div>
 
+
+    <!-- رجسٹریشن -->
+    <div class="sec-title" style="margin-top:10px">PENDING REGISTRATIONS</div>
+    <div class="shop-table">
+      <div class="table-header" style="grid-template-columns:2fr 1.2fr 1fr 1fr 1.5fr"><span>NAME</span><span>PHONE</span><span>CATEGORY</span><span>AREA</span><span>ACTIONS</span></div>
+      <div id="reg-list"><div class="loading-row">LOADING...</div></div>
+    </div>
   </div>
 </div>
 
@@ -439,6 +446,25 @@ function doLogout() {
   document.getElementById('dash').style.display = 'none';
 }
 
+async function loadRegistrations() {
+  const el = document.getElementById("reg-list");
+  if (!el) return;
+  try {
+    const { data } = await api("GET", "/admin/registrations");
+    if (!data.length) { el.innerHTML = '<div class="empty-row">کوئی درخواست نہیں</div>'; return; }
+    el.innerHTML = data.map((r,i) => `<div class="shop-row" style="grid-template-columns:2fr 1.2fr 1fr 1fr 1.5fr;animation-delay:${i*.04}s"><div><div class="shop-name-cell">${esc(r.name)}</div></div><div class="shop-phone">${esc(r.owner_phone)}</div><div style="font-size:11px;color:var(--muted)">${esc(r.category||"—")}</div><div style="font-size:11px;color:var(--muted)">${esc(r.area||"—")}</div><div class="action-group"><button class="btn-sm btn-green" onclick="approveReg('${r.id}')">منظور</button><button class="btn-sm btn-red" onclick="rejectReg('${r.id}')">رد</button></div></div>`).join("");
+  } catch(e) { el.innerHTML = `<div class="empty-row">${e.message}</div>`; }
+}
+async function approveReg(id) {
+  try { await api("POST", `/admin/registrations/${id}/approve`); showToast("✅ دکان منظور اور رجسٹر ہو گئی","success"); loadShops(); loadRegistrations(); }
+  catch(e) { showToast(e.message,"error"); }
+}
+async function rejectReg(id) {
+  if(!confirm("درخواست رد کرنا چاہتے ہیں؟")) return;
+  try { await api("POST", `/admin/registrations/${id}/reject`); showToast("درخواست رد کر دی گئی",""); loadRegistrations(); }
+  catch(e) { showToast(e.message,"error"); }
+}
+
 async function loadShops() {
   document.getElementById('shop-list').innerHTML = '<div class="loading-row">LOADING...</div>';
   try {
@@ -498,7 +524,7 @@ async function addShop() {
     await api('POST','/shops',{name,owner_phone:phone,pin,category:cat,area});
     showToast(`✅ ${name} شامل ہو گئی! 30 دن کا مفت ٹرائل شروع`,'success');
     ['f-name','f-phone','f-pin','f-cat','f-area'].forEach(id=>document.getElementById(id).value='');
-    loadShops();
+    loadShops(); loadRegistrations();
   } catch(e) { showToast(e.message,'error'); }
 }
 
@@ -557,7 +583,7 @@ function showToast(msg, type='') {
     SECRET = saved;
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('dash').style.display = 'block';
-    loadShops();
+    loadShops(); loadRegistrations();
   }
   document.getElementById('secret-input').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 })();

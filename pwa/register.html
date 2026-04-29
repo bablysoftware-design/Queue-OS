@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#050810"/>
+<title>دکان رجسٹریشن — سف کیو</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
+<style>
+:root{--void:#050810;--surface:#0d1424;--glass:rgba(13,20,36,.8);--border:rgba(212,175,55,.12);--gold:#D4AF37;--gold2:#F5C842;--gold3:#FFE066;--cyan:#00D4FF;--red:#FF4560;--green:#00E396;--text:#EDE8D0;--muted:rgba(237,232,208,.4);}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Nastaliq Urdu',serif;background:var(--void);color:var(--text);min-height:100vh;direction:rtl;}
+#particle-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;}
+.holo-grid{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(212,175,55,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(212,175,55,.04) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;}
+.container{position:relative;z-index:1;max-width:500px;margin:0 auto;padding:32px 20px 60px;}
+
+.header{text-align:center;margin-bottom:36px;}
+.orb{width:76px;height:76px;margin:0 auto 16px;position:relative;}
+.orb::before{content:'';position:absolute;inset:-3px;border-radius:50%;background:conic-gradient(from 0deg,var(--gold),var(--cyan),var(--gold2),var(--cyan),var(--gold));animation:spin 3s linear infinite;filter:blur(1px);}
+.orb-inner{position:absolute;inset:3px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#1a2540,#050810);display:flex;align-items:center;justify-content:center;font-size:30px;z-index:1;}
+@keyframes spin{to{transform:rotate(360deg);}}
+h1{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;background:linear-gradient(135deg,var(--gold),var(--gold3),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;direction:ltr;margin-bottom:8px;}
+.header p{font-size:13px;color:var(--muted);}
+
+.card{background:var(--glass);border:1px solid var(--border);border-radius:20px;padding:28px;backdrop-filter:blur(20px);position:relative;overflow:hidden;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),var(--cyan),var(--gold),transparent);}
+
+.card-title{font-size:15px;font-weight:700;color:var(--gold2);margin-bottom:22px;text-align:center;}
+
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:11px;color:var(--muted);margin-bottom:7px;letter-spacing:.5px;}
+.field input,.field select{width:100%;background:rgba(5,8,16,.6);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:inherit;font-size:14px;outline:none;transition:border-color .3s,box-shadow .3s;direction:ltr;text-align:right;}
+.field input:focus,.field select:focus{border-color:var(--gold);box-shadow:0 0 16px rgba(212,175,55,.15);}
+.field input::placeholder{color:var(--muted);}
+.field select option{background:var(--surface);color:var(--text);}
+
+.btn-gold{width:100%;padding:14px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--gold),var(--gold2),var(--gold3));color:#050810;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;transition:transform .2s,box-shadow .2s;box-shadow:0 6px 24px rgba(212,175,55,.3);margin-top:8px;}
+.btn-gold:hover{transform:translateY(-2px);}
+.btn-gold:disabled{opacity:.5;pointer-events:none;}
+
+.success-box{text-align:center;padding:32px 20px;display:none;}
+.success-box .icon{font-size:56px;margin-bottom:16px;animation:bounceIn .6s cubic-bezier(.16,1,.3,1);}
+@keyframes bounceIn{from{transform:scale(0);}to{transform:scale(1);}}
+.success-box h2{font-size:18px;font-weight:700;color:var(--green);margin-bottom:10px;}
+.success-box p{font-size:13px;color:var(--muted);line-height:1.8;}
+
+.err{color:var(--red);font-size:12px;text-align:center;margin-top:10px;min-height:18px;}
+
+.plan-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;}
+.plan-card{background:rgba(5,8,16,.6);border:1px solid var(--border);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .2s;}
+.plan-card.selected{border-color:var(--gold);background:rgba(212,175,55,.08);}
+.plan-name{font-family:'Orbitron',monospace;font-size:10px;font-weight:700;color:var(--gold);letter-spacing:1px;margin-bottom:6px;}
+.plan-price{font-size:12px;color:var(--text);font-weight:600;}
+.plan-days{font-size:10px;color:var(--muted);margin-top:3px;}
+</style>
+</head>
+<body>
+<canvas id="particle-canvas"></canvas>
+<div class="holo-grid"></div>
+<div class="container">
+
+  <div class="header">
+    <div class="orb"><div class="orb-inner">🏪</div></div>
+    <h1>SAF QUEUE</h1>
+    <p>اپنی دکان رجسٹر کریں اور 30 دن مفت استعمال کریں</p>
+  </div>
+
+  <div class="card" id="form-card">
+    <div class="card-title">دکان رجسٹریشن</div>
+
+    <div class="field">
+      <label>دکان کا نام *</label>
+      <input id="r-name" type="text" placeholder="مثال: علی باربر شاپ"/>
+    </div>
+
+    <div class="field">
+      <label>واٹس ایپ نمبر *</label>
+      <input id="r-phone" type="tel" placeholder="923001234567"/>
+    </div>
+
+    <div class="field">
+      <label>4 ہندسہ پن (لاگ ان کے لیے) *</label>
+      <input id="r-pin" type="number" placeholder="مثال: 1234" maxlength="4"/>
+    </div>
+
+    <div class="field">
+      <label>دکان کی قسم</label>
+      <select id="r-cat">
+        <option value="">-- قسم منتخب کریں --</option>
+        <option value="barber">حجام / باربر</option>
+        <option value="clinic">کلینک / ڈاکٹر</option>
+        <option value="pharmacy">فارمیسی</option>
+        <option value="govt">سرکاری دفتر</option>
+        <option value="bank">بینک</option>
+        <option value="tailor">درزی</option>
+        <option value="other">دیگر</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>علاقہ / شہر</label>
+      <input id="r-area" type="text" placeholder="مثال: راولپنڈی، صدر"/>
+    </div>
+
+    <button class="btn-gold" id="reg-btn" onclick="submitReg()">رجسٹریشن درخواست دیں</button>
+    <div class="err" id="reg-err"></div>
+  </div>
+
+  <div class="success-box" id="success-box">
+    <div class="icon">✅</div>
+    <h2>درخواست موصول ہو گئی!</h2>
+    <p>
+      آپ کی درخواست زیر غور ہے۔<br/>
+      ایڈمن جلد منظوری دے گا۔<br/>
+      منظوری کے بعد آپ <strong>queue-os.pages.dev</strong> پر لاگ ان کر سکتے ہیں۔<br/><br/>
+      30 دن کا مفت ٹرائل خود بخود شروع ہو گا۔
+    </p>
+  </div>
+
+</div>
+
+<script>
+const canvas=document.getElementById('particle-canvas'),ctx=canvas.getContext('2d');
+let W,H,pts=[];
+function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
+function mkPt(){return{x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.4+.3,vy:-(Math.random()*.4+.1),vx:(Math.random()-.5)*.2,a:Math.random()*.4+.1,c:Math.random()>.6?'#D4AF37':'#00D4FF'};}
+function draw(){ctx.clearRect(0,0,W,H);pts.forEach((p,i)=>{p.x+=p.vx;p.y+=p.vy;if(p.y<-5){pts[i]=mkPt();pts[i].y=H+5;}ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=p.c;ctx.globalAlpha=p.a;ctx.fill();});ctx.globalAlpha=1;requestAnimationFrame(draw);}
+resize();pts=Array.from({length:60},mkPt);draw();window.addEventListener('resize',resize);
+
+const WORKER='https://saf-queue-worker.byker-software.workers.dev';
+
+async function submitReg(){
+  const name=document.getElementById('r-name').value.trim();
+  const phone=document.getElementById('r-phone').value.trim();
+  const pin=document.getElementById('r-pin').value.trim();
+  const cat=document.getElementById('r-cat').value;
+  const area=document.getElementById('r-area').value.trim();
+  const errEl=document.getElementById('reg-err');
+  const btn=document.getElementById('reg-btn');
+  errEl.textContent='';
+
+  if(!name)return errEl.textContent='دکان کا نام ضروری ہے';
+  if(!phone)return errEl.textContent='فون نمبر ضروری ہے';
+  if(!pin||pin.length!==4)return errEl.textContent='پن 4 ہندسوں کا ہونا چاہیے';
+
+  btn.disabled=true;btn.textContent='...';
+  try{
+    const res=await fetch(`${WORKER}/register`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,owner_phone:phone,pin,category:cat,area})});
+    const data=await res.json();
+    if(data.success){
+      document.getElementById('form-card').style.display='none';
+      document.getElementById('success-box').style.display='block';
+    }else{
+      errEl.textContent=data.error||'خرابی';
+      btn.disabled=false;btn.textContent='رجسٹریشن درخواست دیں';
+    }
+  }catch(e){
+    errEl.textContent='کنکشن خرابی';
+    btn.disabled=false;btn.textContent='رجسٹریشن درخواست دیں';
+  }
+}
+</script>
+</body>
+</html>

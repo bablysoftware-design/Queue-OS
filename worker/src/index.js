@@ -4,35 +4,60 @@
 
 import { handleVerify, handleMessage }               from './routes/webhook.js';
 import { createTokenHandler, nextTokenHandler,
-         getQueueHandler }                           from './routes/tokens.js';
+         getQueueHandler, noShowHandler,
+         getStatsHandler, getPositionHandler }        from './routes/tokens.js';
 import { createShopHandler, loginShopHandler,
          toggleShopHandler, getShopHandler,
-         deleteShopHandler, activateShopHandler }    from './routes/shops.js';
+         deleteShopHandler, activateShopHandler }     from './routes/shops.js';
 import { assignPlanHandler, getSubscriptionHandler,
-         listShopsAdminHandler }                     from './routes/subscriptions.js';
-import { expireStaleSubscriptions }                  from './services/subscriptionService.js';
-import { createClient }                              from './utils/db.js';
-import { preflight, notFound }                       from './utils/response.js';
+         listShopsAdminHandler }                      from './routes/subscriptions.js';
+import { easypaisaWebhook, jazzcashWebhook,
+         manualPayment }                              from './routes/payments.js';
+import { submitRegistration, listRegistrations,
+         approveRegistration, rejectRegistration }    from './routes/register.js';
+import { expireStaleSubscriptions }                   from './services/subscriptionService.js';
+import { resetDailyTokens }                           from './services/tokenService.js';
+import { createClient }                               from './utils/db.js';
+import { preflight, notFound }                        from './utils/response.js';
 
 const ROUTES = [
-  { method: 'GET',    path: '/webhook',                  handler: handleVerify },
-  { method: 'POST',   path: '/webhook',                  handler: handleMessage },
+  // WhatsApp
+  { method: 'GET',    path: '/webhook',                            handler: handleVerify },
+  { method: 'POST',   path: '/webhook',                            handler: handleMessage },
 
-  { method: 'POST',   path: '/tokens',                   handler: createTokenHandler },
-  { method: 'POST',   path: '/tokens/next',              handler: nextTokenHandler },
-  { method: 'GET',    path: '/tokens/queue',             handler: getQueueHandler },
+  // Tokens
+  { method: 'POST',   path: '/tokens',                             handler: createTokenHandler },
+  { method: 'POST',   path: '/tokens/next',                        handler: nextTokenHandler },
+  { method: 'POST',   path: '/tokens/no-show',                     handler: noShowHandler },
+  { method: 'GET',    path: '/tokens/queue',                       handler: getQueueHandler },
+  { method: 'GET',    path: '/tokens/stats',                       handler: getStatsHandler },
+  { method: 'GET',    path: '/tokens/position',                    handler: getPositionHandler },
 
-  { method: 'POST',   path: '/shops',                    handler: createShopHandler },
-  { method: 'POST',   path: '/shops/login',              handler: loginShopHandler },
-  { method: 'PATCH',  path: '/shops/:id/toggle',         handler: toggleShopHandler },
-  { method: 'GET',    path: '/shops/:id',                handler: getShopHandler },
+  // Shops
+  { method: 'POST',   path: '/shops',                              handler: createShopHandler },
+  { method: 'POST',   path: '/shops/login',                        handler: loginShopHandler },
+  { method: 'PATCH',  path: '/shops/:id/toggle',                   handler: toggleShopHandler },
+  { method: 'GET',    path: '/shops/:id',                          handler: getShopHandler },
 
-  { method: 'GET',    path: '/subscriptions',            handler: getSubscriptionHandler },
+  // Subscriptions
+  { method: 'GET',    path: '/subscriptions',                      handler: getSubscriptionHandler },
 
-  { method: 'POST',   path: '/admin/assign-plan',        handler: assignPlanHandler },
-  { method: 'GET',    path: '/admin/shops',              handler: listShopsAdminHandler },
-  { method: 'DELETE', path: '/admin/shops/:id',          handler: deleteShopHandler },
-  { method: 'PATCH',  path: '/admin/shops/:id/activate', handler: activateShopHandler },
+  // Payments
+  { method: 'POST',   path: '/payments/easypaisa',                 handler: easypaisaWebhook },
+  { method: 'POST',   path: '/payments/jazzcash',                  handler: jazzcashWebhook },
+  { method: 'POST',   path: '/payments/manual',                    handler: manualPayment },
+
+  // Public registration
+  { method: 'POST',   path: '/register',                           handler: submitRegistration },
+
+  // Admin
+  { method: 'POST',   path: '/admin/assign-plan',                  handler: assignPlanHandler },
+  { method: 'GET',    path: '/admin/shops',                        handler: listShopsAdminHandler },
+  { method: 'DELETE', path: '/admin/shops/:id',                    handler: deleteShopHandler },
+  { method: 'PATCH',  path: '/admin/shops/:id/activate',           handler: activateShopHandler },
+  { method: 'GET',    path: '/admin/registrations',                handler: listRegistrations },
+  { method: 'POST',   path: '/admin/registrations/:id/approve',    handler: approveRegistration },
+  { method: 'POST',   path: '/admin/registrations/:id/reject',     handler: rejectRegistration },
 ];
 
 function matchRoute(method, pathname) {
@@ -59,8 +84,13 @@ export default {
     return handler(request, env, ctx);
   },
 
+  // Runs daily at midnight UTC
   async scheduled(event, env, ctx) {
     const db = createClient(env);
-    await expireStaleSubscriptions(db);
+    await Promise.all([
+      expireStaleSubscriptions(db),
+      resetDailyTokens(db),
+    ]);
+    console.log('✅ Daily cron: subscriptions expired + tokens reset');
   },
 };
