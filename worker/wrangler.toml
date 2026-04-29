@@ -1,0 +1,30 @@
+# ============================================================
+# SAF QUEUE — Cloudflare Worker Config
+# ============================================================
+
+name = "saf-queue-worker"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# ─── Scheduled task: expire subscriptions daily ────────────
+[triggers]
+crons = ["0 0 * * *"]   # Runs daily at midnight UTC
+
+# ─── Environment Variables ─────────────────────────────────
+# Set these via: wrangler secret put VARIABLE_NAME
+# Or in Cloudflare Dashboard → Worker → Settings → Variables
+
+[vars]
+ENVIRONMENT = "production"
+
+# Secrets (set with `wrangler secret put`):
+# SUPABASE_URL        → your Supabase project URL
+# SUPABASE_KEY        → Supabase service_role key
+# WHATSAPP_TOKEN      → Meta WhatsApp Cloud API token
+# WHATSAPP_VERIFY_TOKEN → webhook verification token
+# ADMIN_SECRET        → secret header for admin routes
+
+# ─── KV Namespace (optional caching, add later) ─────────────
+# [[kv_namespaces]]
+# binding = "SAF_CACHE"
+# id = "YOUR_KV_NAMESPACE_ID"

@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="ur" dir="ltr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#0f172a"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>Saf Queue</title>
+<link rel="manifest" href="/manifest.json"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:      #0a0f1e;
+    --surface: #111827;
+    --border:  #1e2d47;
+    --accent:  #6366f1;
+    --accent2: #22d3ee;
+    --green:   #10b981;
+    --red:     #ef4444;
+    --amber:   #f59e0b;
+    --text:    #f1f5f9;
+    --muted:   #64748b;
+    --card:    #141d2e;
+    --radius:  16px;
+    --safe-top: env(safe-area-inset-top, 0px);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Space Grotesk', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  /* ── Background grid ───────────────────────── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #app { position: relative; z-index: 1; }
+
+  /* ── SCREENS ───────────────────────────────── */
+  .screen { display: none; min-height: 100dvh; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ══════════════════════════════════════════
+     LOGIN SCREEN
+  ══════════════════════════════════════════ */
+  #login-screen {
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    gap: 32px;
+  }
+
+  .logo-block {
+    text-align: center;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .logo-icon {
+    width: 72px; height: 72px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    margin-bottom: 16px;
+    box-shadow: 0 0 40px rgba(99,102,241,0.4);
+  }
+
+  .logo-block h1 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, #fff 40%, var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .logo-block p {
+    color: var(--muted);
+    font-size: 14px;
+    margin-top: 6px;
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: 380px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    animation: fadeUp 0.6s 0.1s ease both;
+  }
+
+  .login-card h2 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: var(--text);
+  }
+
+  .field {
+    margin-bottom: 16px;
+  }
+
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .field input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 13px 16px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .field input:focus { border-color: var(--accent); }
+
+  .btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #818cf8);
+    color: white;
+  }
+
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(99,102,241,0.4); }
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-success {
+    background: linear-gradient(135deg, var(--green), #34d399);
+    color: white;
+  }
+
+  .btn-danger {
+    background: linear-gradient(135deg, var(--red), #f87171);
+    color: white;
+  }
+
+  .btn-ghost {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .btn:disabled { opacity: 0.5; pointer-events: none; }
+
+  .error-msg {
+    color: var(--red);
+    font-size: 13px;
+    text-align: center;
+    margin-top: 12px;
+    min-height: 20px;
+  }
+
+  /* ══════════════════════════════════════════
+     DASHBOARD SCREEN
+  ══════════════════════════════════════════ */
+  #dash-screen { flex-direction: column; }
+
+  /* Top bar */
+  .topbar {
+    padding: calc(var(--safe-top) + 16px) 20px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,15,30,0.85);
+    backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+
+  .topbar-logo {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+
+  .topbar-title { font-size: 15px; font-weight: 600; }
+  .topbar-sub   { font-size: 11px; color: var(--muted); }
+
+  .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .status-badge.open  { background: rgba(16,185,129,0.1); border-color: var(--green);  color: var(--green); }
+  .status-badge.closed{ background: rgba(239,68,68,0.1);  border-color: var(--red);   color: var(--red); }
+  .status-badge .dot  { width: 7px; height: 7px; border-radius: 50%; }
+  .status-badge.open  .dot { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .status-badge.closed .dot{ background: var(--red); }
+
+  /* Dashboard body */
+  .dash-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 16px 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Token hero */
+  .token-hero {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .token-hero::before {
+    content: '';
+    position: absolute;
+    top: -60px; left: 50%;
+    transform: translateX(-50%);
+    width: 180px; height: 180px;
+    background: radial-gradient(circle, rgba(99,102,241,0.15), transparent 70%);
+    border-radius: 50%;
+  }
+
+  .token-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+  }
+
+  .token-number {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 80px;
+    font-weight: 500;
+    line-height: 1;
+    color: white;
+    text-shadow: 0 0 40px rgba(99,102,241,0.5);
+  }
+
+  .token-number.empty { font-size: 36px; color: var(--muted); }
+
+  .token-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 10px;
+  }
+
+  .next-btn {
+    margin-top: 20px;
+    padding: 16px 32px;
+    width: auto;
+    min-width: 200px;
+  }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+
+  .stat-card .stat-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 28px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .stat-card .stat-key {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 4px;
+  }
+
+  /* Queue list */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .queue-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .queue-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    animation: fadeUp 0.3s ease both;
+  }
+
+  .queue-item .q-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px;
+    font-weight: 500;
+    min-width: 40px;
+    color: var(--accent2);
+  }
+
+  .queue-item .q-phone {
+    font-size: 13px;
+    color: var(--muted);
+    flex: 1;
+    padding: 0 12px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .q-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 100px;
+    text-transform: uppercase;
+  }
+
+  .q-badge.waiting  { background: rgba(245,158,11,0.15); color: var(--amber); }
+  .q-badge.called   { background: rgba(99,102,241,0.15); color: #818cf8; }
+
+  .empty-queue {
+    text-align: center;
+    padding: 32px;
+    color: var(--muted);
+    font-size: 14px;
+    background: var(--card);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+  }
+
+  /* Subscription banner */
+  .sub-banner {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .sub-banner .sub-plan {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent2);
+  }
+
+  .sub-banner .sub-expiry {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* Bottom bar */
+  .bottombar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    padding: 12px 16px calc(env(safe-area-inset-bottom, 0px) + 12px);
+    background: rgba(10,15,30,0.95);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+  }
+
+  /* Toast */
+  #toast {
+    position: fixed;
+    top: 20px; left: 50%;
+    transform: translateX(-50%) translateY(-80px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 999;
+    transition: transform 0.3s ease;
+    white-space: nowrap;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  #toast.success { color: var(--green); border-color: var(--green); }
+  #toast.error   { color: var(--red);   border-color: var(--red); }
+
+  /* Animations */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.5; }
+  }
+
+  .loading { animation: pulse 1.2s ease infinite; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ════════════════════════════════════
+       LOGIN SCREEN
+  ════════════════════════════════════ -->
+  <div id="login-screen" class="screen active">
+    <div class="logo-block">
+      <div class="logo-icon">🏪</div>
+      <h1>Saf Queue</h1>
+      <p>Smart queue management</p>
+    </div>
+
+    <div class="login-card">
+      <h2>Dukan Login</h2>
+
+      <div class="field">
+        <label>WhatsApp Number</label>
+        <input id="login-phone" type="tel" placeholder="923001234567" autocomplete="tel"/>
+      </div>
+
+      <div class="field">
+        <label>4-Digit PIN</label>
+        <input id="login-pin" type="password" maxlength="4" placeholder="••••" autocomplete="current-password"/>
+      </div>
+
+      <button class="btn btn-primary" id="login-btn" onclick="handleLogin()">
+        Login karo
+      </button>
+
+      <div class="error-msg" id="login-error"></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       DASHBOARD SCREEN
+  ════════════════════════════════════ -->
+  <div id="dash-screen" class="screen">
+
+    <!-- Top bar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-logo">🏪</div>
+        <div>
+          <div class="topbar-title" id="shop-name-topbar">Dukan</div>
+          <div class="topbar-sub" id="shop-sub-topbar">loading...</div>
+        </div>
+      </div>
+      <div class="status-badge closed" id="status-toggle" onclick="toggleOpen()">
+        <span class="dot"></span>
+        <span id="status-text">Band</span>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="dash-body">
+
+      <!-- Current token hero -->
+      <div class="token-hero">
+        <div class="token-label">Abhi Chal Raha Hai</div>
+        <div class="token-number empty" id="current-token-display">—</div>
+        <div class="token-sub" id="current-token-phone"></div>
+        <button class="btn btn-primary next-btn" id="next-btn" onclick="callNext()">
+          ▶ Agla Token
+        </button>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-val" id="stat-waiting">0</div>
+          <div class="stat-key">Queue Mein</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-today">0</div>
+          <div class="stat-key">Aaj Serve Kiye</div>
+        </div>
+      </div>
+
+      <!-- Subscription -->
+      <div class="sub-banner">
+        <div>
+          <div class="sub-plan" id="sub-plan">—</div>
+          <div class="sub-expiry" id="sub-expiry">loading...</div>
+        </div>
+        <span style="font-size:18px">💎</span>
+      </div>
+
+      <!-- Queue list -->
+      <div>
+        <div class="section-header">
+          <span class="section-title">Queue List</span>
+          <span class="section-title" id="queue-count">0 log</span>
+        </div>
+        <div class="queue-list" id="queue-list">
+          <div class="empty-queue">Queue khali hai</div>
+        </div>
+      </div>
+
+    </div><!-- /dash-body -->
+
+    <!-- Bottom bar -->
+    <div class="bottombar">
+      <button class="btn btn-ghost" style="flex:1" onclick="refreshQueue()">🔄 Refresh</button>
+      <button class="btn btn-ghost" style="flex:1" onclick="handleLogout()">Logout</button>
+    </div>
+
+  </div><!-- /dash-screen -->
+
+</div><!-- /app -->
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ============================================================
+// CONFIG — change WORKER_URL to your deployed Worker URL
+// ============================================================
+const CONFIG = {
+  WORKER_URL: 'https://saf-queue-worker.YOUR_SUBDOMAIN.workers.dev',
+};
+
+// ── State ────────────────────────────────────────────────────
+let state = {
+  shopId:   null,
+  shopName: null,
+  isOpen:   false,
+  refreshTimer: null,
+};
+
+// ============================================================
+// AUTH
+// ============================================================
+function handleLogin() {
+  const phone = document.getElementById('login-phone').value.trim();
+  const pin   = document.getElementById('login-pin').value.trim();
+  const errEl = document.getElementById('login-error');
+  const btn   = document.getElementById('login-btn');
+
+  errEl.textContent = '';
+
+  if (!phone || !pin) {
+    errEl.textContent = 'Phone aur PIN dono chahiye';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Logging in...';
+
+  api('POST', '/shops/login', { owner_phone: phone, pin })
+    .then(({ data }) => {
+      // Persist session
+      localStorage.setItem('saf_shop_id',   data.shop_id);
+      localStorage.setItem('saf_shop_name', data.shop_name);
+      localStorage.setItem('saf_is_open',   data.is_open ? '1' : '0');
+
+      state.shopId   = data.shop_id;
+      state.shopName = data.shop_name;
+      state.isOpen   = data.is_open;
+
+      showDashboard();
+    })
+    .catch((err) => {
+      errEl.textContent = err.message || 'Login failed';
+      btn.disabled = false;
+      btn.textContent = 'Login karo';
+    });
+}
+
+function handleLogout() {
+  localStorage.clear();
+  clearInterval(state.refreshTimer);
+  showScreen('login-screen');
+  document.getElementById('login-pin').value = '';
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function showDashboard() {
+  document.getElementById('shop-name-topbar').textContent = state.shopName;
+  showScreen('dash-screen');
+  updateStatusBadge(state.isOpen);
+  loadSubscription();
+  refreshQueue();
+
+  // Auto-refresh every 15s
+  clearInterval(state.refreshTimer);
+  state.refreshTimer = setInterval(refreshQueue, 15000);
+}
+
+function refreshQueue() {
+  const listEl  = document.getElementById('queue-list');
+  const numEl   = document.getElementById('current-token-display');
+
+  api('GET', `/tokens/queue?shop_id=${state.shopId}`)
+    .then(({ data }) => {
+      const { currentlyServing, queue, queueLength } = data;
+
+      // Current token
+      if (currentlyServing) {
+        numEl.className = 'token-number';
+        numEl.textContent = currentlyServing.token_number;
+        document.getElementById('current-token-phone').textContent =
+          maskPhone(currentlyServing.customer_phone);
+      } else {
+        numEl.className = 'token-number empty';
+        numEl.textContent = '—';
+        document.getElementById('current-token-phone').textContent = '';
+      }
+
+      // Stats
+      document.getElementById('stat-waiting').textContent = queueLength;
+
+      // Queue list
+      document.getElementById('queue-count').textContent = `${queueLength} log`;
+
+      if (!queue.length) {
+        listEl.innerHTML = '<div class="empty-queue">Queue khali hai 🎉</div>';
+      } else {
+        listEl.innerHTML = queue.map((t, i) => `
+          <div class="queue-item" style="animation-delay:${i * 0.05}s">
+            <span class="q-num">#${t.token_number}</span>
+            <span class="q-phone">${maskPhone(t.customer_phone)}</span>
+            <span class="q-badge waiting">Wait</span>
+          </div>
+        `).join('');
+      }
+
+      // Today stat (approximate)
+      document.getElementById('stat-today').textContent =
+        data.shop?.current_token ?? '—';
+    })
+    .catch((err) => {
+      if (err.message.includes('expired') || err.message.includes('inactive')) {
+        showToast('Subscription khatam ho gayi!', 'error');
+      }
+    });
+}
+
+function callNext() {
+  const btn = document.getElementById('next-btn');
+  btn.disabled = true;
+  btn.textContent = '...';
+
+  api('POST', '/tokens/next', { shop_id: state.shopId })
+    .then(({ data }) => {
+      if (data.empty) {
+        showToast('Queue khali hai!', 'success');
+      } else {
+        showToast(`Token #${data.next.token_number} call ho gaya`, 'success');
+      }
+      refreshQueue();
+    })
+    .catch((err) => showToast(err.message, 'error'))
+    .finally(() => {
+      btn.disabled = false;
+      btn.textContent = '▶ Agla Token';
+    });
+}
+
+function toggleOpen() {
+  const newState = !state.isOpen;
+  api('PATCH', `/shops/${state.shopId}/toggle`, { is_open: newState })
+    .then(() => {
+      state.isOpen = newState;
+      localStorage.setItem('saf_is_open', newState ? '1' : '0');
+      updateStatusBadge(newState);
+      showToast(newState ? 'Dukan khulli hai! ✅' : 'Dukan band ho gayi', newState ? 'success' : '');
+    })
+    .catch((err) => showToast(err.message, 'error'));
+}
+
+function updateStatusBadge(isOpen) {
+  const badge = document.getElementById('status-toggle');
+  const text  = document.getElementById('status-text');
+  badge.className = `status-badge ${isOpen ? 'open' : 'closed'}`;
+  text.textContent = isOpen ? 'Khuli' : 'Band';
+}
+
+function loadSubscription() {
+  api('GET', `/subscriptions?shop_id=${state.shopId}`)
+    .then(({ data }) => {
+      document.getElementById('sub-plan').textContent =
+        (data.plan_name || 'free').toUpperCase() + ' PLAN';
+      document.getElementById('sub-expiry').textContent =
+        `Expiry: ${data.end_date}`;
+      document.getElementById('shop-sub-topbar').textContent =
+        `${data.plan_name} — ${data.end_date}`;
+    })
+    .catch(() => {
+      document.getElementById('sub-expiry').textContent = 'Subscription nahi mili';
+    });
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+async function api(method, path, body) {
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+  };
+  if (body) opts.body = JSON.stringify(body);
+
+  const res  = await fetch(CONFIG.WORKER_URL + path, opts);
+  const data = await res.json();
+
+  if (!data.success) {
+    throw new Error(data.error || 'Kuch error ho gaya');
+  }
+  return data;
+}
+
+function maskPhone(phone) {
+  if (!phone) return '—';
+  const s = String(phone);
+  return s.slice(0, 4) + '****' + s.slice(-3);
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+let toastTimer;
+function showToast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className   = `show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = '', 3000);
+}
+
+// ============================================================
+// BOOT — restore session on page load
+// ============================================================
+(function boot() {
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+  }
+
+  const shopId   = localStorage.getItem('saf_shop_id');
+  const shopName = localStorage.getItem('saf_shop_name');
+  const isOpen   = localStorage.getItem('saf_is_open') === '1';
+
+  if (shopId && shopName) {
+    state.shopId   = shopId;
+    state.shopName = shopName;
+    state.isOpen   = isOpen;
+    showDashboard();
+  }
+})();
+</script>
+</body>
+</html>
