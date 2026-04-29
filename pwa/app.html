@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#050810"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="description" content="سف کیو — لائن میں کھڑے ہوئے بغیر ٹوکن لیں"/>
+<title>سف کیو — آن لائن قطار</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --void:#050810;--deep:#070c18;--surface:#0d1424;
+  --glass:rgba(13,20,36,.75);--border:rgba(212,175,55,.1);
+  --gold:#D4AF37;--gold2:#F5C842;--gold3:#FFE066;
+  --cyan:#00D4FF;--red:#FF4560;--green:#00E396;--amber:#F59E0B;
+  --purple:#A855F7;--text:#EDE8D0;--muted:rgba(237,232,208,.4);
+  --r:16px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Noto Nastaliq Urdu',serif;background:var(--void);color:var(--text);min-height:100dvh;overflow-x:hidden;direction:rtl;}
+#particle-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;}
+.holo-grid{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(212,175,55,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(212,175,55,.03) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;animation:gridDrift 30s linear infinite;}
+@keyframes gridDrift{to{background-position:50px 50px;}}
+.page{position:relative;z-index:1;max-width:600px;margin:0 auto;padding-bottom:40px;}
+
+/* ══ HERO ══ */
+.hero{padding:calc(env(safe-area-inset-top,0px)+24px) 20px 28px;text-align:center;position:relative;}
+.hero::after{content:'';position:absolute;bottom:0;left:20%;right:20%;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+.hero-orb{width:72px;height:72px;margin:0 auto 14px;position:relative;animation:orbFloat 4s ease-in-out infinite;}
+.hero-orb::before{content:'';position:absolute;inset:-3px;border-radius:50%;background:conic-gradient(from 0deg,var(--gold),var(--cyan),var(--gold2),var(--cyan),var(--gold));animation:spin 3s linear infinite;filter:blur(1px);}
+.hero-orb-in{position:absolute;inset:3px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#1a2540,#050810);display:flex;align-items:center;justify-content:center;font-size:28px;z-index:1;}
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes orbFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+.hero-brand{font-family:'Orbitron',monospace;font-size:20px;font-weight:900;background:linear-gradient(135deg,var(--gold),var(--gold3),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;direction:ltr;letter-spacing:3px;margin-bottom:6px;}
+.hero-tagline{font-size:15px;color:var(--text);margin-bottom:4px;font-weight:600;}
+.hero-sub{font-size:12px;color:var(--muted);}
+
+/* ══ SEARCH BAR ══ */
+.search-wrap{padding:18px 16px 0;animation:fadeUp .6s .1s cubic-bezier(.16,1,.3,1) both;}
+.search-box{display:flex;gap:10px;background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:6px 6px 6px 14px;backdrop-filter:blur(20px);transition:border-color .3s,box-shadow .3s;}
+.search-box:focus-within{border-color:rgba(212,175,55,.35);box-shadow:0 0 20px rgba(212,175,55,.08);}
+.search-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-family:inherit;font-size:14px;padding:8px 0;direction:rtl;}
+.search-input::placeholder{color:var(--muted);}
+.search-btn{background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:10px;width:44px;height:44px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .2s;}
+.search-btn:hover{transform:scale(1.05);}
+
+/* Location pill */
+.location-row{display:flex;align-items:center;gap:8px;padding:10px 16px 0;}
+.loc-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.15);border-radius:100px;font-size:11px;color:var(--cyan);cursor:pointer;transition:all .2s;}
+.loc-pill:hover{background:rgba(0,212,255,.12);}
+.loc-dot{width:6px;height:6px;border-radius:50%;background:var(--cyan);animation:blink 1.5s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+/* ══ CATEGORIES ══ */
+.section{padding:20px 16px 0;}
+.section-label{font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;direction:ltr;}
+.cats-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
+.cats-scroll::-webkit-scrollbar{display:none;}
+.cat-chip{flex-shrink:0;display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--glass);border:1px solid var(--border);border-radius:100px;font-size:12px;color:var(--muted);cursor:pointer;transition:all .2s;white-space:nowrap;backdrop-filter:blur(12px);}
+.cat-chip:hover,.cat-chip.active{background:rgba(212,175,55,.1);border-color:rgba(212,175,55,.3);color:var(--gold2);}
+.cat-icon{font-size:15px;}
+
+/* ══ SHOP CARDS ══ */
+.shops-grid{display:flex;flex-direction:column;gap:12px;padding:16px;}
+
+.shop-card{background:var(--glass);border:1px solid var(--border);border-radius:20px;overflow:hidden;backdrop-filter:blur(16px);transition:transform .3s,box-shadow .3s;animation:fadeUp .5s cubic-bezier(.16,1,.3,1) both;cursor:pointer;position:relative;}
+.shop-card:hover{transform:translateY(-3px);box-shadow:0 16px 48px rgba(0,0,0,.3);}
+.shop-card.open:hover{box-shadow:0 16px 48px rgba(212,175,55,.1);}
+.shop-card.closed{opacity:.7;}
+.shop-card.closed .shop-card-body{filter:grayscale(.3);}
+
+/* Top accent line */
+.shop-card.open::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),var(--cyan),var(--gold));}
+.shop-card.closed::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--red),transparent);}
+
+.shop-card-body{padding:18px 16px 14px;}
+.shop-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px;}
+
+.shop-icon-wrap{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
+.shop-icon-wrap.open{background:linear-gradient(135deg,rgba(212,175,55,.15),rgba(0,212,255,.1));border:1px solid rgba(212,175,55,.2);}
+.shop-icon-wrap.closed{background:rgba(255,69,96,.08);border:1px solid rgba(255,69,96,.1);}
+
+.shop-info{flex:1;}
+.shop-name{font-size:16px;font-weight:700;color:var(--text);margin-bottom:3px;line-height:1.3;}
+.shop-area{font-size:11px;color:var(--muted);}
+
+.shop-status-badge{padding:4px 10px;border-radius:100px;font-size:10px;font-weight:700;border:1px solid;white-space:nowrap;flex-shrink:0;font-family:'Orbitron',monospace;letter-spacing:.5px;}
+.shop-status-badge.open{background:rgba(0,227,150,.1);border-color:var(--green);color:var(--green);}
+.shop-status-badge.closed{background:rgba(255,69,96,.1);border-color:var(--red);color:var(--red);}
+.shop-status-badge.heavy{background:rgba(245,158,11,.1);border-color:var(--amber);color:var(--amber);}
+
+/* Queue meter */
+.queue-meter{margin-bottom:12px;}
+.meter-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.meter-label{font-size:10px;color:var(--muted);}
+.meter-val{font-family:'Orbitron',monospace;font-size:10px;color:var(--gold2);}
+.meter-bar{height:4px;background:rgba(255,255,255,.06);border-radius:100px;overflow:hidden;}
+.meter-fill{height:100%;border-radius:100px;transition:width .6s cubic-bezier(.16,1,.3,1);}
+.meter-fill.light{background:linear-gradient(90deg,var(--green),var(--cyan));}
+.meter-fill.medium{background:linear-gradient(90deg,var(--amber),var(--gold));}
+.meter-fill.heavy{background:linear-gradient(90deg,var(--red),var(--amber));}
+
+/* Stats row */
+.shop-stats{display:flex;gap:8px;margin-bottom:14px;}
+.shop-stat{flex:1;background:rgba(5,8,16,.4);border:1px solid var(--border);border-radius:10px;padding:8px 10px;text-align:center;}
+.shop-stat .sv{font-family:'Orbitron',monospace;font-size:16px;font-weight:700;color:var(--gold2);}
+.shop-stat .sl{font-size:9px;color:var(--muted);margin-top:2px;}
+
+/* Timing info (closed) */
+.timing-box{background:rgba(255,69,96,.06);border:1px solid rgba(255,69,96,.12);border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;}
+.timing-icon{font-size:18px;}
+.timing-text{font-size:12px;color:rgba(237,232,208,.6);}
+.timing-time{font-family:'Orbitron',monospace;font-size:11px;color:var(--amber);margin-top:2px;}
+
+/* Suggestion hint (heavy queue) */
+.suggestion-hint{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:11px;color:rgba(237,232,208,.7);display:flex;align-items:center;gap:8px;}
+
+/* Action button */
+.shop-action{width:100%;padding:12px;border:none;border-radius:12px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
+.shop-action.open{background:linear-gradient(135deg,var(--gold),var(--gold2),var(--gold3));color:#050810;box-shadow:0 6px 20px rgba(212,175,55,.25);}
+.shop-action.open:hover{transform:translateY(-1px);box-shadow:0 10px 28px rgba(212,175,55,.4);}
+.shop-action.closed{background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--muted);cursor:default;}
+.shop-action.heavy{background:linear-gradient(135deg,rgba(245,158,11,.2),rgba(212,175,55,.1));border:1px solid rgba(245,158,11,.3);color:var(--amber);}
+
+/* Distance badge */
+.distance-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.15);border-radius:100px;font-size:9px;color:var(--cyan);font-family:'Orbitron',monospace;margin-right:6px;}
+
+/* ══ SUGGESTIONS SECTION ══ */
+.suggestions-section{padding:0 16px 4px;}
+.suggest-scroll{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
+.suggest-scroll::-webkit-scrollbar{display:none;}
+.suggest-card{flex-shrink:0;width:160px;background:var(--glass);border:1px solid rgba(0,227,150,.15);border-radius:14px;padding:14px 12px;cursor:pointer;transition:transform .2s;backdrop-filter:blur(12px);}
+.suggest-card:hover{transform:translateY(-2px);}
+.suggest-card::before{content:'';display:block;width:100%;height:1px;background:linear-gradient(90deg,var(--green),transparent);margin-bottom:10px;}
+.suggest-name{font-size:12px;font-weight:700;margin-bottom:4px;}
+.suggest-meta{font-size:10px;color:var(--muted);}
+.suggest-queue{font-family:'Orbitron',monospace;font-size:10px;color:var(--green);margin-top:6px;}
+
+/* ══ EMPTY / LOADING ══ */
+.loading-grid{padding:16px;display:flex;flex-direction:column;gap:12px;}
+.skeleton{background:var(--glass);border:1px solid var(--border);border-radius:20px;height:180px;animation:shimmerAnim 1.5s ease-in-out infinite;}
+@keyframes shimmerAnim{0%,100%{opacity:.5;}50%{opacity:1;}}
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted);}
+.empty-icon{font-size:48px;margin-bottom:12px;display:block;}
+.empty-text{font-size:14px;}
+
+/* ══ TOAST ══ */
+#toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:10px 22px;font-size:13px;font-weight:600;z-index:999;transition:transform .4s cubic-bezier(.16,1,.3,1);white-space:nowrap;backdrop-filter:blur(20px);}
+#toast.show{transform:translateX(-50%) translateY(0);}
+#toast.success{color:var(--green);border-color:var(--green);}
+#toast.error{color:var(--red);border-color:var(--red);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+<canvas id="particle-canvas"></canvas>
+<div class="holo-grid"></div>
+
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-orb">
+      <div class="hero-orb-in">🏪</div>
+    </div>
+    <div class="hero-brand">SAF QUEUE</div>
+    <div class="hero-tagline">لائن میں کھڑے ہوئے بغیر ٹوکن لیں</div>
+    <div class="hero-sub">قریبی دکان منتخب کریں — گھر سے نمبر لیں</div>
+  </div>
+
+  <!-- Search -->
+  <div class="search-wrap">
+    <div class="search-box">
+      <input id="search-input" class="search-input" type="text" placeholder="دکان، علاقہ، یا سروس تلاش کریں..." oninput="handleSearch()"/>
+      <button class="search-btn" onclick="handleSearch()">🔍</button>
+    </div>
+  </div>
+
+  <!-- Location -->
+  <div class="location-row">
+    <div class="loc-pill" id="loc-pill" onclick="getLocation()">
+      <span class="loc-dot"></span>
+      <span id="loc-text">قریبی دکانیں دیکھیں</span>
+    </div>
+    <div id="loc-status" style="font-size:10px;color:var(--muted)"></div>
+  </div>
+
+  <!-- Categories -->
+  <div class="section">
+    <div class="section-label">CATEGORIES</div>
+    <div class="cats-scroll" id="cats-row">
+      <div class="cat-chip active" onclick="filterCat('')" data-cat="">
+        <span class="cat-icon">🏪</span> سب
+      </div>
+    </div>
+  </div>
+
+  <!-- Suggestions -->
+  <div id="suggestions-section" class="suggestions-section" style="display:none">
+    <div class="section" style="padding-bottom:0">
+      <div class="section-label">✨ کم قطار — ابھی جائیں</div>
+    </div>
+    <div class="suggest-scroll" id="suggest-row"></div>
+  </div>
+
+  <!-- Shop list -->
+  <div id="shops-container">
+    <div class="loading-grid">
+      <div class="skeleton"></div>
+      <div class="skeleton"></div>
+      <div class="skeleton"></div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── Particles ──────────────────────────────────────────────
+const canvas=document.getElementById('particle-canvas'),ctx=canvas.getContext('2d');
+let W,H,pts=[];
+function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
+function mkPt(){return{x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.4+.3,vy:-(Math.random()*.35+.08),vx:(Math.random()-.5)*.18,a:Math.random()*.35+.08,c:Math.random()>.6?'#D4AF37':'#00D4FF'};}
+function draw(){ctx.clearRect(0,0,W,H);pts.forEach((p,i)=>{p.x+=p.vx;p.y+=p.vy;if(p.y<-5){pts[i]=mkPt();pts[i].y=H+5;}ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=p.c;ctx.globalAlpha=p.a;ctx.fill();});ctx.globalAlpha=1;requestAnimationFrame(draw);}
+resize();pts=Array.from({length:60},mkPt);draw();window.addEventListener('resize',resize);
+
+const WORKER='https://saf-queue-worker.byker-software.workers.dev';
+
+let allShops=[], suggestions=[], activeCategory='', userLat=null, userLng=null, searchTimer=null;
+
+const CAT_ICONS={barber:'💈',clinic:'🏥',pharmacy:'💊',govt:'🏛️',bank:'🏦',tailor:'🧵',restaurant:'🍽️',other:'🏪'};
+const CAT_LABELS={barber:'حجام',clinic:'کلینک',pharmacy:'فارمیسی',govt:'سرکاری',bank:'بینک',tailor:'درزی',restaurant:'ریستوران',other:'دیگر'};
+
+// ── Load shops ─────────────────────────────────────────────
+async function loadShops(params={}){
+  const qs=new URLSearchParams();
+  if(params.category) qs.set('category',params.category);
+  if(params.area)     qs.set('area',params.area);
+  if(params.search)   qs.set('search',params.search);
+  if(userLat)         qs.set('lat',userLat);
+  if(userLng)         qs.set('lng',userLng);
+
+  try{
+    const res=await fetch(`${WORKER}/public/shops?${qs}`);
+    const {data}=await res.json();
+    allShops=data.shops;
+    suggestions=data.suggestions;
+    renderAll();
+  }catch(e){
+    document.getElementById('shops-container').innerHTML=
+      '<div class="empty-state"><span class="empty-icon">⚠️</span><div class="empty-text">لوڈ نہیں ہو سکا</div></div>';
+  }
+}
+
+async function loadCategories(){
+  try{
+    const res=await fetch(`${WORKER}/public/categories`);
+    const {data}=await res.json();
+    const row=document.getElementById('cats-row');
+    data.forEach(cat=>{
+      const icon=CAT_ICONS[cat.name]||'🏪';
+      const label=CAT_LABELS[cat.name]||cat.name;
+      row.innerHTML+=`<div class="cat-chip" onclick="filterCat('${cat.name}')" data-cat="${cat.name}">
+        <span class="cat-icon">${icon}</span> ${label}
+        <span style="font-family:'Orbitron',monospace;font-size:9px;opacity:.5">${cat.count}</span>
+      </div>`;
+    });
+  }catch(e){}
+}
+
+// ── Render ─────────────────────────────────────────────────
+function renderAll(){
+  renderSuggestions();
+  renderShops(allShops);
+}
+
+function renderSuggestions(){
+  const sec=document.getElementById('suggestions-section');
+  const row=document.getElementById('suggest-row');
+  if(!suggestions.length){sec.style.display='none';return;}
+  sec.style.display='block';
+  row.innerHTML=suggestions.map(s=>`
+    <div class="suggest-card" onclick="goToShop('${s.id}','${esc(s.name)}')">
+      <div class="suggest-name">${esc(s.name)}</div>
+      <div class="suggest-meta">${esc(s.area||'')} ${CAT_ICONS[s.category]||'🏪'}</div>
+      <div class="suggest-queue">⚡ ${s.queue_length} لوگ — ${s.estimated_wait} منٹ</div>
+    </div>`).join('');
+}
+
+function renderShops(shops){
+  const container=document.getElementById('shops-container');
+
+  if(!shops.length){
+    container.innerHTML='<div class="empty-state"><span class="empty-icon">🔍</span><div class="empty-text">کوئی دکان نہیں ملی</div></div>';
+    return;
+  }
+
+  container.innerHTML=`<div class="shops-grid">${shops.map((s,i)=>shopCard(s,i)).join('')}</div>`;
+}
+
+function shopCard(s, i){
+  const isOpen    = s.is_open;
+  const isHeavy   = s.queue_load === 'heavy';
+  const icon      = CAT_ICONS[s.category] || '🏪';
+  const meterPct  = Math.min((s.queue_length / 20) * 100, 100);
+  const distBadge = s.distance != null
+    ? `<span class="distance-badge">📍 ${s.distance<1?Math.round(s.distance*1000)+'m':s.distance.toFixed(1)+'km'}</span>`
+    : '';
+
+  let statusBadge, actionBtn, extraInfo='';
+
+  if(isOpen && !isHeavy){
+    statusBadge=`<span class="shop-status-badge open">● کھلی</span>`;
+    actionBtn=`<button class="shop-action open" onclick="goToShop('${s.id}','${esc(s.name)}')">ٹوکن لیں ←</button>`;
+  }else if(isOpen && isHeavy){
+    statusBadge=`<span class="shop-status-badge heavy">⚠ بھری قطار</span>`;
+    actionBtn=`<button class="shop-action heavy" onclick="goToShop('${s.id}','${esc(s.name)}')">پھر بھی شامل ہوں</button>`;
+    extraInfo=`<div class="suggestion-hint">💡 اس دکان میں لمبی قطار ہے — متبادل دکانیں نیچے دیکھیں</div>`;
+  }else{
+    statusBadge=`<span class="shop-status-badge closed">بند</span>`;
+    const opensAt=s.opening_time||'09:00';
+    const closesAt=s.closing_time||'21:00';
+    extraInfo=`
+      <div class="timing-box">
+        <span class="timing-icon">🕐</span>
+        <div>
+          <div class="timing-text">ابھی بند ہے</div>
+          <div class="timing-time">کھلنے کا وقت: ${opensAt} — بند: ${closesAt}</div>
+        </div>
+      </div>`;
+    actionBtn=`<button class="shop-action closed" disabled>بند ہے</button>`;
+  }
+
+  return `
+  <div class="shop-card ${isOpen?'open':'closed'}" style="animation-delay:${i*.06}s">
+    <div class="shop-card-body">
+      <div class="shop-top">
+        <div class="shop-icon-wrap ${isOpen?'open':'closed'}">${icon}</div>
+        <div class="shop-info">
+          <div class="shop-name">${esc(s.name)}</div>
+          <div class="shop-area">${distBadge}${esc(s.area||'')}${s.category?` · ${CAT_LABELS[s.category]||s.category}`:''}</div>
+          ${s.description?`<div style="font-size:10px;color:var(--muted);margin-top:3px">${esc(s.description)}</div>`:''}
+        </div>
+        ${statusBadge}
+      </div>
+
+      ${isOpen?`
+      <div class="queue-meter">
+        <div class="meter-row">
+          <span class="meter-label">قطار کی صورتحال</span>
+          <span class="meter-val">${s.queue_length} لوگ · ~${s.estimated_wait} منٹ</span>
+        </div>
+        <div class="meter-bar"><div class="meter-fill ${s.queue_load}" style="width:${meterPct}%"></div></div>
+      </div>
+
+      <div class="shop-stats">
+        <div class="shop-stat"><div class="sv">${s.current_token||'—'}</div><div class="sl">ابھی نمبر</div></div>
+        <div class="shop-stat"><div class="sv">${s.queue_length}</div><div class="sl">قطار</div></div>
+        <div class="shop-stat"><div class="sv">${s.estimated_wait}m</div><div class="sl">انتظار</div></div>
+      </div>`:''}
+
+      ${extraInfo}
+      ${actionBtn}
+    </div>
+  </div>`;
+}
+
+// ── Navigation ─────────────────────────────────────────────
+function goToShop(shopId, shopName){
+  window.location.href=`/join.html?shop=${shopId}`;
+}
+
+// ── Filters ────────────────────────────────────────────────
+function filterCat(cat){
+  activeCategory=cat;
+  document.querySelectorAll('.cat-chip').forEach(c=>{
+    c.classList.toggle('active', c.dataset.cat===cat);
+  });
+  loadShops({category:cat, search:document.getElementById('search-input').value.trim()});
+}
+
+function handleSearch(){
+  clearTimeout(searchTimer);
+  searchTimer=setTimeout(()=>{
+    const q=document.getElementById('search-input').value.trim();
+    loadShops({category:activeCategory, search:q});
+  },400);
+}
+
+// ── Location ───────────────────────────────────────────────
+function getLocation(){
+  const pill=document.getElementById('loc-pill');
+  const txt=document.getElementById('loc-text');
+  const status=document.getElementById('loc-status');
+
+  if(!navigator.geolocation){txt.textContent='لوکیشن سپورٹ نہیں';return;}
+
+  txt.textContent='لوکیشن مل رہی ہے...';
+  pill.style.opacity='.6';
+
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      userLat=pos.coords.latitude;
+      userLng=pos.coords.longitude;
+      txt.textContent='قریبی دکانیں';
+      pill.style.opacity='1';
+      status.textContent='✓ لوکیشن مل گئی';
+      loadShops({category:activeCategory});
+    },
+    err=>{
+      txt.textContent='قریبی دکانیں دیکھیں';
+      pill.style.opacity='1';
+      if(err.code===1)status.textContent='لوکیشن اجازت نہیں دی';
+    },
+    {timeout:8000}
+  );
+}
+
+// ── Helpers ────────────────────────────────────────────────
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+let toastT;
+function showToast(msg,type=''){const el=document.getElementById('toast');el.textContent=msg;el.className=`show ${type}`;clearTimeout(toastT);toastT=setTimeout(()=>el.className='',3500);}
+
+// ── Boot ───────────────────────────────────────────────────
+loadCategories();
+loadShops();
+
+// Auto-refresh live data every 30s
+setInterval(()=>loadShops({category:activeCategory,search:document.getElementById('search-input').value.trim()}), 30000);
+</script>
+</body>
+</html>

@@ -66,3 +66,14 @@ CREATE TABLE IF NOT EXISTS shop_registrations (
   status       TEXT NOT NULL DEFAULT 'pending', -- pending, approved, rejected
   created_at   TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- ============================================================
+-- Business hours + location fields
+-- ============================================================
+ALTER TABLE shops ADD COLUMN IF NOT EXISTS opening_time  TEXT DEFAULT '09:00';
+ALTER TABLE shops ADD COLUMN IF NOT EXISTS closing_time  TEXT DEFAULT '21:00';
+ALTER TABLE shops ADD COLUMN IF NOT EXISTS description   TEXT;
+ALTER TABLE shops ADD COLUMN IF NOT EXISTS address       TEXT;
+ALTER TABLE shops ADD COLUMN IF NOT EXISTS latitude      NUMERIC(10,7);
+ALTER TABLE shops ADD COLUMN IF NOT EXISTS longitude     NUMERIC(10,7);
+ALTER TABLE shops ADD COLUMN IF NOT EXISTS avg_rating    NUMERIC(3,1) DEFAULT 5.0;
