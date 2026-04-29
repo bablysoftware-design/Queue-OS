@@ -39,6 +39,15 @@ export function createClient(env) {
     return res.json();
   }
 
+  async function del(table, query) {
+    const res = await fetch(`${base}/${table}?${query}`, {
+      method:  'DELETE',
+      headers: { ...baseHeaders, 'Prefer': 'return=representation' },
+    });
+    if (!res.ok) throw new Error(`DB delete error [${res.status}]: ${await res.text()}`);
+    return res.json();
+  }
+
   async function rpc(fn, params = {}) {
     const res = await fetch(`${base}/rpc/${fn}`, {
       method:  'POST',
@@ -49,5 +58,5 @@ export function createClient(env) {
     return res.json();
   }
 
-  return { select, insert, update, rpc };
+  return { select, insert, update, delete: del, rpc };
 }
