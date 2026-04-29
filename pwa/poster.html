@@ -163,8 +163,8 @@ body{font-family:'Noto Nastaliq Urdu',serif;background:#1a1a2e;color:var(--text)
     <input id="cfg-name" type="text" placeholder="مثال: علی باربر شاپ" value="آپ کی دکان"/>
   </div>
   <div class="cfg-field">
-    <label>واٹس ایپ نمبر (مکمل، مثلاً 923001234567)</label>
-    <input id="cfg-phone" type="tel" placeholder="923001234567"/>
+    <label>دکان ID (ایڈمن پینل سے کاپی کریں)</label>
+    <input id="cfg-phone" type="text" placeholder="دکان ID (UUID)"/>
   </div>
   <button class="btn-gen" onclick="generatePoster()">پوسٹر بنائیں</button>
   <button class="btn-print" onclick="window.print()">🖨️ پرنٹ / PDF محفوظ کریں</button>
@@ -224,16 +224,16 @@ body{font-family:'Noto Nastaliq Urdu',serif;background:#1a1a2e;color:var(--text)
 <script>
 function generatePoster() {
   const name  = document.getElementById('cfg-name').value.trim()  || 'آپ کی دکان';
-  const phone = document.getElementById('cfg-phone').value.trim();
+  const shopId = document.getElementById("cfg-phone").value.trim();
 
-  if (!phone) { alert('واٹس ایپ نمبر درج کریں'); return; }
+  if (!shopId) { alert('واٹس ایپ نمبر درج کریں'); return; }
 
   // Update poster text
   document.getElementById('poster-shop-name').textContent = name;
-  document.getElementById('poster-wa-num').textContent    = '+' + phone;
+  document.getElementById('poster-wa-num').textContent = 'queue-os.pages.dev/join.html';
 
   // Generate WA deep link
-  const waLink = `https://wa.me/${phone}?text=hi`;
+  const waLink = `https://queue-os.pages.dev/join.html?shop=${shopId}`;
 
   // Clear old QR
   const qrEl = document.getElementById('qr-code');

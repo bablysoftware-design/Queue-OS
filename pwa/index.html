@@ -334,6 +334,7 @@ body{font-family:'Noto Nastaliq Urdu',serif;background:var(--void);color:var(--t
 
   <div class="bottombar">
     <button class="btn-outline" onclick="refreshQueue()">🔄 تازہ</button>
+    <button class="btn-outline" onclick="shareShopLink()" style="border-color:rgba(0,212,255,.3);color:var(--cyan)">🔗 لنک</button>
     <button class="btn-outline" onclick="handleLogout()">باہر</button>
   </div>
 </div>
@@ -561,6 +562,11 @@ async function api(method,path,body){
   return data;
 }
 function maskPhone(p){if(!p)return'—';const s=String(p);return s.slice(0,4)+'****'+s.slice(-3);}
+function shareShopLink(){
+  const url=`${location.origin}/join.html?shop=${state.shopId}`;
+  if(navigator.share){navigator.share({title:state.shopName+" قطار",text:"آن لائن ٹوکن لیں",url});}
+  else{navigator.clipboard.writeText(url).then(()=>showToast("لنک کاپی ہو گیا!","success")).catch(()=>{prompt("لنک کاپی کریں:",url);});}
+}
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
 let toastT;
 function showToast(msg,type=''){const el=document.getElementById('toast');el.textContent=msg;el.className=`show ${type}`;clearTimeout(toastT);toastT=setTimeout(()=>el.className='',3500);}
