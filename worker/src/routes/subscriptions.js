@@ -79,7 +79,7 @@ export async function listShopsAdminHandler(request, env) {
     const db = createClient(env);
     const shops = await db.select(
       'shops',
-      'select=id,name,owner_phone,is_active,is_open,created_at&order=created_at.desc'
+      'select=id,name,owner_phone,area,category,is_active,is_open,current_token,created_at&order=created_at.desc'
     );
     return ok(shops);
   } catch (err) {
