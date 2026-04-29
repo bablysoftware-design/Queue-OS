@@ -1,66 +1,57 @@
 // ============================================================
-// service-worker.js — Saf Queue PWA Service Worker
-// Strategy: Cache-First for assets, Network-First for API
+// service-worker.js — Saf Queue PWA
 // ============================================================
 
-const CACHE_NAME   = 'saf-queue-v1';
-const STATIC_ASSETS = ['/', '/index.html', '/manifest.json'];
+const CACHE = 'saf-queue-v3';
+const STATIC = [
+  '/',
+  '/index.html',
+  '/admin.html',
+  '/manifest.json',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+  '/icons/apple-touch-icon.png',
+];
 
-// ── Install: cache static shell ──────────────────────────────
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE).then(c => c.addAll(STATIC))
   );
   self.skipWaiting();
 });
 
-// ── Activate: clean old caches ───────────────────────────────
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))
-      )
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
     )
   );
   self.clients.claim();
 });
 
-// ── Fetch: route strategy ─────────────────────────────────────
-self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  const url = new URL(request.url);
+self.addEventListener('fetch', e => {
+  const url = new URL(e.request.url);
 
-  // API calls → Network-First (don't cache API responses)
-  if (url.pathname.startsWith('/tokens') ||
-      url.pathname.startsWith('/shops')  ||
-      url.pathname.startsWith('/subscriptions')) {
-    event.respondWith(networkFirst(request));
+  // API calls → always network
+  if (url.hostname.includes('workers.dev') || url.hostname.includes('supabase.co')) {
+    e.respondWith(fetch(e.request).catch(() =>
+      new Response(JSON.stringify({ success: false, error: 'Offline' }),
+        { status: 503, headers: { 'Content-Type': 'application/json' } })
+    ));
     return;
   }
 
-  // Static assets → Cache-First
-  event.respondWith(cacheFirst(request));
+  // Static → cache first
+  e.respondWith(
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+      return fetch(e.request).then(res => {
+        if (res.ok) {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+        }
+        return res;
+      });
+    })
+  );
 });
-
-async function cacheFirst(request) {
-  const cached = await caches.match(request);
-  if (cached) return cached;
-  const response = await fetch(request);
-  if (response.ok) {
-    const cache = await caches.open(CACHE_NAME);
-    cache.put(request, response.clone());
-  }
-  return response;
-}
-
-async function networkFirst(request) {
-  try {
-    return await fetch(request);
-  } catch {
-    return caches.match(request) || new Response(
-      JSON.stringify({ success: false, error: 'Offline' }),
-      { status: 503, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
-}

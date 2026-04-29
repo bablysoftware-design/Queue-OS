@@ -1,11 +1,11 @@
 {
   "name": "Saf Queue",
   "short_name": "SafQueue",
-  "description": "Queue management for your business",
+  "description": "Smart queue management for Pakistani businesses",
   "start_url": "/",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#0f172a",
+  "orientation": "portrait-primary",
+  "background_color": "#0a0f1e",
   "theme_color": "#6366f1",
   "icons": [
     {
@@ -19,8 +19,21 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
     }
   ],
   "categories": ["business", "utilities"],
-  "lang": "ur"
+  "lang": "ur",
+  "screenshots": [
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ]
 }

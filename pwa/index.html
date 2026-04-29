@@ -6,6 +6,8 @@
 <meta name="theme-color" content="#0f172a"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"/>
+<link rel="apple-touch-startup-image" href="/icons/icon-512.png"/>
 <title>Saf Queue v2</title>
 <link rel="manifest" href="/manifest.json"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -598,6 +600,21 @@
 <!-- Toast -->
 <div id="toast"></div>
 
+<!-- PWA Install Banner -->
+<div id="install-banner" style="display:none;position:fixed;bottom:80px;left:16px;right:16px;background:#141d2e;border:1px solid #6366f1;border-radius:14px;padding:14px 16px;align-items:center;justify-content:space-between;gap:12px;z-index:998;box-shadow:0 8px 32px rgba(99,102,241,0.3)">
+  <div style="display:flex;align-items:center;gap:10px">
+    <span style="font-size:24px">📲</span>
+    <div>
+      <div style="font-size:13px;font-weight:600;color:#f1f5f9">App Install Karein</div>
+      <div style="font-size:11px;color:#64748b">Home screen pe add karein</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px">
+    <button onclick="installApp()" style="background:linear-gradient(135deg,#6366f1,#818cf8);color:white;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer">Install</button>
+    <button onclick="document.getElementById('install-banner').style.display='none'" style="background:transparent;color:#64748b;border:1px solid #1e2d47;border-radius:8px;padding:8px 12px;font-size:12px;cursor:pointer">✕</button>
+  </div>
+</div>
+
 <script>
 // ============================================================
 // CONFIG — change WORKER_URL to your deployed Worker URL
@@ -841,3 +858,29 @@ function showToast(msg, type = '') {
 </script>
 </body>
 </html>
+<script>
+// PWA install logic injected
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  const b = document.getElementById('install-banner');
+  if (b && !window.matchMedia('(display-mode: standalone)').matches) b.style.display = 'flex';
+});
+function installApp() {
+  if (!deferredInstallPrompt) {
+    alert('iOS pe: Safari mein Share button dabayein → "Add to Home Screen" select karein');
+    return;
+  }
+  deferredInstallPrompt.prompt();
+  deferredInstallPrompt.userChoice.then(() => {
+    deferredInstallPrompt = null;
+    const b = document.getElementById('install-banner');
+    if (b) b.style.display = 'none';
+  });
+}
+window.addEventListener('appinstalled', () => {
+  const b = document.getElementById('install-banner');
+  if (b) b.style.display = 'none';
+});
+</script>
