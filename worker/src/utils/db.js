@@ -8,7 +8,7 @@
  * Keeps the Worker dependency-free.
  */
 export function createClient(env) {
-  const base = `${env.SUPABASE_URL}/rest/v1`;
+  const base = `${env.SUPABASE_URL.trim()}/rest/v1`;
   const headers = {
     'apikey': env.SUPABASE_KEY,
     'Authorization': `Bearer ${env.SUPABASE_KEY}`,
@@ -66,7 +66,7 @@ export function createClient(env) {
    * @param {object} params
    */
   async function rpc(fn, params = {}) {
-    const res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    const res = await fetch(`${env.SUPABASE_URL.trim()}/rest/v1/rpc/${fn}`, {
       method: 'POST',
       headers,
       body: JSON.stringify(params),
