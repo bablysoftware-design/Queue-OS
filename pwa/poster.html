@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>پوسٹر — سف کیو</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{--gold:#D4AF37;--gold2:#F5C842;--void:#050810;--text:#EDE8D0;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Nastaliq Urdu',serif;background:#1a1a2e;color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px;gap:20px;}
+
+/* Config panel - not printed */
+.config-panel{background:rgba(255,255,255,.05);border:1px solid rgba(212,175,55,.2);border-radius:16px;padding:20px;width:100%;max-width:500px;}
+.config-panel h2{font-family:'Orbitron',monospace;font-size:14px;color:var(--gold);margin-bottom:16px;direction:ltr;}
+.cfg-field{margin-bottom:12px;}
+.cfg-field label{display:block;font-size:11px;color:rgba(237,232,208,.5);margin-bottom:6px;}
+.cfg-field input{width:100%;background:rgba(5,8,16,.6);border:1px solid rgba(212,175,55,.15);border-radius:8px;padding:10px 12px;color:var(--text);font-family:inherit;font-size:13px;outline:none;direction:ltr;}
+.cfg-field input:focus{border-color:var(--gold);}
+.btn-gen{width:100%;padding:12px;border:none;border-radius:8px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#050810;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;margin-top:4px;}
+.btn-print{width:100%;padding:12px;border:1px solid var(--gold);border-radius:8px;background:transparent;color:var(--gold);font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;}
+
+/* THE POSTER */
+.poster{
+  width:380px;
+  background:linear-gradient(160deg,#0a0f1e 0%,#080d1a 100%);
+  border:3px solid var(--gold);
+  border-radius:20px;
+  padding:32px 28px;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+  box-shadow:0 0 60px rgba(212,175,55,.3),inset 0 0 60px rgba(212,175,55,.03);
+}
+
+.poster::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,transparent,var(--gold),#00D4FF,var(--gold),transparent);
+}
+
+/* Corner decorations */
+.poster::after{
+  content:'';position:absolute;inset:12px;
+  border:1px solid rgba(212,175,55,.1);border-radius:12px;pointer-events:none;
+}
+
+.poster-logo{
+  font-size:52px;margin-bottom:8px;
+  filter:drop-shadow(0 0 20px rgba(212,175,55,.5));
+  animation:float 3s ease-in-out infinite;
+}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+
+.poster-brand{
+  font-family:'Orbitron',monospace;font-size:22px;font-weight:900;
+  background:linear-gradient(135deg,var(--gold),#FFE066,#00D4FF);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;direction:ltr;letter-spacing:3px;
+  margin-bottom:4px;
+}
+
+.poster-tagline{
+  font-size:14px;color:rgba(212,175,55,.7);margin-bottom:24px;
+}
+
+/* QR box */
+.qr-box{
+  background:white;
+  border-radius:16px;
+  padding:16px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 8px 32px rgba(212,175,55,.3);
+  margin-bottom:20px;
+  position:relative;
+}
+
+.qr-box::before{
+  content:'';position:absolute;inset:-2px;
+  border-radius:18px;
+  background:linear-gradient(135deg,var(--gold),#00D4FF,var(--gold));
+  z-index:-1;
+}
+
+#qr-code{width:180px!important;height:180px!important;}
+#qr-code img,#qr-code canvas{width:180px!important;height:180px!important;}
+
+.scan-label{
+  font-size:13px;color:rgba(237,232,208,.6);margin-bottom:20px;
+}
+
+/* Steps */
+.steps{display:flex;flex-direction:column;gap:10px;text-align:right;margin-bottom:22px;}
+.step{
+  display:flex;align-items:center;gap:12px;
+  background:rgba(212,175,55,.06);
+  border:1px solid rgba(212,175,55,.1);
+  border-radius:10px;padding:10px 14px;
+}
+.step-num{
+  width:28px;height:28px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  color:#050810;font-weight:700;font-size:13px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Orbitron',monospace;
+}
+.step-txt{font-size:13px;color:var(--text);flex:1;}
+
+/* WA number */
+.wa-num{
+  background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);
+  border-radius:10px;padding:10px 16px;
+  font-family:'Orbitron',monospace;font-size:14px;font-weight:700;
+  color:#25D366;letter-spacing:1px;direction:ltr;
+  margin-bottom:18px;display:inline-block;
+  box-shadow:0 0 20px rgba(37,211,102,.15);
+}
+
+/* Shop name */
+.shop-name-display{
+  font-size:18px;font-weight:700;color:var(--gold2);
+  margin-bottom:6px;
+}
+
+.divider{
+  width:60px;height:2px;margin:0 auto 16px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+}
+
+.footer-txt{font-size:10px;color:rgba(237,232,208,.3);font-family:'Orbitron',monospace;direction:ltr;letter-spacing:1px;}
+
+/* Print styles */
+@media print {
+  body{background:white;padding:0;}
+  .config-panel,.no-print{display:none!important;}
+  .poster{
+    width:100%;max-width:400px;border-radius:0;
+    background:white!important;color:#000;
+    border:2px solid #000;box-shadow:none;
+    margin:0 auto;
+  }
+  .poster::before,.poster::after{display:none;}
+  .poster-brand{-webkit-text-fill-color:#000;background:none;color:#000;}
+  .poster-logo,.poster-tagline,.scan-label,.step,.wa-num,.shop-name-display,.footer-txt{color:#000!important;-webkit-text-fill-color:#000!important;}
+  .step{border:1px solid #ccc;background:#f9f9f9;}
+  .step-num{background:#000;color:white;}
+  .wa-num{background:#e8f8ee;border:1px solid #25D366;color:#000;}
+  .qr-box::before{display:none;}
+  .qr-box{box-shadow:none;border:2px solid #000;padding:12px;}
+  .divider{background:#000;}
+}
+</style>
+</head>
+<body>
+
+<!-- Config (not printed) -->
+<div class="config-panel no-print">
+  <h2>⚙️ POSTER SETTINGS</h2>
+  <div class="cfg-field">
+    <label>دکان کا نام</label>
+    <input id="cfg-name" type="text" placeholder="مثال: علی باربر شاپ" value="آپ کی دکان"/>
+  </div>
+  <div class="cfg-field">
+    <label>واٹس ایپ نمبر (مکمل، مثلاً 923001234567)</label>
+    <input id="cfg-phone" type="tel" placeholder="923001234567"/>
+  </div>
+  <button class="btn-gen" onclick="generatePoster()">پوسٹر بنائیں</button>
+  <button class="btn-print" onclick="window.print()">🖨️ پرنٹ / PDF محفوظ کریں</button>
+</div>
+
+<!-- THE POSTER -->
+<div class="poster" id="poster">
+
+  <div class="poster-logo">🏪</div>
+  <div class="poster-brand">SAF QUEUE</div>
+  <div class="poster-tagline">آن لائن ٹوکن سسٹم</div>
+  <div class="divider"></div>
+
+  <div class="shop-name-display" id="poster-shop-name">آپ کی دکان</div>
+
+  <p style="font-size:12px;color:rgba(237,232,208,.5);margin-bottom:16px">
+    لائن میں کھڑے ہونے کی ضرورت نہیں!
+  </p>
+
+  <!-- QR Code -->
+  <div class="qr-box">
+    <div id="qr-code"></div>
+  </div>
+
+  <div class="scan-label">📱 یہ QR اسکین کریں</div>
+
+  <!-- Steps -->
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-txt">واٹس ایپ کھولیں اور QR اسکین کریں</div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-txt"><strong>"hi"</strong> لکھ کر بھیجیں</div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-txt">اپنا ٹوکن نمبر ملے گا — گھر بیٹھیں!</div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-txt">آپ کی باری آنے پر پیغام آئے گا</div>
+    </div>
+  </div>
+
+  <!-- WA Number -->
+  <div>
+    <div style="font-size:11px;color:rgba(237,232,208,.4);margin-bottom:8px">یا واٹس ایپ پر لکھیں</div>
+    <div class="wa-num" id="poster-wa-num">نمبر یہاں آئے گا</div>
+  </div>
+
+  <div class="divider" style="margin-top:16px"></div>
+  <div class="footer-txt">POWERED BY SAF QUEUE</div>
+</div>
+
+<script>
+function generatePoster() {
+  const name  = document.getElementById('cfg-name').value.trim()  || 'آپ کی دکان';
+  const phone = document.getElementById('cfg-phone').value.trim();
+
+  if (!phone) { alert('واٹس ایپ نمبر درج کریں'); return; }
+
+  // Update poster text
+  document.getElementById('poster-shop-name').textContent = name;
+  document.getElementById('poster-wa-num').textContent    = '+' + phone;
+
+  // Generate WA deep link
+  const waLink = `https://wa.me/${phone}?text=hi`;
+
+  // Clear old QR
+  const qrEl = document.getElementById('qr-code');
+  qrEl.innerHTML = '';
+
+  // Generate new QR
+  new QRCode(qrEl, {
+    text:          waLink,
+    width:         180,
+    height:        180,
+    colorDark:     '#000000',
+    colorLight:    '#FFFFFF',
+    correctLevel:  QRCode.CorrectLevel.H,
+  });
+}
+
+// Generate default on load if phone in URL
+const params = new URLSearchParams(window.location.search);
+if (params.get('phone')) {
+  document.getElementById('cfg-phone').value = params.get('phone');
+  if (params.get('name'))  document.getElementById('cfg-name').value = params.get('name');
+  generatePoster();
+}
+</script>
+</body>
+</html>
