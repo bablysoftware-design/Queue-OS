@@ -6,7 +6,8 @@
 // ============================================================
 
 import { createClient }          from '../utils/db.js';
-import { hashPin, verifyPin, generateSessionToken } from '../utils/crypto.js';
+import { hashPin, verifyPin } from '../utils/crypto.js';
+import { generateShopToken } from '../utils/auth.js';
 import { requireShopAuth, requireAdmin }  from '../utils/auth.js';
 import { ok, badRequest, serverError, notFound, unauthorized } from '../utils/response.js';
 import { isValidPin, isValidUUID } from '../utils/validation.js';
@@ -80,15 +81,8 @@ export async function loginShopHandler(request, env) {
 
     if (!pinValid) return unauthorized('Galat PIN');
 
-    // FIX #2: Generate session token
-    const sessionToken = generateSessionToken();
-    const expiresAt    = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-
-    await db.insert('shopkeeper_sessions', {
-      shop_id:    shop.id,
-      token:      sessionToken,
-      expires_at: expiresAt,
-    });
+    // Generate stateless signed token (no DB needed)
+    const sessionToken = await generateShopToken(shop.id, env.ADMIN_SECRET);
 
     return ok({
       shop_id:       shop.id,
