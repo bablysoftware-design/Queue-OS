@@ -7,8 +7,7 @@
 
 import { createClient }          from '../utils/db.js';
 import { hashPin, verifyPin } from '../utils/crypto.js';
-import { generateShopToken } from '../utils/auth.js';
-import { requireShopAuth, requireAdmin }  from '../utils/auth.js';
+import { generateShopToken, requireShopAuth, requireAdmin } from '../utils/auth.js';
 import { ok, badRequest, serverError, notFound, unauthorized } from '../utils/response.js';
 import { isValidPin, isValidUUID } from '../utils/validation.js';
 import { notifyShopClosed }      from '../services/tokenService.js';

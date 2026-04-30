@@ -309,6 +309,128 @@ body{font-family:'Noto Nastaliq Urdu',serif;background:var(--void);color:var(--t
 .list-divider-txt{font-family:'Orbitron',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;white-space:nowrap;}
 
 
+
+/* ── COUNTDOWN TIMER ── */
+.countdown-wrap {
+  text-align: center;
+  margin: 16px 0;
+}
+.countdown-ring {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 12px;
+}
+.countdown-svg {
+  width: 120px;
+  height: 120px;
+  transform: rotate(-90deg);
+}
+.countdown-track {
+  fill: none;
+  stroke: rgba(255,255,255,0.06);
+  stroke-width: 6;
+}
+.countdown-progress {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-dasharray: 339.3;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1s linear, stroke 0.5s;
+}
+.countdown-progress.urgent { stroke: var(--red); }
+.countdown-num {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.countdown-mins {
+  font-family: 'Orbitron', monospace;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--gold2);
+  line-height: 1;
+}
+.countdown-mins.urgent { color: var(--red); }
+.countdown-lbl {
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 1px;
+  margin-top: 2px;
+  font-family: 'Orbitron', monospace;
+}
+
+/* ── BIG TOKEN CTA ── */
+.big-join-btn {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+  padding: 18px 32px;
+  border: none;
+  border-radius: 100px;
+  background: linear-gradient(135deg, var(--gold), var(--gold2), var(--gold3));
+  color: #050810;
+  font-family: 'Orbitron', monospace;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
+  box-shadow: 0 8px 32px rgba(212,175,55,0.4), 0 2px 8px rgba(0,0,0,0.3);
+  position: relative;
+  overflow: hidden;
+}
+.big-join-btn::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.25) 50%, transparent 70%);
+  transform: rotate(45deg) translateX(-100%);
+  transition: transform 0.6s;
+}
+.big-join-btn:hover::before { transform: rotate(45deg) translateX(100%); }
+.big-join-btn:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 16px 48px rgba(212,175,55,0.55), 0 4px 12px rgba(0,0,0,0.3);
+}
+.big-join-btn:active { transform: scale(0.98); }
+.big-join-btn:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+  background: rgba(212,175,55,0.3);
+  box-shadow: none;
+}
+.big-join-btn-icon { font-size: 20px; margin-bottom: 4px; display: block; }
+
+/* Center the join form */
+.join-form-center { text-align: center; }
+.join-form-center .sheet-field { text-align: right; }
+
+/* Result big number */
+.result-token-display {
+  text-align: center;
+  padding: 24px 0 16px;
+}
+.result-token-num {
+  font-family: 'Orbitron', monospace;
+  font-size: 100px;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--gold), var(--gold3), var(--cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  filter: drop-shadow(0 8px 30px rgba(212,175,55,0.5));
+  animation: numPulse 2s ease-in-out infinite;
+}
+
 </style>
 </head>
 <body>
@@ -423,7 +545,12 @@ body{font-family:'Noto Nastaliq Urdu',serif;background:var(--void);color:var(--t
         <label>فون نمبر (اختیاری)</label>
         <input id="c-phone" type="tel" placeholder="03001234567"/>
       </div>
-      <button class="btn-gold" id="join-btn" onclick="submitJoin()">ٹوکن لیں</button>
+      <div class="join-form-center" style="margin-top:20px">
+        <button class="big-join-btn" id="join-btn" onclick="submitJoin()">
+          <span class="big-join-btn-icon">🎫</span>
+          GET MY TOKEN
+        </button>
+      </div>
       <div class="sheet-err" id="sheet-err"></div>
       <button class="btn-cancel" onclick="closeModal()">منسوخ کریں</button>
     </div>
@@ -431,7 +558,22 @@ body{font-family:'Noto Nastaliq Urdu',serif;background:var(--void);color:var(--t
     <!-- Token result -->
     <div class="result-wrap" id="result-wrap">
       <div class="result-label">YOUR TOKEN NUMBER</div>
-      <div class="big-num" id="r-num">—</div>
+      <div class="result-token-display">
+      <div class="result-label">YOUR TOKEN NUMBER</div>
+      <div class="result-token-num" id="r-num">—</div>
+    </div>
+    <div class="countdown-wrap" id="countdown-wrap" style="display:none">
+      <div class="countdown-ring">
+        <svg class="countdown-svg" viewBox="0 0 120 120">
+          <circle class="countdown-track" cx="60" cy="60" r="54"/>
+          <circle class="countdown-progress" id="countdown-circle" cx="60" cy="60" r="54"/>
+        </svg>
+        <div class="countdown-num">
+          <div class="countdown-mins" id="countdown-val">—</div>
+          <div class="countdown-lbl">MINUTES</div>
+        </div>
+      </div>
+    </div>
       <div class="result-greeting">🎉 <span id="r-greeting">آپ کی باری آئے گی!</span></div>
 
       <div class="result-stats-row">
@@ -889,9 +1031,10 @@ async function submitJoin() {
     document.getElementById('join-form-wrap').style.display = 'none';
     document.getElementById('result-wrap').style.display    = 'block';
     document.getElementById('r-num').textContent           = data.token_number;
-    document.getElementById('r-greeting').textContent      = `${name}، آپ کی باری آئے گی!`;
+    document.getElementById('r-greeting').textContent      = `🎉 ${name}, you're in line!`;
     document.getElementById('r-pos').textContent           = data.position;
-    document.getElementById('r-wait-val').textContent      = data.estimated_wait + 'm';
+    document.getElementById('r-wait-val').textContent      = data.estimated_wait + ' min';
+    updateCountdown(data.estimated_wait, data.position);
 
     // Vibrate
     if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
@@ -1056,6 +1199,29 @@ function startGraceCountdown(seconds, onExpire) {
   }, 1000);
 }
 
+
+// ── COUNTDOWN RING ─────────────────────────────────────────
+function updateCountdown(minutes, position) {
+  const wrap   = document.getElementById('countdown-wrap');
+  const circle = document.getElementById('countdown-circle');
+  const val    = document.getElementById('countdown-val');
+  if (!wrap || !circle || !val) return;
+
+  wrap.style.display = 'block';
+
+  const maxMin   = 60; // ring fills at 0, empties at 60
+  const pct      = Math.max(0, Math.min(1, 1 - (minutes / maxMin)));
+  const dashArr  = 339.3;
+  const offset   = dashArr * (1 - pct);
+
+  circle.style.strokeDashoffset = offset;
+  val.textContent = minutes;
+
+  const isUrgent = minutes <= 5;
+  circle.classList.toggle('urgent', isUrgent);
+  val.classList.toggle('urgent', isUrgent);
+}
+
 // ── LIVE TRACKER ───────────────────────────────────────────
 function startTracker() {
   updateTracker();
@@ -1112,10 +1278,12 @@ async function updateTracker() {
       localStorage.removeItem('saf_token_id');
     } else if (data.status === 'waiting') {
       badge.className = 'tracker-badge waiting';
-      badge.textContent = `انتظار — نمبر ${data.position}`;
-      sub.textContent = `آگے ${data.people_ahead} لوگ · ~${data.estimated_wait} منٹ`;
-      document.getElementById('r-pos').textContent     = data.position;
-      document.getElementById('r-wait-val').textContent = data.estimated_wait + 'm';
+      badge.textContent = `Waiting — Position #${data.position}`;
+      sub.textContent = `${data.people_ahead} people ahead · ~${data.estimated_wait} min`;
+      document.getElementById('r-pos').textContent      = data.position;
+      document.getElementById('r-wait-val').textContent = data.estimated_wait + ' min';
+      // Update countdown ring
+      updateCountdown(data.estimated_wait, data.position);
     }
   } catch(e) {}
 }
