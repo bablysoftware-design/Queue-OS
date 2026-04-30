@@ -172,6 +172,143 @@ body{font-family:'Noto Nastaliq Urdu',serif;background:var(--void);color:var(--t
 .empty-state{text-align:center;padding:50px 20px;}
 .empty-icon{font-size:44px;margin-bottom:12px;}
 .empty-txt{font-size:14px;color:var(--muted);}
+
+/* ── FEATURED SHOP HERO (poster scan mode) ── */
+#featured-section{display:none;margin-bottom:20px;}
+
+.featured-hero{
+  background:var(--glass);
+  border:1px solid rgba(212,175,55,.35);
+  border-radius:22px;
+  padding:24px 20px;
+  backdrop-filter:blur(20px);
+  position:relative;
+  overflow:hidden;
+  box-shadow:0 0 50px rgba(212,175,55,.08);
+  animation:heroIn .6s cubic-bezier(.16,1,.3,1) both;
+}
+.featured-hero::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--gold),var(--cyan),var(--gold),transparent);
+  animation:shimmerLine 3s linear infinite;
+}
+.featured-hero::after{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% -10%,rgba(212,175,55,.07),transparent 60%);
+  pointer-events:none;
+}
+@keyframes shimmerLine{0%{background-position:-200%;}100%{background-position:200%;}}
+@keyframes heroIn{from{opacity:0;transform:translateY(20px) scale(.98);}to{opacity:1;transform:translateY(0) scale(1);}}
+
+.featured-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:4px 12px;border-radius:100px;
+  background:linear-gradient(135deg,rgba(212,175,55,.15),rgba(212,175,55,.05));
+  border:1px solid rgba(212,175,55,.3);
+  font-family:'Orbitron',monospace;font-size:9px;font-weight:700;
+  color:var(--gold);letter-spacing:1px;margin-bottom:14px;
+}
+
+.featured-top{display:flex;align-items:flex-start;gap:14px;margin-bottom:16px;}
+.featured-icon{
+  width:60px;height:60px;border-radius:16px;flex-shrink:0;
+  background:linear-gradient(135deg,rgba(212,175,55,.2),rgba(212,175,55,.05));
+  border:1px solid rgba(212,175,55,.25);
+  display:flex;align-items:center;justify-content:center;font-size:26px;
+  box-shadow:0 0 20px rgba(212,175,55,.15);
+}
+.featured-info{flex:1;}
+.featured-name{font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px;line-height:1.3;}
+.featured-meta{font-size:11px;color:var(--muted);}
+
+.featured-status-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+
+/* Live queue bar in hero */
+.featured-bar-wrap{margin-bottom:16px;}
+.featured-bar-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px;}
+.featured-bar-track{height:6px;background:rgba(255,255,255,.05);border-radius:100px;overflow:hidden;}
+.featured-bar-fill{height:100%;border-radius:100px;transition:width .8s ease;}
+.featured-bar-fill.low{background:linear-gradient(90deg,var(--green),#34d399);}
+.featured-bar-fill.mid{background:linear-gradient(90deg,var(--gold),var(--amber));}
+.featured-bar-fill.high{background:linear-gradient(90deg,var(--amber),var(--red));}
+
+/* Featured stats */
+.featured-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;}
+.featured-stat{
+  background:rgba(5,8,16,.5);border:1px solid var(--border);
+  border-radius:12px;padding:12px 8px;text-align:center;
+}
+.featured-stat-val{font-family:'Orbitron',monospace;font-size:20px;font-weight:700;color:var(--gold2);}
+.featured-stat-lbl{font-size:9px;color:var(--muted);margin-top:3px;}
+
+/* Big CTA button */
+.featured-btn{
+  width:100%;padding:16px;border:none;border-radius:14px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2),var(--gold3));
+  color:#050810;font-family:inherit;font-size:16px;font-weight:700;
+  cursor:pointer;transition:transform .2s,box-shadow .2s;
+  box-shadow:0 8px 32px rgba(212,175,55,.35);
+  display:flex;align-items:center;justify-content:center;gap:10px;
+}
+.featured-btn:hover{transform:translateY(-2px);box-shadow:0 14px 40px rgba(212,175,55,.5);}
+.featured-btn:disabled{opacity:.5;pointer-events:none;background:rgba(212,175,55,.3);}
+.featured-btn-arrow{font-size:18px;transition:transform .2s;}
+.featured-btn:hover .featured-btn-arrow{transform:translateX(-4px);}
+
+/* Closed featured shop */
+.featured-closed-banner{
+  background:rgba(255,69,96,.05);border:1px solid rgba(255,69,96,.15);
+  border-radius:12px;padding:14px 16px;text-align:center;margin-bottom:12px;
+}
+.featured-closed-title{font-size:14px;font-weight:700;color:var(--red);margin-bottom:4px;}
+.featured-closed-sub{font-size:12px;color:var(--muted);}
+.featured-closed-hours{
+  display:inline-flex;align-items:center;gap:6px;margin-top:10px;
+  background:rgba(5,8,16,.4);border:1px solid var(--border);
+  border-radius:100px;padding:5px 14px;font-size:11px;color:var(--text);
+  font-family:'Orbitron',monospace;direction:ltr;
+}
+
+/* Suggestions strip */
+.suggestions-strip{margin-bottom:4px;}
+.suggestions-scroll{
+  display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;
+  scrollbar-width:none;
+}
+.suggestions-scroll::-webkit-scrollbar{display:none;}
+.suggest-card{
+  flex-shrink:0;width:170px;
+  background:var(--glass);border:1px solid var(--border);
+  border-radius:14px;padding:12px;backdrop-filter:blur(12px);
+  cursor:pointer;transition:all .25s;
+  animation:cardIn .4s cubic-bezier(.16,1,.3,1) both;
+}
+.suggest-card:hover{border-color:rgba(212,175,55,.3);transform:translateY(-2px);}
+.suggest-card.closed{opacity:.55;cursor:not-allowed;}
+.suggest-card.closed:hover{transform:none;}
+.suggest-icon{font-size:20px;margin-bottom:8px;}
+.suggest-name{font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.suggest-area{font-size:10px;color:var(--muted);margin-bottom:6px;}
+.suggest-queue{font-size:10px;font-family:'Orbitron',monospace;}
+.suggest-queue.open{color:var(--green);}
+.suggest-queue.busy{color:var(--amber);}
+.suggest-queue.closed-txt{color:var(--red);}
+.suggest-tag-chip{
+  display:inline-block;margin-top:5px;padding:2px 7px;border-radius:4px;
+  font-size:9px;font-weight:700;
+}
+.suggest-tag-chip.same-cat{background:rgba(0,212,255,.08);color:var(--cyan);border:1px solid rgba(0,212,255,.15);}
+.suggest-tag-chip.near{background:rgba(0,227,150,.08);color:var(--green);border:1px solid rgba(0,227,150,.15);}
+
+/* Divider before full list */
+.list-divider{
+  display:flex;align-items:center;gap:12px;margin:20px 0 14px;
+}
+.list-divider-line{flex:1;height:1px;background:linear-gradient(90deg,rgba(212,175,55,.15),transparent);}
+.list-divider-txt{font-family:'Orbitron',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;white-space:nowrap;}
+
+
 </style>
 </head>
 <body>
@@ -213,6 +350,27 @@ body{font-family:'Noto Nastaliq Urdu',serif;background:var(--void);color:var(--t
     <div class="area-row" id="area-row" style="display:none"></div>
   </div>
 
+
+  <!-- ── FEATURED SHOP SECTION (when ?shop= param present) ── -->
+  <div id="featured-section">
+    <!-- Hero card -->
+    <div id="featured-hero" class="featured-hero">
+      <!-- populated by JS -->
+    </div>
+
+    <!-- Relevant suggestions strip -->
+    <div class="suggestions-strip" id="suggestions-strip" style="display:none">
+      <div class="sec-lbl" style="margin-top:18px;margin-bottom:10px" id="suggest-label">متعلقہ دکانیں</div>
+      <div class="suggestions-scroll" id="suggestions-scroll"></div>
+    </div>
+
+    <!-- Divider before full list -->
+    <div class="list-divider" id="list-divider" style="display:none">
+      <div class="list-divider-line"></div>
+      <div class="list-divider-txt">ALL SHOPS</div>
+      <div class="list-divider-line" style="background:linear-gradient(270deg,rgba(212,175,55,.15),transparent)"></div>
+    </div>
+  </div>
   <!-- ── BODY ── -->
   <div class="body" id="main-body">
     <div class="loading" id="loading-state">
@@ -313,6 +471,160 @@ let myTokenId      = null;
 let myTokenNum     = null;
 let trackerTimer   = null;
 
+
+// ── FEATURED SHOP (poster scan mode) ──────────────────────
+
+async function loadFeaturedShop(shopId) {
+  try {
+    const res    = await fetch(`${WORKER}/public/shop/${shopId}`);
+    const {data} = await res.json();
+    if (!data) return;
+
+    // Update page title
+    document.title = `${data.name} — سف کیو`;
+    document.querySelector('.topbar-sub').textContent = data.name;
+
+    renderFeaturedHero(data);
+    renderSuggestions(data);
+
+    // Show featured section, show list divider
+    document.getElementById('featured-section').style.display = 'block';
+    document.getElementById('list-divider').style.display     = 'flex';
+
+    return data;
+  } catch(e) {
+    console.error('Featured shop load failed', e);
+  }
+}
+
+function renderFeaturedHero(shop) {
+  const isOpen  = shop.is_open;
+  const isBusy  = shop.is_busy;
+  const qLen    = shop.queue_length || 0;
+  const maxQ    = 20;
+  const pct     = Math.min((qLen / maxQ) * 100, 100);
+  const fillCls = pct > 75 ? 'high' : pct > 40 ? 'mid' : 'low';
+
+  let statusBadge;
+  if (!isOpen)       statusBadge = `<span class="status-badge closed"><span class="s-dot"></span>ابھی بند</span>`;
+  else if (isBusy)   statusBadge = `<span class="status-badge busy"><span class="s-dot"></span>مصروف</span>`;
+  else               statusBadge = `<span class="status-badge open"><span class="s-dot"></span>کھلی ہے</span>`;
+
+  let heroBody;
+  if (isOpen) {
+    heroBody = `
+      <div class="featured-bar-wrap">
+        <div class="featured-bar-labels">
+          <span>قطار: ${qLen} لوگ</span>
+          <span>~${shop.estimated_wait} منٹ انتظار</span>
+        </div>
+        <div class="featured-bar-track">
+          <div class="featured-bar-fill ${fillCls}" style="width:${pct}%"></div>
+        </div>
+      </div>
+      <div class="featured-stats">
+        <div class="featured-stat">
+          <div class="featured-stat-val">${shop.current_serving ?? '—'}</div>
+          <div class="featured-stat-lbl">ابھی نمبر</div>
+        </div>
+        <div class="featured-stat">
+          <div class="featured-stat-val">${qLen}</div>
+          <div class="featured-stat-lbl">قطار میں</div>
+        </div>
+        <div class="featured-stat">
+          <div class="featured-stat-val">${shop.estimated_wait}m</div>
+          <div class="featured-stat-lbl">انتظار</div>
+        </div>
+      </div>
+      <button class="featured-btn" onclick="openShop('${shop.id}')">
+        <span class="featured-btn-arrow">←</span>
+        ٹوکن لیں — ابھی قطار میں شامل ہوں
+      </button>`;
+  } else {
+    heroBody = `
+      <div class="featured-closed-banner">
+        <div class="featured-closed-title">🔒 دکان ابھی بند ہے</div>
+        <div class="featured-closed-sub">کھلنے پر دوبارہ آئیں اور ٹوکن لیں</div>
+        <div class="featured-closed-hours">
+          ⏰ عام طور پر صبح کھلتی ہے
+        </div>
+      </div>
+      <button class="featured-btn" disabled>
+        ابھی ٹوکن نہیں لیا جا سکتا
+      </button>`;
+  }
+
+  document.getElementById('featured-hero').innerHTML = `
+    <div class="featured-badge">⭐ آپ کی دکان</div>
+    <div class="featured-top">
+      <div class="featured-icon">${catIcon(shop.category)}</div>
+      <div class="featured-info">
+        <div class="featured-name">${esc(shop.name)}</div>
+        <div class="featured-meta">📍 ${esc(shop.area || '—')} &nbsp;·&nbsp; ${catLabel(shop.category)}</div>
+      </div>
+    </div>
+    <div class="featured-status-row">
+      ${statusBadge}
+      <span style="font-size:10px;color:var(--muted)">لائیو اعداد و شمار</span>
+    </div>
+    ${heroBody}
+  `;
+}
+
+function renderSuggestions(featuredShop) {
+  // Find same-category shops (excluding featured)
+  const sameCat = allShops.filter(s =>
+    s.id !== featuredShop.id &&
+    s.category === featuredShop.category
+  ).slice(0, 6);
+
+  // Find same-area shops (excluding featured and already in sameCat)
+  const sameArea = allShops.filter(s =>
+    s.id !== featuredShop.id &&
+    s.category !== featuredShop.category &&
+    s.area && featuredShop.area &&
+    s.area.toLowerCase() === featuredShop.area.toLowerCase()
+  ).slice(0, 3);
+
+  const suggestions = [...sameCat, ...sameArea];
+  if (!suggestions.length) return;
+
+  const label = featuredShop.is_open
+    ? `دیگر ${catLabel(featuredShop.category)} دکانیں`
+    : `متبادل ${catLabel(featuredShop.category)} دکانیں`;
+
+  document.getElementById('suggest-label').textContent = label;
+  document.getElementById('suggestions-strip').style.display = 'block';
+
+  const isSameCatId = new Set(sameCat.map(s => s.id));
+
+  document.getElementById('suggestions-scroll').innerHTML = suggestions.map((s, i) => {
+    const isOpen = s.is_open;
+    const tag = isSameCatId.has(s.id)
+      ? `<span class="suggest-tag-chip same-cat">${catLabel(s.category)}</span>`
+      : `<span class="suggest-tag-chip near">قریبی</span>`;
+
+    let queueTxt, queueCls, clickable;
+    if (!isOpen) {
+      queueTxt = 'بند'; queueCls = 'closed-txt'; clickable = false;
+    } else if (s.is_busy) {
+      queueTxt = `${s.queue_length} لوگ — مصروف`; queueCls = 'busy'; clickable = true;
+    } else {
+      queueTxt = s.queue_length ? `${s.queue_length} لوگ قطار میں` : 'ابھی خالی ✓'; queueCls = 'open'; clickable = true;
+    }
+
+    return `<div class="suggest-card ${isOpen ? '' : 'closed'}" 
+              style="animation-delay:${i*0.06}s"
+              ${clickable ? `onclick="openShop('${s.id}')"` : ''}>
+      <div class="suggest-icon">${catIcon(s.category)}</div>
+      <div class="suggest-name">${esc(s.name)}</div>
+      <div class="suggest-area">📍 ${esc(s.area || '—')}</div>
+      <div class="suggest-queue ${queueCls}">${queueTxt}</div>
+      ${tag}
+    </div>`;
+  }).join('');
+}
+
 // ── LOAD SHOPS ─────────────────────────────────────────────
 async function loadShops() {
   document.getElementById('loading-state').style.display = 'block';
@@ -376,7 +688,12 @@ function renderShops() {
   document.getElementById('shops-label').textContent = label;
 
   // Sort: open first, then by queue length ascending
-  const sorted = [...filteredShops].sort((a,b) => {
+  // Exclude the featured shop from main list (it's already shown at top)
+  const listShops = HIGHLIGHT_SHOP
+    ? filteredShops.filter(s => s.id !== HIGHLIGHT_SHOP)
+    : filteredShops;
+
+  const sorted = [...listShops].sort((a,b) => {
     if (a.is_open !== b.is_open) return b.is_open - a.is_open;
     return (a.queue_length||0) - (b.queue_length||0);
   });
@@ -642,9 +959,38 @@ function esc(s) {
 document.getElementById('c-name').addEventListener('keydown', e => { if(e.key==='Enter') submitJoin(); });
 
 // ── BOOT ───────────────────────────────────────────────────
-loadShops();
-// Refresh every 60s in background
-setInterval(() => { if (!myTokenId) loadShops(); }, 60000);
+(async function boot() {
+  await loadShops();
+
+  // If ?shop= param: load featured shop AFTER all shops are loaded
+  // so suggestions can be built from allShops
+  if (HIGHLIGHT_SHOP) {
+    await loadFeaturedShop(HIGHLIGHT_SHOP);
+
+    // Hide search/filter bar — not the primary focus in poster scan mode
+    // (keep visible but de-emphasize)
+    document.querySelector('.search-wrap').style.opacity = '0.7';
+
+    // Auto-open token sheet ONLY if shop is open
+    // (gives user a chance to see the featured hero first, then 1.5s pause)
+    try {
+      const res    = await fetch(`${WORKER}/public/shop/${HIGHLIGHT_SHOP}`);
+      const {data} = await res.json();
+      if (data?.is_open) {
+        setTimeout(() => openShop(HIGHLIGHT_SHOP), 1500);
+      }
+    } catch(e) {}
+  }
+
+  // Refresh every 60s in background
+  setInterval(async () => {
+    if (!myTokenId) {
+      await loadShops();
+      // Also refresh featured hero stats
+      if (HIGHLIGHT_SHOP) await loadFeaturedShop(HIGHLIGHT_SHOP);
+    }
+  }, 60000);
+})();
 </script>
 </body>
 </html>
