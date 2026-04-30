@@ -27,28 +27,57 @@ export async function getPublicShops(request, env) {
 
     const db = createClient(env);
 
-    // FIX #3: Single RPC call — no N+1
-    const result = await db.rpc('get_public_shops', {
-      p_area:     area     || null,
-      p_category: category || null,
-      p_limit:    limit,
-      p_offset:   offset,
-    });
+    // Try RPC first (fast), fall back to direct queries
+    let shops = [], areas = [], total = 0;
 
-    let { shops, total, areas } = result;
+    try {
+      const result = await db.rpc('get_public_shops', {
+        p_area:     area     || null,
+        p_category: category || null,
+        p_limit:    limit,
+        p_offset:   offset,
+      });
+      shops = result?.shops || [];
+      areas = result?.areas || [];
+      total = result?.total || shops.length;
+    } catch {
+      // Fallback: direct query if RPC not yet created
+      let query = `is_active=eq.true&select=id,name,category,area,address,description,opening_time,closing_time,is_open,current_token,avg_service_time_mins&order=is_open.desc,name.asc&limit=${limit}&offset=${offset}`;
+      if (area)     query += `&area=ilike.*${area}*`;
+      if (category) query += `&category=eq.${category}`;
 
-    // Client-side search (fast, already small result set)
-    if (search && shops?.length) {
+      const rawShops = await db.select('shops', query);
+
+      // Attach queue counts (simple version)
+      shops = await Promise.all(rawShops.map(async sh => {
+        try {
+          const waiting = await db.select('tokens', `shop_id=eq.${sh.id}&status=eq.waiting&select=id`);
+          const called  = await db.select('tokens', `shop_id=eq.${sh.id}&status=eq.called&select=token_number`);
+          return {
+            ...sh,
+            queue_length:    waiting.length,
+            current_serving: called[0]?.token_number ?? null,
+            estimated_wait:  waiting.length * sh.avg_service_time_mins,
+            is_busy:         waiting.length >= 15,
+          };
+        } catch { return { ...sh, queue_length: 0, estimated_wait: 0, is_busy: false }; }
+      }));
+
+      areas = [...new Set(rawShops.map(s => s.area).filter(Boolean))].sort();
+      total = shops.length;
+    }
+
+    // Client-side search
+    if (search && shops.length) {
       const s = search.toLowerCase();
       shops = shops.filter(sh =>
         sh.name.toLowerCase().includes(s) ||
         (sh.area        || '').toLowerCase().includes(s) ||
-        (sh.category    || '').toLowerCase().includes(s) ||
-        (sh.description || '').toLowerCase().includes(s)
+        (sh.category    || '').toLowerCase().includes(s)
       );
     }
 
-    return ok({ shops: shops || [], areas: areas || [], total, limit, offset });
+    return ok({ shops, areas, total, limit, offset });
   } catch (err) { return serverError(err.message); }
 }
 
