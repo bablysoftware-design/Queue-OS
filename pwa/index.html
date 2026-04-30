@@ -945,11 +945,8 @@ body::after {
   </div>
 </div>
 
-<script type="module">
-import { t, getLang, toggleLang, applyDir } from '/i18n.js';
-
-// Expose to global scope for onclick handlers
-window.toggleLang = toggleLang;
+<script src="/i18n.js"></script>
+<script>
 
 const WORKER = 'https://saf-queue-worker.byker-software.workers.dev';
 

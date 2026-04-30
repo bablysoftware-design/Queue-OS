@@ -250,19 +250,19 @@ const STRINGS = {
 };
 
 /** Get a translated string, replacing #{n} with value */
-export function t(key, n) {
+function t(key, n) {
   const lang = localStorage.getItem('sq_lang') || 'en';
   const str  = STRINGS[lang]?.[key] || STRINGS.en[key] || key;
   return n !== undefined ? str.replace('#{n}', n) : str;
 }
 
 /** Get current language code */
-export function getLang() {
+function getLang() {
   return localStorage.getItem('sq_lang') || 'en';
 }
 
 /** Toggle language and reload */
-export function toggleLang() {
+function toggleLang() {
   const current = getLang();
   const next    = current === 'en' ? 'ur' : 'en';
   localStorage.setItem('sq_lang', next);
@@ -270,8 +270,14 @@ export function toggleLang() {
 }
 
 /** Apply dir attribute to document */
-export function applyDir() {
+function applyDir() {
   const lang = getLang();
   document.documentElement.lang = lang;
   document.documentElement.dir  = lang === 'ur' ? 'rtl' : 'ltr';
 }
+
+// Expose globally
+window.t          = t;
+window.getLang    = getLang;
+window.toggleLang = toggleLang;
+window.applyDir   = applyDir;
