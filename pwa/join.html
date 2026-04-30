@@ -1,385 +1,798 @@
 <!DOCTYPE html>
-<html lang="ur" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<meta name="theme-color" content="#050810"/>
-<title>قطار میں شامل ہوں</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;500;600;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet"/>
+<meta name="theme-color" content="#080c14"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>Saf Queue — Get Token</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Noto+Nastaliq+Urdu:wght@400;600;700&family=JetBrains+Mono:wght@300;400;600;700&display=swap" rel="stylesheet"/>
 <style>
-:root{
-  --void:#050810;--surface:#0d1424;--glass:rgba(13,20,36,.8);
-  --border:rgba(212,175,55,.12);--gold:#D4AF37;--gold2:#F5C842;
-  --gold3:#FFE066;--cyan:#00D4FF;--red:#FF4560;--green:#00E396;
-  --amber:#F59E0B;--text:#EDE8D0;--muted:rgba(237,232,208,.4);
+:root {
+  --bg:     #080c14;
+  --bg2:    #0d1422;
+  --glass:  rgba(17,24,39,0.6);
+  --border: rgba(255,255,255,0.07);
+  --gold:   #E8B84B;
+  --gold2:  #F5CC6A;
+  --cyan:   #38BDF8;
+  --green:  #34D399;
+  --red:    #F87171;
+  --amber:  #FBBF24;
+  --text:   #F1F5F9;
+  --text2:  #94A3B8;
+  --text3:  #475569;
 }
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Noto Nastaliq Urdu',serif;background:var(--void);color:var(--text);min-height:100dvh;direction:rtl;overflow-x:hidden;}
-#particle-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;}
-.holo-grid{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(212,175,55,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(212,175,55,.035) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;animation:gridDrift 25s linear infinite;}
-@keyframes gridDrift{to{background-position:50px 50px;}}
-.wrap{position:relative;z-index:1;max-width:440px;margin:0 auto;padding:24px 20px 60px;min-height:100dvh;display:flex;flex-direction:column;}
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+html,body { height: 100%; }
+body {
+  font-family: 'Sora', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
 
-/* ── HEADER ── */
-.page-header{text-align:center;padding:20px 0 28px;animation:fadeUp .7s cubic-bezier(.16,1,.3,1) both;}
-.page-logo{font-size:44px;margin-bottom:8px;display:inline-block;animation:float 3s ease-in-out infinite;}
-@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
-.page-brand{font-family:'Orbitron',monospace;font-size:18px;font-weight:900;background:linear-gradient(135deg,var(--gold),var(--gold3),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;direction:ltr;letter-spacing:2px;}
+/* Mesh bg */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 70% 50% at 15% 15%, rgba(232,184,75,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 85% 85%, rgba(56,189,248,0.05) 0%, transparent 60%);
+  pointer-events: none;
+}
 
-/* ── SHOP CARD ── */
-.shop-card{background:var(--glass);border:1px solid var(--border);border-radius:20px;padding:22px;margin-bottom:18px;backdrop-filter:blur(20px);position:relative;overflow:hidden;animation:fadeUp .7s .1s cubic-bezier(.16,1,.3,1) both;}
-.shop-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),var(--cyan),transparent);}
-.shop-name{font-size:20px;font-weight:700;color:var(--gold2);margin-bottom:6px;}
-.shop-meta{font-size:12px;color:var(--muted);margin-bottom:14px;}
-.shop-status{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:100px;font-size:11px;font-weight:700;border:1px solid;}
-.shop-status.open{background:rgba(0,227,150,.1);border-color:var(--green);color:var(--green);}
-.shop-status.closed{background:rgba(255,69,96,.1);border-color:var(--red);color:var(--red);}
-.status-dot{width:6px;height:6px;border-radius:50%;}
-.shop-status.open .status-dot{background:var(--green);box-shadow:0 0 6px var(--green);animation:blink 1.5s ease-in-out infinite;}
-.shop-status.closed .status-dot{background:var(--red);}
-@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+/* Pages */
+.page { display: none; min-height: 100dvh; flex-direction: column; }
+.page.active { display: flex; }
 
-/* Live stats row */
-.live-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px;}
-.live-stat{text-align:center;background:rgba(5,8,16,.4);border:1px solid var(--border);border-radius:12px;padding:12px 8px;}
-.live-val{font-family:'Orbitron',monospace;font-size:22px;font-weight:700;color:var(--gold2);}
-.live-lbl{font-size:10px;color:var(--muted);margin-top:3px;}
+/* ── JOIN PAGE ── */
+#page-join {
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  gap: 0;
+}
 
-/* ── JOIN FORM ── */
-.join-card{background:var(--glass);border:1px solid var(--border);border-radius:20px;padding:24px;backdrop-filter:blur(20px);position:relative;overflow:hidden;animation:fadeUp .7s .2s cubic-bezier(.16,1,.3,1) both;}
-.join-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
-.join-title{font-size:16px;font-weight:700;color:var(--gold2);text-align:center;margin-bottom:20px;}
-.field{margin-bottom:16px;}
-.field label{display:block;font-size:11px;color:var(--muted);margin-bottom:7px;letter-spacing:.5px;}
-.field input{width:100%;background:rgba(5,8,16,.6);border:1px solid var(--border);border-radius:10px;padding:13px 14px;color:var(--text);font-family:inherit;font-size:14px;outline:none;transition:border-color .3s,box-shadow .3s;direction:ltr;text-align:right;}
-.field input:focus{border-color:var(--gold);box-shadow:0 0 16px rgba(212,175,55,.15);}
-.field input::placeholder{color:var(--muted);}
-.btn-gold{width:100%;padding:15px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--gold),var(--gold2),var(--gold3));color:#050810;font-family:inherit;font-size:16px;font-weight:700;cursor:pointer;transition:transform .2s,box-shadow .2s;box-shadow:0 6px 24px rgba(212,175,55,.3);}
-.btn-gold:hover{transform:translateY(-2px);box-shadow:0 12px 36px rgba(212,175,55,.5);}
-.btn-gold:disabled{opacity:.5;pointer-events:none;}
-.err{color:var(--red);font-size:12px;text-align:center;margin-top:10px;min-height:18px;}
+.join-header { text-align: center; margin-bottom: 28px; animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) both; }
 
-/* ── TOKEN RESULT (after joining) ── */
-.token-result{display:none;text-align:center;animation:popIn .6s cubic-bezier(.16,1,.3,1) both;}
-@keyframes popIn{from{opacity:0;transform:scale(.8);}to{opacity:1;transform:scale(1);}}
-.token-result-card{background:var(--glass);border:1px solid rgba(212,175,55,.3);border-radius:24px;padding:32px 24px;backdrop-filter:blur(20px);position:relative;overflow:hidden;box-shadow:0 0 60px rgba(212,175,55,.1);}
-.token-result-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),var(--cyan),var(--gold),transparent);}
-.result-label{font-size:10px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;font-family:'Orbitron',monospace;}
-.big-token{font-family:'Orbitron',monospace;font-size:96px;font-weight:900;background:linear-gradient(135deg,var(--gold),var(--gold3),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;filter:drop-shadow(0 8px 24px rgba(212,175,55,.4));animation:numPulse 2s ease-in-out infinite;}
-@keyframes numPulse{0%,100%{filter:drop-shadow(0 8px 24px rgba(212,175,55,.4));}50%{filter:drop-shadow(0 8px 36px rgba(212,175,55,.7));}}
-.result-name{font-size:16px;color:var(--text);margin:8px 0 20px;}
-.result-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
-.result-stat{background:rgba(5,8,16,.5);border:1px solid var(--border);border-radius:12px;padding:14px;}
-.result-stat .rv{font-family:'Orbitron',monospace;font-size:24px;font-weight:700;color:var(--gold2);}
-.result-stat .rl{font-size:10px;color:var(--muted);margin-top:4px;}
+.shop-icon-wrap {
+  width: 70px; height: 70px;
+  margin: 0 auto 14px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(232,184,75,0.15), rgba(232,184,75,0.05));
+  border: 1px solid rgba(232,184,75,0.25);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 30px;
+}
 
-/* Live tracker */
-.tracker{background:rgba(5,8,16,.5);border:1px solid var(--border);border-radius:14px;padding:16px;margin-top:4px;text-align:center;}
-.tracker-title{font-size:10px;color:var(--gold);letter-spacing:1px;font-family:'Orbitron',monospace;margin-bottom:10px;direction:ltr;}
-.tracker-status{font-size:14px;font-weight:600;padding:8px 16px;border-radius:100px;display:inline-block;border:1px solid;}
-.tracker-status.waiting{background:rgba(212,175,55,.1);border-color:var(--gold);color:var(--gold);}
-.tracker-status.called {background:rgba(0,227,150,.15);border-color:var(--green);color:var(--green);animation:calledPulse 1s ease-in-out infinite;}
-.tracker-status.done   {background:rgba(100,116,139,.1);border-color:var(--muted);color:var(--muted);}
-@keyframes calledPulse{0%,100%{box-shadow:0 0 0 0 rgba(0,227,150,.3);}50%{box-shadow:0 0 0 8px rgba(0,227,150,0);}}
+.shop-name-big { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px; }
+.shop-area-txt { font-size: 12px; color: var(--text2); }
 
-.refresh-note{font-size:10px;color:var(--muted);margin-top:10px;direction:ltr;}
-.btn-share{width:100%;padding:13px;border:1px solid var(--border);border-radius:12px;background:transparent;color:var(--muted);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;margin-top:12px;}
-.btn-share:hover{border-color:var(--cyan);color:var(--cyan);}
+/* Live stats strip */
+.live-strip {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+  animation: fadeUp 0.6s 0.05s cubic-bezier(0.16,1,0.3,1) both;
+}
 
-/* Closed overlay */
-.closed-msg{background:var(--glass);border:1px solid rgba(255,69,96,.2);border-radius:20px;padding:32px;text-align:center;backdrop-filter:blur(20px);animation:fadeUp .7s .2s cubic-bezier(.16,1,.3,1) both;}
-.closed-icon{font-size:48px;margin-bottom:12px;}
-.closed-title{font-size:18px;font-weight:700;color:var(--red);margin-bottom:8px;}
-.closed-sub{font-size:13px;color:var(--muted);}
+.live-pill {
+  flex: 1;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 10px;
+  text-align: center;
+}
+.live-pill-val { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 600; color: var(--gold); line-height: 1; margin-bottom: 4px; }
+.live-pill-lbl { font-size: 10px; color: var(--text3); font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; }
 
-@keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+/* Queue bar */
+.queue-bar-wrap {
+  width: 100%;
+  max-width: 380px;
+  margin-bottom: 20px;
+  animation: fadeUp 0.6s 0.08s cubic-bezier(0.16,1,0.3,1) both;
+}
+.queue-bar-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--text2); margin-bottom: 6px; }
+.queue-bar-track { height: 4px; background: rgba(255,255,255,0.05); border-radius: 100px; overflow: hidden; }
+.queue-bar-fill { height: 100%; border-radius: 100px; transition: width 1s ease; background: linear-gradient(90deg, var(--green), var(--gold)); }
+.queue-bar-fill.mid  { background: linear-gradient(90deg, var(--gold), var(--amber)); }
+.queue-bar-fill.high { background: linear-gradient(90deg, var(--amber), var(--red)); }
 
-.loading-state{text-align:center;padding:60px 20px;color:var(--muted);}
-.spinner{width:40px;height:40px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px;}
-@keyframes spin{to{transform:rotate(360deg);}}
+/* Join form */
+.join-form {
+  width: 100%;
+  max-width: 380px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 22px 20px;
+  animation: fadeUp 0.6s 0.1s cubic-bezier(0.16,1,0.3,1) both;
+  position: relative;
+}
+.join-form::before {
+  content: '';
+  position: absolute; top: 0; left: 20%; right: 20%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(232,184,75,0.5), transparent);
+}
+
+.form-label { font-size: 11px; font-weight: 600; color: var(--text2); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 7px; display: block; }
+.form-input {
+  width: 100%;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: var(--text);
+  font-family: 'Sora', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  margin-bottom: 14px;
+  direction: ltr;
+}
+.form-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(232,184,75,0.08); }
+.form-input::placeholder { color: var(--text3); }
+
+/* THE BIG GET TOKEN BUTTON */
+.btn-get-token {
+  width: 100%;
+  padding: 18px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  color: #080c14;
+  font-family: 'Sora', sans-serif;
+  font-size: 17px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
+  letter-spacing: -0.01em;
+  box-shadow: 0 8px 32px rgba(232,184,75,0.3), 0 2px 8px rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+}
+.btn-get-token::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.15) 50%, transparent 70%);
+  transform: translateX(-100%);
+  transition: transform 0.5s;
+}
+.btn-get-token:hover { transform: translateY(-2px); box-shadow: 0 16px 40px rgba(232,184,75,0.4), 0 4px 12px rgba(0,0,0,0.3); }
+.btn-get-token:hover::before { transform: translateX(100%); }
+.btn-get-token:active { transform: scale(0.98); }
+.btn-get-token:disabled { opacity: 0.5; pointer-events: none; }
+.btn-get-token .btn-icon { font-size: 20px; }
+
+.form-err { color: var(--red); font-size: 12px; text-align: center; margin-top: 10px; min-height: 18px; }
+
+/* Closed state */
+.closed-box {
+  width: 100%; max-width: 380px;
+  text-align: center;
+  padding: 32px 24px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(248,113,113,0.15);
+  border-radius: 18px;
+  animation: fadeUp 0.6s 0.1s cubic-bezier(0.16,1,0.3,1) both;
+}
+.closed-icon { font-size: 48px; margin-bottom: 12px; }
+.closed-title { font-size: 18px; font-weight: 700; color: var(--red); margin-bottom: 6px; }
+.closed-sub { font-size: 13px; color: var(--text2); line-height: 1.6; }
+.closed-hours {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 14px; padding: 7px 16px;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+  border-radius: 100px; font-size: 12px; font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── TOKEN PAGE ── */
+#page-token {
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
+  overflow-y: auto;
+}
+
+.token-page-inner {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 32px 20px 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.token-header {
+  text-align: center;
+  animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) both;
+}
+.token-header-shop { font-size: 13px; color: var(--text2); margin-bottom: 6px; }
+.token-header-greeting { font-size: 16px; font-weight: 600; }
+
+/* BIG COUNTDOWN TOKEN NUMBER */
+.token-hero-wrap {
+  width: 100%;
+  text-align: center;
+  animation: popIn 0.6s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+.token-label-txt {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.token-big-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 120px;
+  font-weight: 700;
+  line-height: 1;
+  background: linear-gradient(135deg, var(--gold) 30%, var(--gold2) 60%, #fff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 40px rgba(232,184,75,0.35));
+  animation: numFloat 3s ease-in-out infinite;
+  letter-spacing: -0.04em;
+}
+@keyframes numFloat {
+  0%,100% { filter: drop-shadow(0 0 30px rgba(232,184,75,0.3)); transform: translateY(0); }
+  50%      { filter: drop-shadow(0 0 50px rgba(232,184,75,0.6)); transform: translateY(-4px); }
+}
+
+/* Position + wait stats */
+.token-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+  animation: fadeUp 0.5s 0.1s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+.token-stat {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  text-align: center;
+}
+.token-stat-val { font-family: 'JetBrains Mono', monospace; font-size: 32px; font-weight: 600; color: var(--text); line-height: 1; margin-bottom: 5px; }
+.token-stat-lbl { font-size: 11px; color: var(--text2); font-weight: 500; }
+
+/* LIVE COUNTDOWN TICKER */
+.countdown-wrap {
+  width: 100%;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px 16px;
+  text-align: center;
+  animation: fadeUp 0.5s 0.15s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+.countdown-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* The live status badge */
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border-radius: 100px;
+  font-size: 15px;
+  font-weight: 600;
+  border: 1px solid;
+  transition: all 0.4s;
+}
+.live-badge.waiting { background: rgba(251,191,36,0.08); border-color: var(--amber); color: var(--amber); }
+.live-badge.called  {
+  background: rgba(52,211,153,0.12);
+  border-color: var(--green);
+  color: var(--green);
+  animation: callPulse 1s ease-in-out infinite;
+  font-size: 17px;
+}
+.live-badge.done    { background: rgba(148,163,184,0.08); border-color: var(--text3); color: var(--text2); }
+@keyframes callPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(52,211,153,0.3); }
+  50%      { box-shadow: 0 0 0 12px rgba(52,211,153,0); }
+}
+
+.live-badge-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.live-badge.waiting .live-badge-dot { animation: blink 1.5s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.countdown-sub { font-size: 12px; color: var(--text2); margin-top: 10px; }
+
+/* Estimated time countdown */
+.est-countdown {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.est-label { font-size: 11px; color: var(--text3); margin-bottom: 6px; }
+.est-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 36px;
+  font-weight: 600;
+  color: var(--text);
+}
+.est-time span { font-size: 14px; color: var(--text2); margin-left: 4px; }
+
+/* Action buttons */
+.token-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  animation: fadeUp 0.5s 0.2s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+.btn-share-link {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text2);
+  font-family: 'Sora', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-share-link:hover { border-color: var(--cyan); color: var(--cyan); background: rgba(56,189,248,0.05); }
+
+.btn-cancel-token {
+  width: 100%;
+  padding: 11px;
+  border: 1px solid rgba(248,113,113,0.2);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text3);
+  font-family: 'Sora', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-cancel-token:hover { border-color: var(--red); color: var(--red); background: rgba(248,113,113,0.05); }
+
+/* Loading */
+.loading-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  flex-direction: column;
+  gap: 16px;
+  color: var(--text2);
+  font-size: 13px;
+}
+.spinner {
+  width: 32px; height: 32px;
+  border: 2px solid var(--border);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+@keyframes popIn  { from { opacity:0; transform:scale(0.85); } to { opacity:1; transform:scale(1); } }
 </style>
 </head>
 <body>
-<canvas id="particle-canvas"></canvas>
-<div class="holo-grid"></div>
 
-<div class="wrap">
+<div id="page-loading" class="loading-page">
+  <div class="spinner"></div>
+  <span>Loading shop...</span>
+</div>
 
-  <div class="page-header">
-    <div class="page-logo">🏪</div>
-    <div class="page-brand">SAF QUEUE</div>
+<!-- ═══════════ JOIN PAGE ═══════════ -->
+<div id="page-join" class="page">
+  <div class="join-header">
+    <div class="shop-icon-wrap" id="j-icon">🏪</div>
+    <div class="shop-name-big" id="j-name">—</div>
+    <div class="shop-area-txt" id="j-area">—</div>
   </div>
 
-  <!-- Loading -->
-  <div id="loading-state" class="loading-state">
-    <div class="spinner"></div>
-    <div>لوڈ ہو رہا ہے...</div>
+  <!-- Live stats -->
+  <div class="live-strip" style="width:100%;max-width:380px">
+    <div class="live-pill">
+      <div class="live-pill-val" id="j-serving">—</div>
+      <div class="live-pill-lbl">Now Serving</div>
+    </div>
+    <div class="live-pill">
+      <div class="live-pill-val" id="j-queue">—</div>
+      <div class="live-pill-lbl">In Queue</div>
+    </div>
+    <div class="live-pill">
+      <div class="live-pill-val" id="j-wait">—</div>
+      <div class="live-pill-lbl">Est. Wait (min)</div>
+    </div>
   </div>
 
-  <!-- Shop info -->
-  <div id="shop-section" style="display:none">
-    <div class="shop-card">
-      <div class="shop-name" id="s-name">—</div>
-      <div class="shop-meta" id="s-meta">—</div>
-      <div class="shop-status open" id="s-status">
-        <span class="status-dot"></span>
-        <span id="s-status-txt">کھلی ہے</span>
+  <!-- Queue bar -->
+  <div class="queue-bar-wrap">
+    <div class="queue-bar-labels">
+      <span id="j-bar-label">Queue status</span>
+      <span id="j-bar-pct">0%</span>
+    </div>
+    <div class="queue-bar-track">
+      <div class="queue-bar-fill" id="j-bar-fill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- Join form -->
+  <div class="join-form" id="join-form">
+    <label class="form-label" for="c-name">Your Name</label>
+    <input class="form-input" id="c-name" type="text" placeholder="Enter your name" autocomplete="name"/>
+
+    <label class="form-label" for="c-phone">Phone Number <span style="color:var(--text3);font-weight:400;text-transform:none">(optional)</span></label>
+    <input class="form-input" id="c-phone" type="tel" placeholder="03001234567" autocomplete="tel"/>
+
+    <button class="btn-get-token" id="join-btn" onclick="submitJoin()">
+      <span class="btn-icon">🎫</span>
+      Get My Token
+    </button>
+    <div class="form-err" id="join-err"></div>
+  </div>
+
+  <!-- Closed state -->
+  <div class="closed-box" id="closed-box" style="display:none">
+    <div class="closed-icon">🔒</div>
+    <div class="closed-title" id="closed-title">Shop is Closed</div>
+    <div class="closed-sub">Come back when the shop is open to get your token.</div>
+    <div class="closed-hours" id="closed-hours" style="display:none">
+      ⏰ <span id="closed-hours-txt"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ TOKEN PAGE ═══════════ -->
+<div id="page-token" class="page">
+  <div class="token-page-inner">
+
+    <div class="token-header">
+      <div class="token-header-shop" id="t-shop">—</div>
+      <div class="token-header-greeting" id="t-greeting">You're in the queue! 🎉</div>
+    </div>
+
+    <!-- Big number -->
+    <div class="token-hero-wrap">
+      <div class="token-label-txt">Your Token Number</div>
+      <div class="token-big-num" id="t-num">—</div>
+    </div>
+
+    <!-- Stats -->
+    <div class="token-stats">
+      <div class="token-stat">
+        <div class="token-stat-val" id="t-pos">—</div>
+        <div class="token-stat-lbl">Position in Queue</div>
       </div>
-      <div class="live-row">
-        <div class="live-stat">
-          <div class="live-val" id="s-current">—</div>
-          <div class="live-lbl">ابھی نمبر</div>
-        </div>
-        <div class="live-stat">
-          <div class="live-val" id="s-queue">—</div>
-          <div class="live-lbl">قطار میں</div>
-        </div>
-        <div class="live-stat">
-          <div class="live-val" id="s-wait">—</div>
-          <div class="live-lbl">منٹ انتظار</div>
-        </div>
+      <div class="token-stat">
+        <div class="token-stat-val" id="t-wait">—</div>
+        <div class="token-stat-lbl">Est. Wait (min)</div>
       </div>
     </div>
 
-    <!-- Join form -->
-    <div class="join-card" id="join-section">
-      <div class="join-title">قطار میں شامل ہوں</div>
-      <div class="field">
-        <label>آپ کا نام *</label>
-        <input id="c-name" type="text" placeholder="نام درج کریں"/>
+    <!-- Live countdown -->
+    <div class="countdown-wrap">
+      <div class="countdown-label">Live Status</div>
+      <div class="live-badge waiting" id="live-badge">
+        <span class="live-badge-dot"></span>
+        <span id="live-badge-txt">Waiting in queue</span>
       </div>
-      <div class="field">
-        <label>فون نمبر (اختیاری)</label>
-        <input id="c-phone" type="tel" placeholder="03001234567" dir="ltr"/>
+      <div class="countdown-sub" id="live-sub">Updates every 15 seconds</div>
+
+      <!-- Estimated time remaining -->
+      <div class="est-countdown" id="est-countdown">
+        <div class="est-label">Estimated time until your turn</div>
+        <div class="est-time" id="est-time-display">—<span>min</span></div>
       </div>
-      <button class="btn-gold" id="join-btn" onclick="joinQueue()">
-        ٹوکن لیں
+    </div>
+
+    <!-- Actions -->
+    <div class="token-actions">
+      <button class="btn-share-link" onclick="shareShopLink()">
+        🔗 Share this shop's link
       </button>
-      <div class="err" id="join-err"></div>
-    </div>
-
-    <!-- Closed message -->
-    <div class="closed-msg" id="closed-section" style="display:none">
-      <div class="closed-icon">🔒</div>
-      <div class="closed-title">دکان ابھی بند ہے</div>
-      <div class="closed-sub" id="closed-name">—</div>
-      <div class="closed-sub" style="margin-top:8px">براہ کرم کھلنے پر دوبارہ آئیں</div>
-    </div>
-  </div>
-
-  <!-- Token result -->
-  <div id="token-result" class="token-result">
-    <div class="token-result-card">
-      <div class="result-label">YOUR TOKEN</div>
-      <div class="big-token" id="r-token">—</div>
-      <div class="result-name">🎉 <span id="r-name">—</span>، آپ کی باری آئے گی!</div>
-
-      <div class="result-stats">
-        <div class="result-stat">
-          <div class="rv" id="r-pos">—</div>
-          <div class="rl">نمبر قطار میں</div>
-        </div>
-        <div class="result-stat">
-          <div class="rv" id="r-wait">—</div>
-          <div class="rl">منٹ انتظار</div>
-        </div>
-      </div>
-
-      <!-- Live tracker -->
-      <div class="tracker">
-        <div class="tracker-title">LIVE STATUS</div>
-        <div class="tracker-status waiting" id="tracker-badge">انتظار میں ہیں</div>
-        <div class="refresh-note" id="tracker-detail">Auto refreshes every 15s</div>
-      </div>
-
-      <button class="btn-share" onclick="shareToken()">
-        📤 دوستوں کو دکان کا لنک بھیجیں
+      <button class="btn-cancel-token" id="cancel-btn" onclick="cancelMyToken()">
+        Cancel my token
       </button>
     </div>
-  </div>
 
+  </div>
 </div>
 
 <script>
-// Particles
-const canvas=document.getElementById('particle-canvas'),ctx=canvas.getContext('2d');
-let W,H,pts=[];
-function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
-function mkPt(){return{x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.4+.3,vy:-(Math.random()*.4+.1),vx:(Math.random()-.5)*.2,a:Math.random()*.4+.1,c:Math.random()>.6?'#D4AF37':'#00D4FF'};}
-function draw(){ctx.clearRect(0,0,W,H);pts.forEach((p,i)=>{p.x+=p.vx;p.y+=p.vy;if(p.y<-5){pts[i]=mkPt();pts[i].y=H+5;}ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=p.c;ctx.globalAlpha=p.a;ctx.fill();});ctx.globalAlpha=1;requestAnimationFrame(draw);}
-resize();pts=Array.from({length:60},mkPt);draw();window.addEventListener('resize',resize);
+const WORKER   = 'https://saf-queue-worker.byker-software.workers.dev';
+const params   = new URLSearchParams(window.location.search);
+const SHOP_ID  = params.get('shop');
 
-const WORKER='https://saf-queue-worker.byker-software.workers.dev';
-const params=new URLSearchParams(window.location.search);
-const SHOP_ID=params.get('shop');
+let shopData      = null;
+let myTokenId     = null;
+let myTokenNum    = null;
+let myName        = null;
+let trackerTimer  = null;
+let estMinutes    = 0;
+let countdownTimer= null;
 
-let shopData=null, myTokenId=null, myTokenNum=null, trackerTimer=null;
+// ── Load shop ────────────────────────────────────────────────
+async function loadShop() {
+  if (!SHOP_ID) { showError('Invalid link — no shop ID found.'); return; }
 
-// ── Load shop ──────────────────────────────────────────────
-async function loadShop(){
-  if(!SHOP_ID){
-    document.getElementById('loading-state').innerHTML='<div style="color:var(--red);padding:40px;text-align:center">غلط لنک — shop ID نہیں ملی</div>';
-    return;
-  }
-  try{
-    const res=await fetch(`${WORKER}/public/shop/${SHOP_ID}`);
-    const {data}=await res.json();
-    shopData=data;
-    renderShop(data);
-  }catch(e){
-    document.getElementById('loading-state').innerHTML='<div style="color:var(--red);padding:40px;text-align:center">دکان نہیں ملی</div>';
-  }
-}
+  try {
+    const res    = await fetch(`${WORKER}/public/shop/${SHOP_ID}`);
+    const { data } = await res.json();
+    shopData = data;
 
-function renderShop(d){
-  document.getElementById('loading-state').style.display='none';
-  document.getElementById('shop-section').style.display='block';
-  document.getElementById('s-name').textContent=d.name;
-  document.getElementById('s-meta').textContent=`${d.category||''} ${d.area?'— '+d.area:''}`.trim();
-  document.getElementById('s-current').textContent=d.current_serving??'—';
-  document.getElementById('s-queue').textContent=d.queue_length;
-  document.getElementById('s-wait').textContent=d.estimated_wait;
-  document.title=`${d.name} — قطار`;
+    document.title = `${data.name} — Saf Queue`;
 
-  if(d.is_open && d.is_active){
-    document.getElementById('s-status').className='shop-status open';
-    document.getElementById('s-status-txt').textContent='کھلی ہے ✓';
-    document.getElementById('join-section').style.display='block';
-    document.getElementById('closed-section').style.display='none';
-  }else{
-    document.getElementById('s-status').className='shop-status closed';
-    document.getElementById('s-status-txt').textContent='بند ہے';
-    document.getElementById('join-section').style.display='none';
-    document.getElementById('closed-section').style.display='block';
-    document.getElementById('closed-name').textContent=d.name;
-  }
-}
+    // Fill header
+    document.getElementById('j-name').textContent = data.name;
+    document.getElementById('j-area').textContent = [data.category, data.area].filter(Boolean).join(' · ');
+    document.getElementById('j-icon').textContent = catIcon(data.category);
 
-// ── Join queue ─────────────────────────────────────────────
-async function joinQueue(){
-  const name=document.getElementById('c-name').value.trim();
-  const phone=document.getElementById('c-phone').value.trim();
-  const errEl=document.getElementById('join-err');
-  const btn=document.getElementById('join-btn');
-  errEl.textContent='';
+    // Fill stats
+    const q   = data.queue_length || 0;
+    const max = 20;
+    const pct = Math.min(Math.round((q / max) * 100), 100);
 
-  if(!name){errEl.textContent='نام ضروری ہے';return;}
+    document.getElementById('j-serving').textContent = data.current_serving ?? '—';
+    document.getElementById('j-queue').textContent   = q;
+    document.getElementById('j-wait').textContent    = data.estimated_wait || 0;
+    document.getElementById('j-bar-fill').style.width = pct + '%';
+    document.getElementById('j-bar-pct').textContent  = pct + '%';
+    document.getElementById('j-bar-label').textContent = q === 0 ? 'Queue is empty — walk right in!' : `${q} ${q === 1 ? 'person' : 'people'} ahead`;
 
-  btn.disabled=true;btn.textContent='...';
-  try{
-    const res=await fetch(`${WORKER}/public/join`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({shop_id:SHOP_ID,customer_name:name,customer_phone:phone||null})
-    });
-    const {data,success,error}=await res.json();
-    if(!success)throw new Error(error);
+    const fillEl = document.getElementById('j-bar-fill');
+    fillEl.className = 'queue-bar-fill' + (pct > 75 ? ' high' : pct > 40 ? ' mid' : '');
 
-    myTokenId=data.token_id;
-    myTokenNum=data.token_number;
+    // Hide loading
+    document.getElementById('page-loading').style.display = 'none';
 
-    // Show result
-    document.getElementById('shop-section').style.display='none';
-    const resultEl=document.getElementById('token-result');
-    resultEl.style.display='block';
-
-    document.getElementById('r-token').textContent=data.token_number;
-    document.getElementById('r-name').textContent=name;
-    document.getElementById('r-pos').textContent=data.position;
-    document.getElementById('r-wait').textContent=data.estimated_wait+'m';
-
-    // Save to session
-    sessionStorage.setItem('saf_token_id',data.token_id);
-    sessionStorage.setItem('saf_token_num',data.token_number);
-    sessionStorage.setItem('saf_customer_name',name);
-    sessionStorage.setItem('saf_shop_id',SHOP_ID);
-
-    startTracker();
-
-  }catch(e){
-    errEl.textContent=e.message||'خرابی';
-    btn.disabled=false;btn.textContent='ٹوکن لیں';
-  }
-}
-
-// ── Live tracker ───────────────────────────────────────────
-function startTracker(){
-  updateTracker();
-  trackerTimer=setInterval(updateTracker,15000);
-}
-
-async function updateTracker(){
-  if(!myTokenId||!SHOP_ID)return;
-  try{
-    const res=await fetch(`${WORKER}/public/position?shop_id=${SHOP_ID}&token_id=${myTokenId}`);
-    const {data}=await res.json();
-
-    const badge=document.getElementById('tracker-badge');
-    const detail=document.getElementById('tracker-detail');
-
-    if(data.status==='called'){
-      badge.className='tracker-status called';
-      badge.textContent='🔔 آپ کی باری آ گئی!';
-      detail.textContent='ابھی آئیں!';
-      clearInterval(trackerTimer);
-      // Vibrate if supported
-      if(navigator.vibrate)navigator.vibrate([200,100,200,100,400]);
-    }else if(data.status==='completed'){
-      badge.className='tracker-status done';
-      badge.textContent='✅ مکمل';
-      detail.textContent='آپ کی سروس ہو گئی';
-      clearInterval(trackerTimer);
-    }else if(data.status==='waiting'){
-      badge.className='tracker-status waiting';
-      badge.textContent=`انتظار — نمبر ${data.position}`;
-      detail.textContent=`آگے ${data.people_ahead} لوگ | ~${data.estimated_wait} منٹ`;
-      document.getElementById('r-pos').textContent=data.position;
-      document.getElementById('r-wait').textContent=data.estimated_wait+'m';
+    if (!data.is_open || !data.is_active) {
+      showClosedState(data);
+    } else {
+      showPage('page-join');
     }
-  }catch(e){}
-}
 
-// ── Share ──────────────────────────────────────────────────
-function shareToken(){
-  const url=`${location.origin}/join.html?shop=${SHOP_ID}`;
-  if(navigator.share){
-    navigator.share({title:`${shopData?.name||'دکان'} قطار`,text:`${shopData?.name||'دکان'} میں آن لائن ٹوکن لیں`,url});
-  }else{
-    navigator.clipboard.writeText(url).then(()=>alert('لنک کاپی ہو گیا!\n'+url));
+    // Check for existing token
+    const savedTokenId  = localStorage.getItem('sq_token_id');
+    const savedShopId   = localStorage.getItem('sq_shop_id');
+    const savedTokenNum = localStorage.getItem('sq_token_num');
+    const savedName     = localStorage.getItem('sq_customer_name');
+
+    if (savedTokenId && savedShopId === SHOP_ID) {
+      myTokenId  = savedTokenId;
+      myTokenNum = savedTokenNum;
+      myName     = savedName;
+      showTokenPage(parseInt(myTokenNum), myName, null, null);
+      startTracker();
+    }
+
+  } catch (e) {
+    showError('Could not load shop. Please try again.');
   }
 }
 
-// ── Boot ───────────────────────────────────────────────────
-(function boot(){
-  // Resume tracking if returning to page
-  const tid=sessionStorage.getItem('saf_token_id');
-  const tnum=sessionStorage.getItem('saf_token_num');
-  const tname=sessionStorage.getItem('saf_customer_name');
-  const tsid=sessionStorage.getItem('saf_shop_id');
+function showClosedState(data) {
+  showPage('page-join');
+  document.getElementById('join-form').style.display = 'none';
+  document.getElementById('closed-box').style.display = 'block';
 
-  if(tid&&tsid===SHOP_ID){
-    myTokenId=tid;myTokenNum=tnum;
-    document.getElementById('loading-state').style.display='none';
-    document.getElementById('token-result').style.display='block';
-    document.getElementById('r-token').textContent=tnum;
-    document.getElementById('r-name').textContent=tname||'—';
+  const t = data.opening_time;
+  const c = data.closing_time;
+  if (t && c) {
+    document.getElementById('closed-hours').style.display = 'inline-flex';
+    document.getElementById('closed-hours-txt').textContent = `Opens ${t} – Closes ${c}`;
+  }
+}
+
+// ── Submit join ──────────────────────────────────────────────
+async function submitJoin() {
+  const name  = document.getElementById('c-name').value.trim();
+  const phone = document.getElementById('c-phone').value.trim();
+  const errEl = document.getElementById('join-err');
+  const btn   = document.getElementById('join-btn');
+  errEl.textContent = '';
+
+  if (!name) { errEl.textContent = 'Please enter your name'; return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span>⏳</span> Getting your token...';
+
+  try {
+    const res  = await fetch(`${WORKER}/public/join`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shop_id: SHOP_ID, customer_name: name, customer_phone: phone || null })
+    });
+    const { data, success, error } = await res.json();
+    if (!success) throw new Error(error);
+
+    myTokenId  = data.token_id;
+    myTokenNum = data.token_number;
+    myName     = name;
+    estMinutes = data.estimated_wait || 0;
+
+    // Persist
+    localStorage.setItem('sq_token_id',      data.token_id);
+    localStorage.setItem('sq_token_num',     data.token_number);
+    localStorage.setItem('sq_shop_id',       SHOP_ID);
+    localStorage.setItem('sq_customer_name', name);
+
+    if (navigator.vibrate) navigator.vibrate([60, 30, 60]);
+
+    showTokenPage(data.token_number, name, data.position, data.estimated_wait);
     startTracker();
-    return;
+
+  } catch (e) {
+    errEl.textContent = e.message || 'Something went wrong. Please try again.';
+    btn.disabled = false;
+    btn.innerHTML = '<span class="btn-icon">🎫</span> Get My Token';
+  }
+}
+
+// ── Token page ───────────────────────────────────────────────
+function showTokenPage(tokenNum, name, position, wait) {
+  document.getElementById('t-shop').textContent     = shopData?.name || '—';
+  document.getElementById('t-greeting').textContent = `${name}, you're in the queue! 🎉`;
+  document.getElementById('t-num').textContent      = tokenNum;
+  document.getElementById('t-pos').textContent      = position ?? '—';
+  document.getElementById('t-wait').textContent     = (wait ?? estMinutes) + 'm';
+
+  if (wait != null) {
+    estMinutes = wait;
+    startEstCountdown();
   }
 
-  loadShop();
-  // Refresh shop stats every 30s
-  setInterval(async()=>{
-    if(!SHOP_ID||myTokenId)return;
-    try{
-      const res=await fetch(`${WORKER}/public/shop/${SHOP_ID}`);
-      const {data}=await res.json();
-      document.getElementById('s-current').textContent=data.current_serving??'—';
-      document.getElementById('s-queue').textContent=data.queue_length;
-      document.getElementById('s-wait').textContent=data.estimated_wait;
-    }catch(e){}
-  },30000);
-})();
+  showPage('page-token');
+}
+
+// ── Est countdown ────────────────────────────────────────────
+function startEstCountdown() {
+  clearInterval(countdownTimer);
+  updateEstDisplay();
+  countdownTimer = setInterval(() => {
+    if (estMinutes > 0) estMinutes -= (15 / 60); // tick every 15s
+    updateEstDisplay();
+  }, 15000);
+}
+
+function updateEstDisplay() {
+  const mins = Math.max(0, Math.round(estMinutes));
+  document.getElementById('est-time-display').innerHTML = `${mins}<span>min</span>`;
+}
+
+// ── Live tracker ─────────────────────────────────────────────
+function startTracker() {
+  updateTracker();
+  trackerTimer = setInterval(updateTracker, 15000);
+}
+
+async function updateTracker() {
+  if (!myTokenId) return;
+  try {
+    const res  = await fetch(`${WORKER}/public/position?shop_id=${SHOP_ID}&token_id=${myTokenId}`);
+    const { data } = await res.json();
+    const badge   = document.getElementById('live-badge');
+    const badgeTxt= document.getElementById('live-badge-txt');
+    const sub     = document.getElementById('live-sub');
+
+    if (data.status === 'called') {
+      badge.className    = 'live-badge called';
+      badgeTxt.textContent = "🔔 It's your turn! Come now!";
+      sub.textContent    = 'Please proceed to the counter immediately';
+      document.getElementById('est-countdown').style.display = 'none';
+      clearInterval(trackerTimer);
+      clearInterval(countdownTimer);
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
+      localStorage.removeItem('sq_token_id');
+    } else if (['completed','no_show','expired'].includes(data.status)) {
+      badge.className    = 'live-badge done';
+      badgeTxt.textContent = '✓ Done';
+      sub.textContent    = 'Your visit is complete';
+      clearInterval(trackerTimer);
+      clearInterval(countdownTimer);
+      localStorage.removeItem('sq_token_id');
+    } else if (data.status === 'shop_closed' || data.status === 'cancelled') {
+      badge.className    = 'live-badge done';
+      badgeTxt.textContent = data.status === 'cancelled' ? '❌ Token cancelled' : '🔒 Shop closed';
+      sub.textContent    = data.status === 'cancelled' ? 'Your token has been cancelled' : 'The shop has closed. Your token is void.';
+      clearInterval(trackerTimer);
+      clearInterval(countdownTimer);
+      localStorage.removeItem('sq_token_id');
+      document.getElementById('cancel-btn').style.display = 'none';
+    } else if (data.status === 'waiting') {
+      badge.className    = 'live-badge waiting';
+      const p            = data.position;
+      const ahead        = data.people_ahead;
+      badgeTxt.textContent = ahead === 0 ? 'You\'re next!' : `Position ${p} — ${ahead} ${ahead === 1 ? 'person' : 'people'} ahead`;
+      sub.textContent    = 'Updates every 15 seconds';
+      document.getElementById('t-pos').textContent  = p;
+      document.getElementById('t-wait').textContent = (data.estimated_wait || 0) + 'm';
+      estMinutes = data.estimated_wait || 0;
+      updateEstDisplay();
+    }
+  } catch(e) {}
+}
+
+// ── Cancel token ─────────────────────────────────────────────
+async function cancelMyToken() {
+  if (!myTokenId) return;
+  if (!confirm('Are you sure you want to cancel your token?')) return;
+  try {
+    await fetch(`${WORKER}/public/cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token_id: myTokenId, shop_id: SHOP_ID })
+    });
+    clearInterval(trackerTimer);
+    clearInterval(countdownTimer);
+    localStorage.removeItem('sq_token_id');
+    const badge    = document.getElementById('live-badge');
+    const badgeTxt = document.getElementById('live-badge-txt');
+    badge.className     = 'live-badge done';
+    badgeTxt.textContent = '❌ Cancelled';
+    document.getElementById('cancel-btn').style.display = 'none';
+  } catch(e) { alert('Could not cancel. Please try again.'); }
+}
+
+// ── Share ────────────────────────────────────────────────────
+function shareShopLink() {
+  const url = `${location.origin}/customer.html?shop=${SHOP_ID}`;
+  if (navigator.share) { navigator.share({ title: shopData?.name, url }); }
+  else { navigator.clipboard.writeText(url).then(() => alert('Link copied!')); }
+}
+
+// ── Helpers ──────────────────────────────────────────────────
+function showPage(id) {
+  document.getElementById('page-loading').style.display = 'none';
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showError(msg) {
+  document.getElementById('page-loading').innerHTML = `<div style="color:#F87171;padding:40px;text-align:center;max-width:300px">${msg}</div>`;
+}
+
+function catIcon(cat) {
+  return { barber:'✂️', clinic:'🏥', pharmacy:'💊', bank:'🏦', govt:'🏛️', tailor:'🧵' }[cat] || '🏪';
+}
+
+loadShop();
 </script>
 </body>
 </html>
