@@ -445,9 +445,27 @@ body{font-family:'Noto Nastaliq Urdu',serif;background:var(--void);color:var(--t
         <div class="tracker-sub" id="tracker-sub">ہر 15 سیکنڈ میں خودبخود اپڈیٹ ہوتا ہے</div>
       </div>
 
-      <button class="btn-gold" onclick="closeModal(true)">ٹھیک ہے — واپس جائیں</button>
-      <button id="cancel-token-btn" onclick="cancelMyToken()" style="width:100%;margin-top:10px;padding:12px;border:1px solid var(--red);border-radius:12px;background:rgba(255,69,96,.08);color:var(--red);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s">
-        ❌ ٹوکن منسوخ کریں
+      <!-- Notification prompt -->
+      <div id="notify-prompt" style="display:none;align-items:center;gap:10px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.25);border-radius:12px;padding:12px 14px;margin-bottom:12px">
+        <span style="font-size:20px">🔔</span>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:var(--text)">Get Notified</div>
+          <div style="font-size:11px;color:var(--muted)">We'll alert you when it's almost your turn</div>
+        </div>
+        <button onclick="enableNotifications()" style="padding:8px 14px;border:none;border-radius:8px;background:var(--green);color:#050810;font-size:12px;font-weight:700;cursor:pointer">Enable</button>
+        <button onclick="document.getElementById('notify-prompt').style.display='none'" style="padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--muted);font-size:12px;cursor:pointer">✕</button>
+      </div>
+
+      <!-- Grace timer (shown when called) -->
+      <div id="grace-timer" style="display:none;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:12px;padding:12px 16px;margin-bottom:12px;text-align:center;transition:border-color 0.3s">
+        <div style="font-size:11px;color:var(--amber);font-weight:600;letter-spacing:1px;margin-bottom:4px">GRACE PERIOD</div>
+        <div style="font-family:'Orbitron',monospace;font-size:28px;font-weight:700;color:var(--gold2)" class="grace-time">2:00</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px">Please arrive before time runs out</div>
+      </div>
+
+      <button class="btn-gold" onclick="closeModal(true)">Got it — Back to List</button>
+      <button id="cancel-token-btn" onclick="cancelMyToken()" style="width:100%;margin-top:10px;padding:12px;border:1px solid rgba(248,113,113,0.3);border-radius:12px;background:rgba(248,113,113,0.06);color:var(--red);font-family:'Sora',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s">
+        Cancel my token
       </button>
     </div>
   </div>
@@ -877,8 +895,17 @@ async function submitJoin() {
 
     // Vibrate
     if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+    playAlarm('ready');
 
     startTracker();
+
+    // Ask for push permission
+    if ('Notification' in window && Notification.permission !== 'denied') {
+      setTimeout(async () => {
+        const el = document.getElementById('notify-prompt');
+        if (el) el.style.display = 'flex';
+      }, 1500);
+    }
 
   } catch(e) {
     errEl.textContent = e.message || 'خرابی';
@@ -888,7 +915,24 @@ async function submitJoin() {
 
 
 // FIX #14: Cancel token
-async function cancelMyToken() {
+async 
+async function enableNotifications() {
+  if (!myTokenId || !selectedShop) return;
+  const btn = document.querySelector('#notify-prompt button');
+  if (btn) { btn.textContent = '...'; btn.disabled = true; }
+
+  const ok = await requestPushPermission(myTokenId, selectedShop.id);
+
+  const prompt = document.getElementById('notify-prompt');
+  if (ok) {
+    if (prompt) prompt.innerHTML = '<span style="font-size:14px">🔔</span><div style="font-size:13px;color:var(--green)">Notifications enabled! We\'ll alert you when your turn is near.</div>';
+    setTimeout(() => { if (prompt) prompt.style.display = 'none'; }, 3000);
+  } else {
+    if (prompt) prompt.style.display = 'none';
+  }
+}
+
+function cancelMyToken() {
   if (!myTokenId || !selectedShop) return;
   if (!confirm('کیا آپ واقعی اپنا ٹوکن منسوخ کرنا چاہتے ہیں؟')) return;
   try {
@@ -912,6 +956,106 @@ async function cancelMyToken() {
   } catch(e) { alert('منسوخ نہیں ہو سکا'); }
 }
 
+
+// ── VAPID PUBLIC KEY ──────────────────────────────────────────
+const VAPID_PUBLIC_KEY = 'BEhHj1q439bpBSggOfW14NI7PjtgL5GQpYX6Zvt4H1imsJgbpi6Aba4ziH4AqoQ9Htr6akwOncK7tkp8yTIaGOw';
+
+// ── WEB PUSH SUBSCRIPTION ─────────────────────────────────────
+async function requestPushPermission(tokenId, shopId) {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    return false;
+  }
+
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') return false;
+
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly:      true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+    });
+
+    // Send subscription to server
+    await fetch(`${WORKER}/push/subscribe`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ token_id: tokenId, shop_id: shopId, subscription: sub.toJSON() }),
+    });
+
+    // Store locally
+    localStorage.setItem('saf_push_token_id', tokenId);
+    return true;
+  } catch (e) {
+    console.error('Push subscription failed:', e);
+    return false;
+  }
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding  = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64   = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData  = atob(base64);
+  const output   = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) output[i] = rawData.charCodeAt(i);
+  return output;
+}
+
+// ── ALARM SOUND (Web Audio API — no file needed) ──────────────
+function playAlarm(type = 'called') {
+  try {
+    const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+    const gain = ctx.createGain();
+    gain.connect(ctx.destination);
+
+    const patterns = {
+      called:   [{ f:880, d:0.3 }, { f:0, d:0.1 }, { f:880, d:0.3 }, { f:0, d:0.1 }, { f:1100, d:0.5 }],
+      position: [{ f:660, d:0.2 }, { f:0, d:0.1 }, { f:880, d:0.3 }],
+      ready:    [{ f:440, d:0.15 }, { f:550, d:0.15 }, { f:660, d:0.2 }],
+    };
+
+    let time = ctx.currentTime;
+    const pattern = patterns[type] || patterns.ready;
+
+    pattern.forEach((note) => {
+      if (note.f > 0) {
+        const osc  = ctx.createOscillator();
+        const g    = ctx.createGain();
+        osc.type   = 'sine';
+        osc.frequency.value = note.f;
+        osc.connect(g);
+        g.connect(ctx.destination);
+        g.gain.setValueAtTime(0.4, time);
+        g.gain.exponentialRampToValueAtTime(0.001, time + note.d);
+        osc.start(time);
+        osc.stop(time + note.d);
+      }
+      time += note.d + 0.02;
+    });
+  } catch (e) {}
+}
+
+// ── COUNTDOWN TIMER ───────────────────────────────────────────
+let countdownInterval = null;
+let graceCountdown    = null;
+
+function startGraceCountdown(seconds, onExpire) {
+  let remaining = seconds;
+  const el = document.getElementById('grace-countdown');
+  if (!el) return;
+  el.style.display = 'block';
+
+  graceCountdown = setInterval(() => {
+    remaining--;
+    el.textContent = `${remaining}s`;
+    if (remaining <= 0) {
+      clearInterval(graceCountdown);
+      el.style.display = 'none';
+      if (onExpire) onExpire();
+    }
+  }, 1000);
+}
+
 // ── LIVE TRACKER ───────────────────────────────────────────
 function startTracker() {
   updateTracker();
@@ -928,10 +1072,25 @@ async function updateTracker() {
 
     if (data.status === 'called') {
       badge.className = 'tracker-badge called';
-      badge.textContent = '🔔 آپ کی باری آ گئی!';
-      sub.textContent = 'ابھی آئیں!';
+      badge.textContent = '🔔 It\'s your turn!';
+      sub.textContent = 'Please come to the counter now!';
       clearInterval(trackerTimer);
-      if (navigator.vibrate) navigator.vibrate([200,100,200,100,400]);
+      if (navigator.vibrate) navigator.vibrate([500,200,500,200,500,200,1000]);
+      playAlarm('called');
+      // Show grace countdown (2 minutes)
+      const graceSecs = 120;
+      const graceEl = document.getElementById('grace-timer');
+      if (graceEl) {
+        graceEl.style.display = 'block';
+        let rem = graceSecs;
+        const gi = setInterval(() => {
+          rem--;
+          const m = Math.floor(rem/60), s = rem%60;
+          graceEl.querySelector('.grace-time').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+          if (rem <= 30) graceEl.style.borderColor = 'var(--red)';
+          if (rem <= 0) { clearInterval(gi); graceEl.querySelector('.grace-time').textContent = '0:00'; }
+        }, 1000);
+      }
     } else if (data.status === 'shop_closed') {
       badge.className = 'tracker-badge done';
       badge.textContent = '🔒 دکان بند ہو گئی';

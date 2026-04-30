@@ -1,3 +1,4 @@
+import { triggerPositionNotifications, notifyTokenCalled, payloadTokenCreated, sendPush } from './pushService.js';
 // ============================================================
 // services/tokenService.js — Queue token management
 // Fixes: #1/#26 (atomic), #5 (reset), #6 (dedup), #8 (name), #14 (cancel), #22 (close notify)
@@ -84,6 +85,16 @@ export async function createToken(db, shopId, customerPhone, customerName = null
 
   const estimatedWaitMins = waitingCount * shop.avg_service_time_mins;
 
+  // Send creation push notification if subscription exists
+  if (env) {
+    db.select('push_subscriptions', `token_id=eq.${token.id}`)
+      .then(async subs => {
+        if (!subs.length) return;
+        const payload = payloadTokenCreated(nextNumber, waitingCount + 1, estimatedWaitMins, shop.name);
+        await sendPush({ endpoint: subs[0].endpoint, p256dh: subs[0].p256dh, auth: subs[0].auth }, payload, env);
+      }).catch(() => {});
+  }
+
   return { token, position: waitingCount + 1, estimatedWaitMins, shopName: shop.name };
 }
 
@@ -115,10 +126,12 @@ export async function advanceQueue(db, shopId, env) {
     `shop_id=eq.${shopId}&status=eq.waiting&select=id`
   );
 
+  const shopRows = await db.select('shops', `id=eq.${shopId}&select=name`);
+  const shopName = shopRows[0]?.name ?? '';
+
   // WhatsApp notification
   if (env?.WHATSAPP_TOKEN && env.WHATSAPP_TOKEN !== 'placeholder') {
-    const shops    = await db.select('shops', `id=eq.${shopId}&select=name`);
-    const shopName = shops[0]?.name ?? 'آپ کی دکان';
+    // shopName already fetched above
     const name     = next.customer_name ? `${next.customer_name}، ` : '';
     await sendMessage(
       next.customer_phone,
@@ -128,6 +141,15 @@ export async function advanceQueue(db, shopId, env) {
       `⏱️ ابھی آئیں!\n\n_Saf Queue_`,
       env
     );
+  }
+
+  // Trigger smart position notifications for remaining queue
+  if (env) {
+    triggerPositionNotifications(db, shopId, env).catch(() => {});
+    // Also notify the called token
+    if (shopName) {
+      notifyTokenCalled(db, next, shopName, env).catch(() => {});
+    }
   }
 
   return { ...calledToken, remaining: remaining.length };

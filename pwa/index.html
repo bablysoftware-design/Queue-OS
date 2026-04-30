@@ -786,6 +786,18 @@ body::after {
         <div class="card-label" id="lbl-current-token">CURRENTLY SERVING</div>
         <div class="token-number empty" id="token-display">—</div>
         <div class="token-sub" id="token-phone-display"></div>
+
+        <!-- Grace period countdown (shown when customer was called) -->
+        <div id="grace-display" style="display:none;margin-bottom:14px">
+          <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);border-radius:10px;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div>
+              <div style="font-size:10px;color:var(--amber);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:2px">Grace Period</div>
+              <div style="font-size:11px;color:var(--text2)" id="grace-customer-name">Customer has 2 min to arrive</div>
+            </div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:600;color:var(--gold2)" id="grace-timer-display">2:00</div>
+          </div>
+        </div>
+
         <div class="btn-row">
           <button class="btn-next" id="next-btn" onclick="callNext()">▶ Next Customer</button>
           <button class="btn-noshow" id="noshow-btn" onclick="handleNoShow()">✗ No Show</button>
@@ -1123,16 +1135,55 @@ function refreshQueue() {
 window.refreshQueue = refreshQueue;
 
 function callNext() {
+  // Cancel any running grace timer
+  if (window._graceInterval) { clearInterval(window._graceInterval); window._graceInterval = null; }
+  const graceDisplay = document.getElementById('grace-display');
+  if (graceDisplay) graceDisplay.style.display = 'none';
+
   const btn = document.getElementById('next-btn');
   btn.disabled = true;
   btn.textContent = '...';
   api('POST', '/tokens/next', { shop_id: state.shopId })
     .then(({ data }) => {
       showToast(data.empty ? t('queueEmptyMsg') : t('tokenCalled', data.next?.token_number), data.empty ? '' : 'success');
+      if (!data.empty && data.next) {
+        const name = data.next.customer_name || '';
+        startGraceTimer(name, () => {
+          showToast('⚠️ Grace period ended — mark no-show?', 'error');
+        });
+      }
       refreshQueue(); loadStats();
     })
     .catch(err => showToast(err.message, 'error'))
     .finally(() => { btn.disabled = false; btn.innerHTML = `▶ ${t('nextToken')}`; });
+}
+
+function startGraceTimer(customerName, onExpire) {
+  const display = document.getElementById('grace-display');
+  const timer   = document.getElementById('grace-timer-display');
+  const label   = document.getElementById('grace-customer-name');
+  if (!display || !timer) return;
+
+  display.style.display = 'block';
+  if (label) label.textContent = customerName ? `${customerName} — 2 min to arrive` : 'Customer has 2 min to arrive';
+
+  let rem = 120;
+  timer.style.color = 'var(--gold2)';
+
+  const interval = setInterval(() => {
+    rem--;
+    const m = Math.floor(rem / 60), s = rem % 60;
+    timer.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+    if (rem <= 30) timer.style.color = 'var(--red)';
+    if (rem <= 0) {
+      clearInterval(interval);
+      display.style.display = 'none';
+      if (onExpire) onExpire();
+    }
+  }, 1000);
+
+  // Store interval ID to cancel if Next is pressed
+  window._graceInterval = interval;
 }
 window.callNext = callNext;
 

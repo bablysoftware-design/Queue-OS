@@ -17,6 +17,7 @@ import { easypaisaWebhook, jazzcashWebhook,
          manualPayment }                              from './routes/payments.js';
 import { submitRegistration, listRegistrations,
          approveRegistration, rejectRegistration }    from './routes/register.js';
+import { subscribePush, unsubscribePush, requestDelay } from './routes/push.js';
 import { getPublicShops, getPublicShop,
          joinQueue, checkPosition,
          publicCancelToken }                          from './routes/public.js';
@@ -42,6 +43,10 @@ const ROUTES = [
   { method: 'GET',    path: '/public/shop/:id',                 handler: getPublicShop },
   { method: 'POST',   path: '/public/join',                     handler: joinQueue },
   { method: 'GET',    path: '/public/position',                 handler: checkPosition },
+  { method: 'POST',   path: '/push/subscribe',                   handler: subscribePush },
+  { method: 'DELETE', path: '/push/unsubscribe',                 handler: unsubscribePush },
+  { method: 'POST',   path: '/push/delay',                       handler: requestDelay },
+
   { method: 'POST',   path: '/public/cancel',                   handler: publicCancelToken },
 
   // Tokens (auth required)
