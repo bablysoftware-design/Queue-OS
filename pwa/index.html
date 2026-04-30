@@ -448,7 +448,9 @@ function handleLogin(){
 }
 
 function handleLogout(){
-  localStorage.clear();clearInterval(state.refreshTimer);
+  localStorage.clear();
+  clearInterval(state.refreshTimer);
+  state.sessionToken = null;
   document.getElementById('login-phone').value='';
   document.getElementById('login-pin').value='';
   document.getElementById('login-btn').disabled=false;
