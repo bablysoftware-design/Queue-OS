@@ -2,11 +2,12 @@
 // service-worker.js — Saf Queue PWA
 // ============================================================
 
-const CACHE = 'saf-queue-v3';
+const CACHE = 'saf-queue-v4';
 const STATIC = [
   '/',
   '/index.html',
   '/admin.html',
+  '/customer.html',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
@@ -15,7 +16,7 @@ const STATIC = [
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(STATIC))
+    caches.open(CACHE).then(c => c.addAll(STATIC).catch(() => {}))
   );
   self.skipWaiting();
 });
@@ -32,26 +33,28 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // API calls → always network
-  if (url.hostname.includes('workers.dev') || url.hostname.includes('supabase.co')) {
-    e.respondWith(fetch(e.request).catch(() =>
-      new Response(JSON.stringify({ success: false, error: 'Offline' }),
-        { status: 503, headers: { 'Content-Type': 'application/json' } })
-    ));
+  // NEVER intercept API calls — pass through directly with all headers intact
+  if (url.hostname.includes('workers.dev') ||
+      url.hostname.includes('supabase.co') ||
+      e.request.method !== 'GET') {
+    e.respondWith(fetch(e.request));
     return;
   }
 
-  // Static → cache first
+  // Skip non-http(s) schemes (chrome-extension, etc.)
+  if (!url.protocol.startsWith('http')) return;
+
+  // Static assets — cache first
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
       return fetch(e.request).then(res => {
-        if (res.ok) {
+        if (res.ok && url.origin === self.location.origin) {
           const clone = res.clone();
           caches.open(CACHE).then(c => c.put(e.request, clone));
         }
         return res;
       });
-    })
+    }).catch(() => caches.match('/index.html'))
   );
 });
