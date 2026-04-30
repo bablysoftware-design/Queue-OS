@@ -438,10 +438,12 @@ function handleLogin(){
   btn.disabled=true;btn.textContent='...';
   api('POST','/shops/login',{owner_phone:phone,pin})
     .then(({data})=>{
-      localStorage.setItem('saf_shop_id',data.shop_id);
-      localStorage.setItem('saf_shop_name',data.shop_name);
-      localStorage.setItem('saf_is_open',data.is_open?'1':'0');
-      state.shopId=data.shop_id;state.shopName=data.shop_name;state.isOpen=data.is_open;
+      localStorage.setItem('saf_shop_id',      data.shop_id);
+      localStorage.setItem('saf_shop_name',    data.shop_name);
+      localStorage.setItem('saf_is_open',      data.is_open?'1':'0');
+      localStorage.setItem('saf_session_token',data.session_token);
+      state.shopId=data.shop_id;state.shopName=data.shop_name;
+      state.isOpen=data.is_open;state.sessionToken=data.session_token;
       showDashboard();
     })
     .catch(err=>{errEl.textContent=err.message||'لاگ ان ناکام';btn.disabled=false;btn.textContent='داخل ہوں';});

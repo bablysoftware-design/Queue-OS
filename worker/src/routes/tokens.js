@@ -15,7 +15,7 @@ import { isValidUUID }            from '../utils/validation.js';
 export async function createTokenHandler(request, env) {
   try {
     const db   = createClient(env);
-    const auth = await requireShopAuth(request, env, db);
+    const auth = await requireShopAuth(request, env);
     if (auth instanceof Response) return auth;
 
     const { shop_id, customer_phone, customer_name } = await request.json();
@@ -31,7 +31,7 @@ export async function createTokenHandler(request, env) {
 export async function nextTokenHandler(request, env) {
   try {
     const db   = createClient(env);
-    const auth = await requireShopAuth(request, env, db);
+    const auth = await requireShopAuth(request, env);
     if (auth instanceof Response) return auth;
 
     const { shop_id } = await request.json();
@@ -47,7 +47,7 @@ export async function nextTokenHandler(request, env) {
 export async function noShowHandler(request, env) {
   try {
     const db   = createClient(env);
-    const auth = await requireShopAuth(request, env, db);
+    const auth = await requireShopAuth(request, env);
     if (auth instanceof Response) return auth;
 
     const { shop_id } = await request.json();
@@ -63,7 +63,7 @@ export async function noShowHandler(request, env) {
 export async function getQueueHandler(request, env) {
   try {
     const db   = createClient(env);
-    const auth = await requireShopAuth(request, env, db);
+    const auth = await requireShopAuth(request, env);
     if (auth instanceof Response) return auth;
 
     const url    = new URL(request.url);
@@ -80,7 +80,7 @@ export async function getQueueHandler(request, env) {
 export async function getStatsHandler(request, env) {
   try {
     const db   = createClient(env);
-    const auth = await requireShopAuth(request, env, db);
+    const auth = await requireShopAuth(request, env);
     if (auth instanceof Response) return auth;
 
     const url    = new URL(request.url);

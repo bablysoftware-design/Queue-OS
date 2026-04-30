@@ -98,7 +98,7 @@ export async function toggleShopHandler(request, env) {
   try {
     const db      = createClient(env);
     // FIX #2: Verify session
-    const auth    = await requireShopAuth(request, env, db);
+    const auth    = await requireShopAuth(request, env);
     if (auth instanceof Response) return auth;
 
     const url     = new URL(request.url);
@@ -122,7 +122,7 @@ export async function toggleShopHandler(request, env) {
 export async function getShopHandler(request, env) {
   try {
     const db     = createClient(env);
-    const auth   = await requireShopAuth(request, env, db);
+    const auth   = await requireShopAuth(request, env);
     if (auth instanceof Response) return auth;
 
     const url    = new URL(request.url);
@@ -140,7 +140,7 @@ export async function getShopHandler(request, env) {
 export async function updateShopSettingsHandler(request, env) {
   try {
     const db   = createClient(env);
-    const auth = await requireShopAuth(request, env, db);
+    const auth = await requireShopAuth(request, env);
     if (auth instanceof Response) return auth;
 
     const url    = new URL(request.url);
@@ -171,7 +171,7 @@ export async function updateShopSettingsHandler(request, env) {
 export async function changePinHandler(request, env) {
   try {
     const db   = createClient(env);
-    const auth = await requireShopAuth(request, env, db);
+    const auth = await requireShopAuth(request, env);
     if (auth instanceof Response) return auth;
 
     const url    = new URL(request.url);

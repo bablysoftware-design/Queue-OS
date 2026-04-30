@@ -2,7 +2,7 @@
 // service-worker.js — Saf Queue PWA
 // ============================================================
 
-const CACHE = 'saf-queue-v4';
+const CACHE = 'saf-queue-v5';
 const STATIC = [
   '/',
   '/index.html',
