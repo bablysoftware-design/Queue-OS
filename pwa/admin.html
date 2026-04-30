@@ -506,10 +506,23 @@ function renderShops() {
         <button class="btn-sm ${s.is_active?'btn-red':'btn-green'}" onclick="toggleActive('${s.id}',${!s.is_active})">
           ${s.is_active?'Off':'On'}
         </button>
+        <button class="btn-sm" style="border-color:var(--cyan);color:var(--cyan)" onclick="copyShopLink('${s.id}','${esc(s.name)}')">🔗</button>
         <button class="btn-sm btn-red" onclick="deleteShop('${s.id}','${esc(s.name)}')">Del</button>
       </div>
     </div>`;
   }).join('');
+}
+
+
+function copyShopLink(shopId, shopName) {
+  const url = `${location.origin}/customer.html?shop=${shopId}`;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url)
+      .then(() => showToast(`✅ ${shopName} کا لنک کاپی ہو گیا`, 'success'))
+      .catch(() => prompt('لنک کاپی کریں:', url));
+  } else {
+    prompt('لنک کاپی کریں:', url);
+  }
 }
 
 async function addShop() {

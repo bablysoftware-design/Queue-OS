@@ -5,10 +5,12 @@
 import { handleVerify, handleMessage }               from './routes/webhook.js';
 import { createTokenHandler, nextTokenHandler,
          getQueueHandler, noShowHandler,
-         getStatsHandler, getPositionHandler }        from './routes/tokens.js';
+         getStatsHandler, getPositionHandler,
+         cancelTokenHandler }                         from './routes/tokens.js';
 import { createShopHandler, loginShopHandler,
          toggleShopHandler, getShopHandler,
-         deleteShopHandler, activateShopHandler }     from './routes/shops.js';
+         deleteShopHandler, activateShopHandler,
+         updateShopSettingsHandler, changePinHandler } from './routes/shops.js';
 import { assignPlanHandler, getSubscriptionHandler,
          listShopsAdminHandler }                      from './routes/subscriptions.js';
 import { easypaisaWebhook, jazzcashWebhook,
@@ -16,7 +18,8 @@ import { easypaisaWebhook, jazzcashWebhook,
 import { submitRegistration, listRegistrations,
          approveRegistration, rejectRegistration }    from './routes/register.js';
 import { getPublicShops, getPublicShop,
-         joinQueue, checkPosition }                   from './routes/public.js';
+         joinQueue, checkPosition,
+         publicCancelToken }                          from './routes/public.js';
 import { expireStaleSubscriptions }                   from './services/subscriptionService.js';
 import { resetDailyTokens }                           from './services/tokenService.js';
 import { createClient }                               from './utils/db.js';
@@ -27,25 +30,29 @@ const ROUTES = [
   { method: 'GET',    path: '/webhook',                         handler: handleVerify },
   { method: 'POST',   path: '/webhook',                         handler: handleMessage },
 
-  // Public customer APIs (no auth)
+  // Public (no auth)
   { method: 'GET',    path: '/public/shops',                    handler: getPublicShops },
   { method: 'GET',    path: '/public/shop/:id',                 handler: getPublicShop },
   { method: 'POST',   path: '/public/join',                     handler: joinQueue },
   { method: 'GET',    path: '/public/position',                 handler: checkPosition },
+  { method: 'POST',   path: '/public/cancel',                   handler: publicCancelToken },
 
-  // Tokens
+  // Tokens (auth required)
   { method: 'POST',   path: '/tokens',                          handler: createTokenHandler },
   { method: 'POST',   path: '/tokens/next',                     handler: nextTokenHandler },
   { method: 'POST',   path: '/tokens/no-show',                  handler: noShowHandler },
+  { method: 'POST',   path: '/tokens/cancel',                   handler: cancelTokenHandler },
   { method: 'GET',    path: '/tokens/queue',                    handler: getQueueHandler },
   { method: 'GET',    path: '/tokens/stats',                    handler: getStatsHandler },
   { method: 'GET',    path: '/tokens/position',                 handler: getPositionHandler },
 
-  // Shops
+  // Shops (auth required)
   { method: 'POST',   path: '/shops',                           handler: createShopHandler },
   { method: 'POST',   path: '/shops/login',                     handler: loginShopHandler },
   { method: 'PATCH',  path: '/shops/:id/toggle',                handler: toggleShopHandler },
   { method: 'GET',    path: '/shops/:id',                       handler: getShopHandler },
+  { method: 'PATCH',  path: '/shops/:id/settings',              handler: updateShopSettingsHandler },
+  { method: 'POST',   path: '/shops/:id/change-pin',            handler: changePinHandler },
 
   // Subscriptions
   { method: 'GET',    path: '/subscriptions',                   handler: getSubscriptionHandler },
@@ -89,6 +96,10 @@ export default {
 
   async scheduled(event, env, ctx) {
     const db = createClient(env);
-    await Promise.all([expireStaleSubscriptions(db), resetDailyTokens(db)]);
+    await Promise.all([
+      expireStaleSubscriptions(db),
+      resetDailyTokens(db),
+      db.rpc('cleanup_sessions'),
+    ]);
   },
 };

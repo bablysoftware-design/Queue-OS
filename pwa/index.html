@@ -286,6 +286,38 @@ body{font-family:'Noto Nastaliq Urdu',serif;background:var(--void);color:var(--t
         <div class="sub-icon">💎</div>
       </div>
 
+      <!-- ترتیبات -->
+      <div class="manual-form" id="settings-panel" style="display:none">
+        <h3 style="margin-bottom:14px">⚙️ SETTINGS</h3>
+        <div class="input-row" style="flex-wrap:wrap;gap:10px">
+          <div style="flex:1;min-width:140px">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:5px">کھلنے کا وقت</div>
+            <input id="s-open-time" type="time" value="09:00" style="width:100%;background:rgba(5,8,16,.6);border:1px solid var(--border);border-radius:8px;padding:9px 10px;color:var(--text);font-size:13px;outline:none"/>
+          </div>
+          <div style="flex:1;min-width:140px">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:5px">بند ہونے کا وقت</div>
+            <input id="s-close-time" type="time" value="21:00" style="width:100%;background:rgba(5,8,16,.6);border:1px solid var(--border);border-radius:8px;padding:9px 10px;color:var(--text);font-size:13px;outline:none"/>
+          </div>
+          <div style="flex:1;min-width:140px">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:5px">فی گاہک منٹ</div>
+            <input id="s-avg-time" type="number" min="1" max="120" value="10" style="width:100%;background:rgba(5,8,16,.6);border:1px solid var(--border);border-radius:8px;padding:9px 10px;color:var(--text);font-size:13px;outline:none;direction:ltr"/>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn-sm-gold" style="flex:1" onclick="saveSettings()">محفوظ کریں</button>
+          <button onclick="document.getElementById('settings-panel').style.display='none'" style="padding:9px 14px;border:1px solid var(--border);border-radius:8px;background:transparent;color:var(--muted);cursor:pointer;font-size:12px">بند</button>
+        </div>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+          <div style="font-size:10px;color:var(--gold);margin-bottom:8px;font-family:'Orbitron',monospace;letter-spacing:1px">PIN تبدیل کریں</div>
+          <div class="input-row" style="flex-wrap:wrap;gap:8px">
+            <input id="s-cur-pin" type="password" maxlength="4" placeholder="موجودہ PIN" style="flex:1;min-width:100px;background:rgba(5,8,16,.6);border:1px solid var(--border);border-radius:8px;padding:9px 10px;color:var(--text);font-size:13px;outline:none;direction:ltr;text-align:center"/>
+            <input id="s-new-pin" type="password" maxlength="4" placeholder="نیا PIN" style="flex:1;min-width:100px;background:rgba(5,8,16,.6);border:1px solid var(--border);border-radius:8px;padding:9px 10px;color:var(--text);font-size:13px;outline:none;direction:ltr;text-align:center"/>
+            <button class="btn-sm-gold" onclick="changePin()">تبدیل</button>
+          </div>
+          <div id="pin-change-msg" style="font-size:11px;margin-top:6px;text-align:center;min-height:16px"></div>
+        </div>
+      </div>
+
       <!-- قطار فہرست -->
       <div>
         <div class="section-head">
@@ -339,8 +371,9 @@ body{font-family:'Noto Nastaliq Urdu',serif;background:var(--void);color:var(--t
   </div><!-- /dash-body -->
 
   <div class="bottombar">
-    <button class="btn-outline" onclick="refreshQueue()">🔄 تازہ</button>
-    <button class="btn-outline" onclick="shareShopLink()" style="border-color:rgba(0,212,255,.3);color:var(--cyan)">🔗 لنک</button>
+    <button class="btn-outline" onclick="refreshQueue()">🔄</button>
+    <button class="btn-outline" onclick="shareShopLink()" style="border-color:rgba(0,212,255,.3);color:var(--cyan)">🔗</button>
+    <button class="btn-outline" onclick="toggleSettings()" style="border-color:rgba(212,175,55,.3);color:var(--gold)">⚙️</button>
     <button class="btn-outline" onclick="handleLogout()">باہر</button>
   </div>
 </div>
@@ -392,7 +425,7 @@ window.addEventListener('resize',resize);
 
 // ── Config ─────────────────────────────────────────────────
 const WORKER='https://saf-queue-worker.byker-software.workers.dev';
-let state={shopId:null,shopName:null,isOpen:false,refreshTimer:null};
+let state={shopId:null,shopName:null,isOpen:false,refreshTimer:null,sessionToken:null};
 
 // ── Auth ───────────────────────────────────────────────────
 function handleLogin(){
@@ -524,12 +557,21 @@ function loadSubscription(){
 }
 
 function loadStats(){
+  // FIX #23: Show skeleton while loading
+  ['r-served','r-noshow','r-waiting','r-total'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el && el.textContent==='—') el.style.animation='pulse 1s ease-in-out infinite';
+  });
   api('GET',`/tokens/stats?shop_id=${state.shopId}`)
     .then(({data})=>{
-      document.getElementById('r-served').textContent=data.served??0;
-      document.getElementById('r-noshow').textContent=data.no_show??0;
-      document.getElementById('r-waiting').textContent=data.waiting??0;
-      document.getElementById('r-total').textContent=data.total??0;
+      const set=(id,val)=>{
+        const el=document.getElementById(id);
+        if(el){el.textContent=val??0;el.style.animation='';}
+      };
+      set('r-served',data.served);
+      set('r-noshow',data.no_show);
+      set('r-waiting',data.waiting);
+      set('r-total',data.total);
     }).catch(()=>{});
 }
 
@@ -560,7 +602,9 @@ window.addEventListener('appinstalled',()=>{document.getElementById('install-ban
 
 // ── Helpers ────────────────────────────────────────────────
 async function api(method,path,body){
-  const opts={method,headers:{'Content-Type':'application/json'}};
+  const headers={'Content-Type':'application/json'};
+  if(state.sessionToken) headers['x-session-token']=state.sessionToken;
+  const opts={method,headers};
   if(body)opts.body=JSON.stringify(body);
   const res=await fetch(WORKER+path,opts);
   const data=await res.json();
@@ -576,6 +620,53 @@ function shareShopLink(){
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
 let toastT;
 function showToast(msg,type=''){const el=document.getElementById('toast');el.textContent=msg;el.className=`show ${type}`;clearTimeout(toastT);toastT=setTimeout(()=>el.className='',3500);}
+
+
+// ── Settings (FIX #11, #12) ───────────────────────────────
+function toggleSettings() {
+  const panel = document.getElementById('settings-panel');
+  const isHidden = panel.style.display === 'none';
+  panel.style.display = isHidden ? 'block' : 'none';
+  if (isHidden) {
+    // Load current values
+    api('GET', `/shops/${state.shopId}`)
+      .then(({data}) => {
+        if (data.opening_time)           document.getElementById('s-open-time').value  = data.opening_time;
+        if (data.closing_time)           document.getElementById('s-close-time').value = data.closing_time;
+        if (data.avg_service_time_mins)  document.getElementById('s-avg-time').value   = data.avg_service_time_mins;
+      }).catch(()=>{});
+  }
+}
+
+async function saveSettings() {
+  const opening_time          = document.getElementById('s-open-time').value;
+  const closing_time          = document.getElementById('s-close-time').value;
+  const avg_service_time_mins = parseInt(document.getElementById('s-avg-time').value, 10);
+  try {
+    await api('PATCH', `/shops/${state.shopId}/settings`, {
+      opening_time, closing_time, avg_service_time_mins
+    });
+    showToast('✅ ترتیبات محفوظ ہو گئیں', 'success');
+    document.getElementById('settings-panel').style.display = 'none';
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// FIX #10: PIN change
+async function changePin() {
+  const cur = document.getElementById('s-cur-pin').value.trim();
+  const nw  = document.getElementById('s-new-pin').value.trim();
+  const msg = document.getElementById('pin-change-msg');
+  msg.textContent = '';
+  if (!cur || !nw) { msg.style.color='var(--red)'; msg.textContent='دونوں PIN درج کریں'; return; }
+  if (nw.length !== 4) { msg.style.color='var(--red)'; msg.textContent='PIN 4 ہندسوں کا ہونا چاہیے'; return; }
+  try {
+    await api('POST', `/shops/${state.shopId}/change-pin`, { current_pin: cur, new_pin: nw });
+    msg.style.color='var(--green)';
+    msg.textContent='✅ PIN تبدیل ہو گیا';
+    document.getElementById('s-cur-pin').value = '';
+    document.getElementById('s-new-pin').value = '';
+  } catch(e) { msg.style.color='var(--red)'; msg.textContent=e.message; }
+}
 
 // ── Boot ───────────────────────────────────────────────────
 (function boot(){

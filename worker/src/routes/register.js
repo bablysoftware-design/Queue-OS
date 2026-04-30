@@ -1,3 +1,4 @@
+import { hashPin } from '../utils/crypto.js';
 // ============================================================
 // routes/register.js — Public shop self-registration
 // ============================================================
@@ -17,6 +18,11 @@ export async function submitRegistration(request, env) {
     if (!name)            return badRequest('نام ضروری ہے');
     if (!owner_phone)     return badRequest('فون نمبر ضروری ہے');
     if (!isValidPin(pin)) return badRequest('پن 4 ہندسوں کا ہونا چاہیے');
+    // FIX #17: Basic phone format validation
+    const cleanPhone = String(owner_phone).replace(/\D/g,'');
+    if (cleanPhone.length < 10 || cleanPhone.length > 13) {
+      return badRequest('فون نمبر درست نہیں ہے');
+    }
 
     const db = createClient(env);
 
@@ -28,8 +34,10 @@ export async function submitRegistration(request, env) {
     const pending = await db.select('shop_registrations', `owner_phone=eq.${owner_phone}&status=eq.pending`);
     if (pending.length) return badRequest('آپ کی درخواست زیر غور ہے');
 
+    // FIX #16: Hash PIN before storing in registrations
+    const pinHash = await hashPin(String(pin));
     const [reg] = await db.insert('shop_registrations', {
-      name, owner_phone, category, area, pin: String(pin), status: 'pending'
+      name, owner_phone, category, area, pin: pinHash, status: 'pending'
     });
 
     return ok({ message: 'درخواست موصول ہو گئی! ایڈمن جلد منظوری دے گا۔', id: reg.id });

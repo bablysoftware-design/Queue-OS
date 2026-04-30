@@ -404,6 +404,8 @@ body{font-family:'Noto Nastaliq Urdu',serif;background:var(--void);color:var(--t
     <div id="join-form-wrap">
       <div class="sheet-shop-name" id="m-shop-name">—</div>
       <div class="sheet-shop-meta" id="m-shop-meta">—</div>
+      <div id="m-shop-address" style="font-size:11px;color:var(--muted);text-align:center;margin-top:2px;display:none">📍 <span id="m-addr-txt"></span></div>
+      <div id="m-shop-hours" style="font-size:11px;color:var(--muted);text-align:center;margin-top:2px;margin-bottom:6px;display:none;font-family:'Orbitron',monospace;font-size:10px">⏰ <span id="m-hours-txt"></span></div>
 
       <!-- Live stats inside modal -->
       <div class="sheet-live">
@@ -443,6 +445,9 @@ body{font-family:'Noto Nastaliq Urdu',serif;background:var(--void);color:var(--t
       </div>
 
       <button class="btn-gold" onclick="closeModal(true)">ٹھیک ہے — واپس جائیں</button>
+      <button id="cancel-token-btn" onclick="cancelMyToken()" style="width:100%;margin-top:10px;padding:12px;border:1px solid var(--red);border-radius:12px;background:rgba(255,69,96,.08);color:var(--red);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s">
+        ❌ ٹوکن منسوخ کریں
+      </button>
     </div>
   </div>
 </div>
@@ -793,6 +798,20 @@ async function openShop(shopId) {
   // Populate
   document.getElementById('m-shop-name').textContent = selectedShop.name;
   document.getElementById('m-shop-meta').textContent = `${catLabel(selectedShop.category)} · ${selectedShop.area||''}`;
+  // FIX #19: Show address
+  if (selectedShop.address) {
+    document.getElementById('m-addr-txt').textContent  = selectedShop.address;
+    document.getElementById('m-shop-address').style.display = 'block';
+  } else {
+    document.getElementById('m-shop-address').style.display = 'none';
+  }
+  // FIX #18: Show hours
+  if (selectedShop.opening_time && selectedShop.closing_time) {
+    document.getElementById('m-hours-txt').textContent = `${selectedShop.opening_time} – ${selectedShop.closing_time}`;
+    document.getElementById('m-shop-hours').style.display = 'block';
+  } else {
+    document.getElementById('m-shop-hours').style.display = 'none';
+  }
   document.getElementById('m-current').textContent   = selectedShop.current_serving ?? '—';
   document.getElementById('m-queue').textContent     = selectedShop.queue_length;
   document.getElementById('m-wait').textContent      = `${selectedShop.estimated_wait}m`;
@@ -866,6 +885,32 @@ async function submitJoin() {
   }
 }
 
+
+// FIX #14: Cancel token
+async function cancelMyToken() {
+  if (!myTokenId || !selectedShop) return;
+  if (!confirm('کیا آپ واقعی اپنا ٹوکن منسوخ کرنا چاہتے ہیں؟')) return;
+  try {
+    const res  = await fetch(`${WORKER}/public/cancel`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ token_id: myTokenId, shop_id: selectedShop.id })
+    });
+    const data = await res.json();
+    if (data.success) {
+      clearInterval(trackerTimer);
+      localStorage.removeItem('saf_token_id');
+      localStorage.removeItem('saf_token_num');
+      myTokenId = null; myTokenNum = null;
+      const badge = document.getElementById('tracker-badge');
+      const sub   = document.getElementById('tracker-sub');
+      if (badge) { badge.className='tracker-badge done'; badge.textContent='❌ منسوخ'; }
+      if (sub)   sub.textContent = 'آپ کا ٹوکن منسوخ ہو گیا';
+      document.getElementById('cancel-token-btn').style.display = 'none';
+    }
+  } catch(e) { alert('منسوخ نہیں ہو سکا'); }
+}
+
 // ── LIVE TRACKER ───────────────────────────────────────────
 function startTracker() {
   updateTracker();
@@ -886,11 +931,25 @@ async function updateTracker() {
       sub.textContent = 'ابھی آئیں!';
       clearInterval(trackerTimer);
       if (navigator.vibrate) navigator.vibrate([200,100,200,100,400]);
+    } else if (data.status === 'shop_closed') {
+      badge.className = 'tracker-badge done';
+      badge.textContent = '🔒 دکان بند ہو گئی';
+      sub.textContent = 'آپ کا ٹوکن منسوخ ہو گیا';
+      clearInterval(trackerTimer);
+      localStorage.removeItem('saf_token_id');
+      document.getElementById('cancel-token-btn') && (document.getElementById('cancel-token-btn').style.display='none');
+    } else if (data.status === 'cancelled') {
+      badge.className = 'tracker-badge done';
+      badge.textContent = '❌ منسوخ';
+      sub.textContent = 'آپ کا ٹوکن منسوخ ہو گیا';
+      clearInterval(trackerTimer);
+      localStorage.removeItem('saf_token_id');
     } else if (data.status === 'completed') {
       badge.className = 'tracker-badge done';
       badge.textContent = '✅ مکمل';
       sub.textContent = 'آپ کی سروس ہو گئی';
       clearInterval(trackerTimer);
+      localStorage.removeItem('saf_token_id');
     } else if (data.status === 'waiting') {
       badge.className = 'tracker-badge waiting';
       badge.textContent = `انتظار — نمبر ${data.position}`;
