@@ -15,8 +15,8 @@ import { easypaisaWebhook, jazzcashWebhook,
          manualPayment }                              from './routes/payments.js';
 import { submitRegistration, listRegistrations,
          approveRegistration, rejectRegistration }    from './routes/register.js';
-import { getPublicShops, getPublicShop, joinQueue,
-         checkPosition, getCategories }               from './routes/public.js';
+import { getPublicShops, getPublicShop,
+         joinQueue, checkPosition }                   from './routes/public.js';
 import { expireStaleSubscriptions }                   from './services/subscriptionService.js';
 import { resetDailyTokens }                           from './services/tokenService.js';
 import { createClient }                               from './utils/db.js';
@@ -27,10 +27,9 @@ const ROUTES = [
   { method: 'GET',    path: '/webhook',                         handler: handleVerify },
   { method: 'POST',   path: '/webhook',                         handler: handleMessage },
 
-  // Public (no auth)
+  // Public customer APIs (no auth)
   { method: 'GET',    path: '/public/shops',                    handler: getPublicShops },
   { method: 'GET',    path: '/public/shop/:id',                 handler: getPublicShop },
-  { method: 'GET',    path: '/public/categories',               handler: getCategories },
   { method: 'POST',   path: '/public/join',                     handler: joinQueue },
   { method: 'GET',    path: '/public/position',                 handler: checkPosition },
 
@@ -80,7 +79,7 @@ function matchRoute(method, pathname) {
 
 export default {
   async fetch(request, env, ctx) {
-    const { method }  = request;
+    const { method }   = request;
     const { pathname } = new URL(request.url);
     if (method === 'OPTIONS') return preflight();
     const handler = matchRoute(method, pathname);

@@ -204,6 +204,12 @@ body{font-family:'Noto Nastaliq Urdu',serif;background:var(--void);color:var(--t
     </div>
     <button class="btn-gold" id="login-btn" onclick="handleLogin()">داخل ہوں</button>
     <div class="err-msg" id="login-error"></div>
+    <div style="margin-top:18px;text-align:center">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:12px">━━━ یا ━━━</div>
+      <button onclick="window.location.href='/customer.html'" style="width:100%;padding:13px;border:1px solid rgba(0,212,255,.3);border-radius:10px;background:rgba(0,212,255,.05);color:var(--cyan);font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;transition:all .3s;" onmouseover="this.style.background='rgba(0,212,255,.1)'" onmouseout="this.style.background='rgba(0,212,255,.05)'">
+        📱 میں گاہک ہوں — ٹوکن لیں
+      </button>
+    </div>
   </div>
 </div>
 
@@ -563,7 +569,7 @@ async function api(method,path,body){
 }
 function maskPhone(p){if(!p)return'—';const s=String(p);return s.slice(0,4)+'****'+s.slice(-3);}
 function shareShopLink(){
-  const url=`${location.origin}/join.html?shop=${state.shopId}`;
+  const url=`${location.origin}/customer.html?shop=${state.shopId}`;
   if(navigator.share){navigator.share({title:state.shopName+" قطار",text:"آن لائن ٹوکن لیں",url});}
   else{navigator.clipboard.writeText(url).then(()=>showToast("لنک کاپی ہو گیا!","success")).catch(()=>{prompt("لنک کاپی کریں:",url);});}
 }

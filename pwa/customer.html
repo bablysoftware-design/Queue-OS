@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#050810"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>سف کیو — ٹوکن لیں</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;500;600;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --void:#050810;--surface:#0d1424;--glass:rgba(13,20,36,.78);
+  --border:rgba(212,175,55,.12);--gold:#D4AF37;--gold2:#F5C842;
+  --gold3:#FFE066;--cyan:#00D4FF;--red:#FF4560;--green:#00E396;
+  --amber:#F59E0B;--text:#EDE8D0;--muted:rgba(237,232,208,.4);--r:16px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Nastaliq Urdu',serif;background:var(--void);color:var(--text);min-height:100dvh;direction:rtl;overflow-x:hidden;}
+#particle-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;}
+.holo-grid{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(212,175,55,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(212,175,55,.03) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;animation:gridDrift 25s linear infinite;}
+@keyframes gridDrift{to{background-position:50px 50px;}}
+#app{position:relative;z-index:1;min-height:100dvh;display:flex;flex-direction:column;}
+
+/* ── TOPBAR ── */
+.topbar{padding:calc(env(safe-area-inset-top,0px)+14px) 18px 14px;display:flex;align-items:center;justify-content:space-between;background:rgba(5,8,16,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;}
+.topbar-brand{display:flex;align-items:center;gap:10px;}
+.topbar-gem{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 0 16px rgba(212,175,55,.3);animation:gemPulse 3s ease-in-out infinite;}
+@keyframes gemPulse{0%,100%{box-shadow:0 0 16px rgba(212,175,55,.3);}50%{box-shadow:0 0 28px rgba(212,175,55,.6);}}
+.topbar-name{font-size:14px;font-weight:700;color:var(--text);}
+.topbar-sub{font-size:10px;color:var(--gold);}
+.back-btn{padding:7px 14px;border:1px solid var(--border);border-radius:100px;background:transparent;color:var(--muted);font-family:inherit;font-size:12px;cursor:pointer;transition:all .2s;}
+.back-btn:hover{border-color:var(--gold);color:var(--gold);}
+
+/* ── SEARCH + FILTER ── */
+.search-wrap{padding:16px 16px 0;background:rgba(5,8,16,.5);}
+.search-box{display:flex;gap:10px;margin-bottom:12px;}
+.search-input{flex:1;background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:12px 16px;color:var(--text);font-family:inherit;font-size:14px;outline:none;transition:border-color .3s;backdrop-filter:blur(16px);}
+.search-input:focus{border-color:var(--gold);}
+.search-input::placeholder{color:var(--muted);}
+.search-btn{padding:12px 18px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#050810;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;}
+
+/* Category chips */
+.cat-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:14px;scrollbar-width:none;}
+.cat-row::-webkit-scrollbar{display:none;}
+.cat-chip{flex-shrink:0;padding:6px 14px;border:1px solid var(--border);border-radius:100px;background:transparent;color:var(--muted);font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.cat-chip.active{border-color:var(--gold);color:var(--gold);background:rgba(212,175,55,.08);}
+.cat-chip:hover{border-color:rgba(212,175,55,.4);color:var(--text);}
+
+/* Area chips */
+.area-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:14px;scrollbar-width:none;}
+.area-row::-webkit-scrollbar{display:none;}
+.area-chip{flex-shrink:0;padding:5px 12px;border:1px solid rgba(0,212,255,.15);border-radius:100px;background:transparent;color:var(--muted);font-family:inherit;font-size:10px;font-weight:600;cursor:pointer;transition:all .2s;}
+.area-chip.active{border-color:var(--cyan);color:var(--cyan);background:rgba(0,212,255,.06);}
+
+/* ── MAIN BODY ── */
+.body{flex:1;overflow-y:auto;padding:16px 16px 80px;}
+
+/* Stats banner */
+.stats-banner{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;}
+.banner-stat{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;backdrop-filter:blur(12px);}
+.banner-val{font-family:'Orbitron',monospace;font-size:20px;font-weight:700;color:var(--gold2);}
+.banner-lbl{font-size:9px;color:var(--muted);margin-top:3px;}
+
+/* Section label */
+.sec-lbl{font-size:9px;font-weight:700;color:var(--gold);letter-spacing:2px;font-family:'Orbitron',monospace;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.sec-lbl::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(212,175,55,.2),transparent);}
+
+/* ── SHOP CARD ── */
+.shop-list{display:flex;flex-direction:column;gap:10px;}
+
+.shop-card{background:var(--glass);border:1px solid var(--border);border-radius:var(--r);padding:16px;backdrop-filter:blur(16px);cursor:pointer;transition:all .3s cubic-bezier(.16,1,.3,1);position:relative;overflow:hidden;animation:cardIn .4s cubic-bezier(.16,1,.3,1) both;}
+.shop-card::before{content:'';position:absolute;right:0;top:0;width:3px;height:100%;background:linear-gradient(180deg,var(--gold),transparent);opacity:0;transition:opacity .3s;}
+.shop-card:hover{border-color:rgba(212,175,55,.3);transform:translateX(-3px);box-shadow:-4px 0 24px rgba(212,175,55,.08);}
+.shop-card:hover::before{opacity:1;}
+.shop-card.open{border-color:rgba(212,175,55,.15);}
+.shop-card.closed{opacity:.6;cursor:not-allowed;}
+.shop-card.closed:hover{transform:none;box-shadow:none;}
+.shop-card.busy{border-color:rgba(245,158,11,.2);}
+.shop-card.highlighted{border-color:rgba(212,175,55,.5);box-shadow:0 0 30px rgba(212,175,55,.1);animation:highlightPulse 2s ease-in-out 3;}
+@keyframes highlightPulse{0%,100%{box-shadow:0 0 30px rgba(212,175,55,.1);}50%{box-shadow:0 0 50px rgba(212,175,55,.3);}}
+@keyframes cardIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
+.shop-icon{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,rgba(212,175,55,.15),rgba(212,175,55,.05));border:1px solid rgba(212,175,55,.15);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.shop-info{flex:1;padding-right:12px;}
+.shop-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:3px;}
+.shop-area{font-size:11px;color:var(--muted);}
+
+/* Status badge */
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:100px;font-size:10px;font-weight:700;border:1px solid;white-space:nowrap;flex-shrink:0;}
+.status-badge.open{background:rgba(0,227,150,.1);border-color:var(--green);color:var(--green);}
+.status-badge.closed{background:rgba(255,69,96,.08);border-color:var(--red);color:var(--red);}
+.status-badge.busy{background:rgba(245,158,11,.1);border-color:var(--amber);color:var(--amber);}
+.s-dot{width:6px;height:6px;border-radius:50%;}
+.status-badge.open .s-dot{background:var(--green);box-shadow:0 0 5px var(--green);animation:blink 1.5s ease-in-out infinite;}
+.status-badge.closed .s-dot{background:var(--red);}
+.status-badge.busy .s-dot{background:var(--amber);}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+/* Queue bar */
+.queue-bar-wrap{margin-bottom:10px;}
+.queue-bar-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:5px;}
+.queue-bar-track{height:4px;background:rgba(255,255,255,.05);border-radius:100px;overflow:hidden;}
+.queue-bar-fill{height:100%;border-radius:100px;transition:width .5s ease;background:linear-gradient(90deg,var(--green),var(--gold));}
+.queue-bar-fill.busy{background:linear-gradient(90deg,var(--gold),var(--amber));}
+.queue-bar-fill.full{background:linear-gradient(90deg,var(--amber),var(--red));}
+
+/* Card stats row */
+.card-stats{display:flex;gap:8px;flex-wrap:wrap;}
+.c-stat{background:rgba(5,8,16,.4);border:1px solid var(--border);border-radius:8px;padding:6px 10px;text-align:center;}
+.c-stat-val{font-family:'Orbitron',monospace;font-size:14px;font-weight:700;color:var(--gold2);}
+.c-stat-lbl{font-size:9px;color:var(--muted);}
+
+/* Suggestion tag */
+.suggestion-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:600;margin-top:8px;}
+.suggestion-tag.alt{background:rgba(0,212,255,.08);color:var(--cyan);border:1px solid rgba(0,212,255,.2);}
+.suggestion-tag.warn{background:rgba(245,158,11,.08);color:var(--amber);border:1px solid rgba(245,158,11,.2);}
+.suggestion-tag.go{background:rgba(0,227,150,.08);color:var(--green);border:1px solid rgba(0,227,150,.2);}
+
+/* Timing info for closed shops */
+.timing-info{background:rgba(5,8,16,.4);border:1px solid rgba(255,69,96,.1);border-radius:10px;padding:10px 12px;margin-top:8px;font-size:12px;color:var(--muted);}
+.timing-info strong{color:var(--text);}
+
+/* ── TOKEN MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(10px);z-index:100;align-items:flex-end;justify-content:center;padding:0;}
+.modal-overlay.show{display:flex;}
+.modal-sheet{background:var(--surface);border:1px solid rgba(212,175,55,.2);border-radius:24px 24px 0 0;padding:28px 24px 40px;width:100%;max-width:500px;animation:sheetUp .4s cubic-bezier(.16,1,.3,1) both;position:relative;overflow:hidden;max-height:90dvh;overflow-y:auto;}
+.modal-sheet::before{content:'';position:absolute;top:0;left:30px;right:30px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+@keyframes sheetUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.sheet-handle{width:40px;height:4px;background:rgba(255,255,255,.1);border-radius:100px;margin:0 auto 20px;}
+.sheet-shop-name{font-size:18px;font-weight:700;color:var(--gold2);text-align:center;margin-bottom:4px;}
+.sheet-shop-meta{font-size:12px;color:var(--muted);text-align:center;margin-bottom:20px;}
+.sheet-live{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px;}
+.sheet-stat{background:rgba(5,8,16,.5);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;}
+.sheet-stat-val{font-family:'Orbitron',monospace;font-size:18px;font-weight:700;color:var(--gold2);}
+.sheet-stat-lbl{font-size:9px;color:var(--muted);margin-top:3px;}
+.sheet-field{margin-bottom:14px;}
+.sheet-field label{display:block;font-size:11px;color:var(--muted);margin-bottom:7px;}
+.sheet-field input{width:100%;background:rgba(5,8,16,.6);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:inherit;font-size:14px;outline:none;transition:border-color .3s;direction:ltr;text-align:right;}
+.sheet-field input:focus{border-color:var(--gold);box-shadow:0 0 14px rgba(212,175,55,.12);}
+.sheet-field input::placeholder{color:var(--muted);}
+.btn-gold{width:100%;padding:15px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--gold),var(--gold2),var(--gold3));color:#050810;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;transition:transform .2s,box-shadow .2s;box-shadow:0 6px 24px rgba(212,175,55,.3);}
+.btn-gold:hover{transform:translateY(-2px);}
+.btn-gold:disabled{opacity:.5;pointer-events:none;}
+.sheet-err{color:var(--red);font-size:12px;text-align:center;margin-top:10px;min-height:18px;}
+.btn-cancel{width:100%;padding:12px;border:1px solid var(--border);border-radius:12px;background:transparent;color:var(--muted);font-family:inherit;font-size:13px;cursor:pointer;margin-top:8px;transition:all .2s;}
+.btn-cancel:hover{border-color:var(--red);color:var(--red);}
+
+/* ── TOKEN RESULT SHEET ── */
+.result-wrap{display:none;text-align:center;}
+.big-num{font-family:'Orbitron',monospace;font-size:88px;font-weight:900;background:linear-gradient(135deg,var(--gold),var(--gold3),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;filter:drop-shadow(0 8px 24px rgba(212,175,55,.4));animation:numPulse 2s ease-in-out infinite;}
+@keyframes numPulse{0%,100%{filter:drop-shadow(0 8px 24px rgba(212,175,55,.4));}50%{filter:drop-shadow(0 8px 36px rgba(212,175,55,.7));}}
+.result-label{font-size:9px;color:var(--gold);letter-spacing:2px;font-family:'Orbitron',monospace;margin-bottom:8px;}
+.result-greeting{font-size:15px;color:var(--text);margin:8px 0 16px;}
+.result-stats-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.rs{background:rgba(5,8,16,.5);border:1px solid var(--border);border-radius:12px;padding:14px;}
+.rs-val{font-family:'Orbitron',monospace;font-size:22px;font-weight:700;color:var(--gold2);}
+.rs-lbl{font-size:10px;color:var(--muted);margin-top:4px;}
+.tracker-box{background:rgba(5,8,16,.5);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px;}
+.tracker-hd{font-family:'Orbitron',monospace;font-size:9px;color:var(--gold);letter-spacing:2px;margin-bottom:10px;direction:ltr;}
+.tracker-badge{padding:8px 20px;border-radius:100px;font-size:13px;font-weight:700;border:1px solid;display:inline-block;transition:all .3s;}
+.tracker-badge.waiting{background:rgba(212,175,55,.08);border-color:var(--gold);color:var(--gold);}
+.tracker-badge.called{background:rgba(0,227,150,.12);border-color:var(--green);color:var(--green);animation:calledPulse 1s ease-in-out infinite;}
+.tracker-badge.done{background:rgba(100,116,139,.08);border-color:var(--muted);color:var(--muted);}
+@keyframes calledPulse{0%,100%{box-shadow:0 0 0 0 rgba(0,227,150,.3);}50%{box-shadow:0 0 0 10px rgba(0,227,150,0);}}
+.tracker-sub{font-size:11px;color:var(--muted);margin-top:8px;}
+
+/* Loading */
+.loading{text-align:center;padding:60px 20px;color:var(--muted);}
+.spinner{width:36px;height:36px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 14px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.empty-state{text-align:center;padding:50px 20px;}
+.empty-icon{font-size:44px;margin-bottom:12px;}
+.empty-txt{font-size:14px;color:var(--muted);}
+</style>
+</head>
+<body>
+<canvas id="particle-canvas"></canvas>
+<div class="holo-grid"></div>
+<div id="app">
+
+  <!-- ── TOPBAR ── -->
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-gem">🏪</div>
+      <div>
+        <div class="topbar-name">سف کیو</div>
+        <div class="topbar-sub">ٹوکن لیں — لائن سے بچیں</div>
+      </div>
+    </div>
+    <button class="back-btn" onclick="window.location.href='/'">← واپس</button>
+  </div>
+
+  <!-- ── SEARCH + FILTERS ── -->
+  <div class="search-wrap">
+    <div class="search-box">
+      <input class="search-input" id="search-input" type="text" placeholder="دکان یا علاقہ تلاش کریں..." oninput="onSearch()"/>
+      <button class="search-btn" onclick="loadShops()">🔍</button>
+    </div>
+
+    <!-- Category filter -->
+    <div class="cat-row" id="cat-row">
+      <button class="cat-chip active" onclick="filterCat('')" data-cat="">سب</button>
+      <button class="cat-chip" onclick="filterCat('barber')" data-cat="barber">✂️ حجام</button>
+      <button class="cat-chip" onclick="filterCat('clinic')" data-cat="clinic">🏥 کلینک</button>
+      <button class="cat-chip" onclick="filterCat('pharmacy')" data-cat="pharmacy">💊 فارمیسی</button>
+      <button class="cat-chip" onclick="filterCat('bank')" data-cat="bank">🏦 بینک</button>
+      <button class="cat-chip" onclick="filterCat('govt')" data-cat="govt">🏛️ سرکاری</button>
+      <button class="cat-chip" onclick="filterCat('tailor')" data-cat="tailor">🧵 درزی</button>
+    </div>
+
+    <!-- Area filter (populated dynamically) -->
+    <div class="area-row" id="area-row" style="display:none"></div>
+  </div>
+
+  <!-- ── BODY ── -->
+  <div class="body" id="main-body">
+    <div class="loading" id="loading-state">
+      <div class="spinner"></div>
+      <div>دکانیں لوڈ ہو رہی ہیں...</div>
+    </div>
+    <div id="shops-container" style="display:none">
+      <!-- Stats banner -->
+      <div class="stats-banner">
+        <div class="banner-stat"><div class="banner-val" id="b-open">0</div><div class="banner-lbl">کھلی دکانیں</div></div>
+        <div class="banner-stat"><div class="banner-val" id="b-total">0</div><div class="banner-lbl">کل دکانیں</div></div>
+        <div class="banner-stat"><div class="banner-val" id="b-tokens">0</div><div class="banner-lbl">قطار میں</div></div>
+      </div>
+      <div class="sec-lbl" id="shops-label">تمام دکانیں</div>
+      <div class="shop-list" id="shop-list"></div>
+    </div>
+    <div class="empty-state" id="empty-state" style="display:none">
+      <div class="empty-icon">🔍</div>
+      <div class="empty-txt">کوئی دکان نہیں ملی</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── TOKEN MODAL (bottom sheet) ── -->
+<div class="modal-overlay" id="token-modal" onclick="handleOverlayClick(event)">
+  <div class="modal-sheet" id="modal-sheet">
+    <div class="sheet-handle"></div>
+
+    <!-- Join form -->
+    <div id="join-form-wrap">
+      <div class="sheet-shop-name" id="m-shop-name">—</div>
+      <div class="sheet-shop-meta" id="m-shop-meta">—</div>
+
+      <!-- Live stats inside modal -->
+      <div class="sheet-live">
+        <div class="sheet-stat"><div class="sheet-stat-val" id="m-current">—</div><div class="sheet-stat-lbl">ابھی نمبر</div></div>
+        <div class="sheet-stat"><div class="sheet-stat-val" id="m-queue">—</div><div class="sheet-stat-lbl">قطار</div></div>
+        <div class="sheet-stat"><div class="sheet-stat-val" id="m-wait">—</div><div class="sheet-stat-lbl">منٹ</div></div>
+      </div>
+
+      <div class="sheet-field">
+        <label>آپ کا نام *</label>
+        <input id="c-name" type="text" placeholder="نام درج کریں"/>
+      </div>
+      <div class="sheet-field">
+        <label>فون نمبر (اختیاری)</label>
+        <input id="c-phone" type="tel" placeholder="03001234567"/>
+      </div>
+      <button class="btn-gold" id="join-btn" onclick="submitJoin()">ٹوکن لیں</button>
+      <div class="sheet-err" id="sheet-err"></div>
+      <button class="btn-cancel" onclick="closeModal()">منسوخ کریں</button>
+    </div>
+
+    <!-- Token result -->
+    <div class="result-wrap" id="result-wrap">
+      <div class="result-label">YOUR TOKEN NUMBER</div>
+      <div class="big-num" id="r-num">—</div>
+      <div class="result-greeting">🎉 <span id="r-greeting">آپ کی باری آئے گی!</span></div>
+
+      <div class="result-stats-row">
+        <div class="rs"><div class="rs-val" id="r-pos">—</div><div class="rs-lbl">نمبر قطار میں</div></div>
+        <div class="rs"><div class="rs-val" id="r-wait-val">—</div><div class="rs-lbl">منٹ انتظار</div></div>
+      </div>
+
+      <div class="tracker-box">
+        <div class="tracker-hd">LIVE POSITION</div>
+        <div class="tracker-badge waiting" id="tracker-badge">انتظار میں ہیں</div>
+        <div class="tracker-sub" id="tracker-sub">ہر 15 سیکنڈ میں خودبخود اپڈیٹ ہوتا ہے</div>
+      </div>
+
+      <button class="btn-gold" onclick="closeModal(true)">ٹھیک ہے — واپس جائیں</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Particles ──────────────────────────────────────────────
+const canvas=document.getElementById('particle-canvas'),ctx=canvas.getContext('2d');
+let W,H,pts=[];
+function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
+function mkPt(){return{x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.3+.3,vy:-(Math.random()*.4+.1),vx:(Math.random()-.5)*.2,a:Math.random()*.35+.1,c:Math.random()>.6?'#D4AF37':'#00D4FF'};}
+function draw(){ctx.clearRect(0,0,W,H);pts.forEach((p,i)=>{p.x+=p.vx;p.y+=p.vy;if(p.y<-5){pts[i]=mkPt();pts[i].y=H+5;}ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=p.c;ctx.globalAlpha=p.a;ctx.fill();});ctx.globalAlpha=1;requestAnimationFrame(draw);}
+resize();pts=Array.from({length:70},mkPt);draw();window.addEventListener('resize',resize);
+
+// ── State ──────────────────────────────────────────────────
+const WORKER = 'https://saf-queue-worker.byker-software.workers.dev';
+const params  = new URLSearchParams(window.location.search);
+const HIGHLIGHT_SHOP = params.get('shop'); // if shared link
+
+let allShops      = [];
+let filteredShops = [];
+let activeCategory = '';
+let activeArea     = '';
+let searchQuery    = '';
+let selectedShop   = null;
+let myTokenId      = null;
+let myTokenNum     = null;
+let trackerTimer   = null;
+
+// ── LOAD SHOPS ─────────────────────────────────────────────
+async function loadShops() {
+  document.getElementById('loading-state').style.display = 'block';
+  document.getElementById('shops-container').style.display = 'none';
+  document.getElementById('empty-state').style.display   = 'none';
+
+  try {
+    let url = `${WORKER}/public/shops`;
+    const qp = [];
+    if (activeArea)     qp.push(`area=${encodeURIComponent(activeArea)}`);
+    if (activeCategory) qp.push(`category=${activeCategory}`);
+    if (searchQuery)    qp.push(`search=${encodeURIComponent(searchQuery)}`);
+    if (qp.length)      url += '?' + qp.join('&');
+
+    const res  = await fetch(url);
+    const data = await res.json();
+
+    allShops      = data.data?.shops ?? [];
+    filteredShops = allShops;
+
+    // Populate area chips
+    const areas = data.data?.areas ?? [];
+    renderAreaChips(areas);
+
+    renderShops();
+
+    // Auto-open highlighted shop (from shared link)
+    if (HIGHLIGHT_SHOP) {
+      setTimeout(() => {
+        const card = document.getElementById(`shop-${HIGHLIGHT_SHOP}`);
+        if (card) { card.scrollIntoView({behavior:'smooth',block:'center'}); card.click(); }
+      }, 600);
+    }
+
+  } catch (e) {
+    document.getElementById('loading-state').innerHTML = `<div style="color:var(--red);padding:40px;text-align:center">لوڈ نہیں ہو سکا</div>`;
+  }
+}
+
+function renderShops() {
+  document.getElementById('loading-state').style.display = 'none';
+
+  if (!filteredShops.length) {
+    document.getElementById('shops-container').style.display = 'none';
+    document.getElementById('empty-state').style.display   = 'block';
+    return;
+  }
+
+  document.getElementById('shops-container').style.display = 'block';
+  document.getElementById('empty-state').style.display     = 'none';
+
+  // Stats banner
+  const openCount  = filteredShops.filter(s => s.is_open).length;
+  const totalQueue = filteredShops.reduce((a,s) => a + (s.queue_length||0), 0);
+  document.getElementById('b-open').textContent   = openCount;
+  document.getElementById('b-total').textContent  = filteredShops.length;
+  document.getElementById('b-tokens').textContent = totalQueue;
+
+  // Label
+  const label = activeCategory ? catLabel(activeCategory) : activeArea ? activeArea : 'تمام دکانیں';
+  document.getElementById('shops-label').textContent = label;
+
+  // Sort: open first, then by queue length ascending
+  const sorted = [...filteredShops].sort((a,b) => {
+    if (a.is_open !== b.is_open) return b.is_open - a.is_open;
+    return (a.queue_length||0) - (b.queue_length||0);
+  });
+
+  document.getElementById('shop-list').innerHTML = sorted.map((s, i) => buildShopCard(s, i)).join('');
+}
+
+function buildShopCard(s, i) {
+  const isOpen   = s.is_open;
+  const isBusy   = s.is_busy;
+  const qLen     = s.queue_length || 0;
+  const maxQ     = 20;
+  const fillPct  = Math.min((qLen / maxQ) * 100, 100);
+  const fillClass = fillPct > 75 ? 'full' : fillPct > 40 ? 'busy' : '';
+
+  let statusBadge, cardClass;
+  if (!isOpen) {
+    statusBadge = `<span class="status-badge closed"><span class="s-dot"></span>بند</span>`;
+    cardClass   = 'closed';
+  } else if (isBusy) {
+    statusBadge = `<span class="status-badge busy"><span class="s-dot"></span>مصروف</span>`;
+    cardClass   = 'open busy';
+  } else {
+    statusBadge = `<span class="status-badge open"><span class="s-dot"></span>کھلی</span>`;
+    cardClass   = 'open';
+  }
+
+  const highlighted = s.id === HIGHLIGHT_SHOP ? ' highlighted' : '';
+
+  // Suggestions
+  let suggestion = '';
+  if (!isOpen) {
+    // Find open alternative in same category
+    const alt = allShops.find(a => a.id !== s.id && a.category === s.category && a.is_open);
+    if (alt) {
+      suggestion = `<div class="suggestion-tag alt">💡 متبادل: ${esc(alt.name)} کھلی ہے</div>`;
+    }
+    suggestion += `<div class="timing-info">⏰ <strong>اگلی بار:</strong> دکان کھلنے پر دوبارہ چیک کریں</div>`;
+  } else if (isBusy) {
+    const quieter = allShops.find(a => a.id !== s.id && a.category === s.category && a.is_open && !a.is_busy);
+    if (quieter) {
+      suggestion = `<div class="suggestion-tag alt">💡 کم قطار: ${esc(quieter.name)} — ${quieter.queue_length} لوگ</div>`;
+    } else {
+      suggestion = `<div class="suggestion-tag warn">⚠️ قطار لمبی ہے — انتظار ہو سکتا ہے</div>`;
+    }
+  } else {
+    suggestion = `<div class="suggestion-tag go">✅ ابھی ٹوکن لینے کا اچھا وقت ہے</div>`;
+  }
+
+  const clickHandler = isOpen ? `onclick="openShop('${s.id}')"` : '';
+
+  return `
+  <div class="shop-card ${cardClass}${highlighted}" id="shop-${s.id}" ${clickHandler} style="animation-delay:${i*0.05}s">
+    <div class="card-top">
+      <div class="shop-icon">${catIcon(s.category)}</div>
+      <div class="shop-info">
+        <div class="shop-title">${esc(s.name)}</div>
+        <div class="shop-area">📍 ${esc(s.area||'—')} &nbsp;·&nbsp; ${catLabel(s.category)}</div>
+      </div>
+      ${statusBadge}
+    </div>
+
+    ${isOpen ? `
+    <div class="queue-bar-wrap">
+      <div class="queue-bar-labels">
+        <span>قطار: ${qLen} لوگ</span>
+        <span>~${s.estimated_wait} منٹ</span>
+      </div>
+      <div class="queue-bar-track">
+        <div class="queue-bar-fill ${fillClass}" style="width:${fillPct}%"></div>
+      </div>
+    </div>
+    <div class="card-stats">
+      <div class="c-stat"><div class="c-stat-val">${s.current_serving??'—'}</div><div class="c-stat-lbl">ابھی نمبر</div></div>
+      <div class="c-stat"><div class="c-stat-val">${qLen}</div><div class="c-stat-lbl">قطار میں</div></div>
+      <div class="c-stat"><div class="c-stat-val">${s.estimated_wait}m</div><div class="c-stat-lbl">انتظار</div></div>
+    </div>` : ''}
+
+    ${suggestion}
+  </div>`;
+}
+
+// ── OPEN SHOP MODAL ────────────────────────────────────────
+async function openShop(shopId) {
+  selectedShop = allShops.find(s => s.id === shopId);
+  if (!selectedShop) return;
+
+  // Reset modal
+  document.getElementById('join-form-wrap').style.display = 'block';
+  document.getElementById('result-wrap').style.display    = 'none';
+  document.getElementById('sheet-err').textContent         = '';
+  document.getElementById('c-name').value                  = '';
+  document.getElementById('c-phone').value                 = '';
+  document.getElementById('join-btn').disabled             = false;
+  document.getElementById('join-btn').textContent          = 'ٹوکن لیں';
+
+  // Populate
+  document.getElementById('m-shop-name').textContent = selectedShop.name;
+  document.getElementById('m-shop-meta').textContent = `${catLabel(selectedShop.category)} · ${selectedShop.area||''}`;
+  document.getElementById('m-current').textContent   = selectedShop.current_serving ?? '—';
+  document.getElementById('m-queue').textContent     = selectedShop.queue_length;
+  document.getElementById('m-wait').textContent      = `${selectedShop.estimated_wait}m`;
+
+  document.getElementById('token-modal').classList.add('show');
+  setTimeout(() => document.getElementById('c-name').focus(), 400);
+
+  // Refresh live stats
+  try {
+    const res  = await fetch(`${WORKER}/public/shop/${shopId}`);
+    const {data} = await res.json();
+    document.getElementById('m-current').textContent = data.current_serving ?? '—';
+    document.getElementById('m-queue').textContent   = data.queue_length;
+    document.getElementById('m-wait').textContent    = `${data.estimated_wait}m`;
+  } catch(e) {}
+}
+
+function closeModal(keepResult = false) {
+  if (!keepResult) {
+    clearInterval(trackerTimer);
+    myTokenId  = null;
+    myTokenNum = null;
+  }
+  document.getElementById('token-modal').classList.remove('show');
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('token-modal')) closeModal();
+}
+
+// ── SUBMIT JOIN ────────────────────────────────────────────
+async function submitJoin() {
+  const name  = document.getElementById('c-name').value.trim();
+  const phone = document.getElementById('c-phone').value.trim();
+  const errEl = document.getElementById('sheet-err');
+  const btn   = document.getElementById('join-btn');
+  errEl.textContent = '';
+
+  if (!name) { errEl.textContent = 'نام ضروری ہے'; return; }
+
+  btn.disabled = true; btn.textContent = '...';
+
+  try {
+    const res  = await fetch(`${WORKER}/public/join`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({shop_id: selectedShop.id, customer_name: name, customer_phone: phone||null})
+    });
+    const {data, success, error} = await res.json();
+    if (!success) throw new Error(error);
+
+    myTokenId  = data.token_id;
+    myTokenNum = data.token_number;
+
+    // Show result
+    document.getElementById('join-form-wrap').style.display = 'none';
+    document.getElementById('result-wrap').style.display    = 'block';
+    document.getElementById('r-num').textContent           = data.token_number;
+    document.getElementById('r-greeting').textContent      = `${name}، آپ کی باری آئے گی!`;
+    document.getElementById('r-pos').textContent           = data.position;
+    document.getElementById('r-wait-val').textContent      = data.estimated_wait + 'm';
+
+    // Vibrate
+    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+
+    startTracker();
+
+  } catch(e) {
+    errEl.textContent = e.message || 'خرابی';
+    btn.disabled = false; btn.textContent = 'ٹوکن لیں';
+  }
+}
+
+// ── LIVE TRACKER ───────────────────────────────────────────
+function startTracker() {
+  updateTracker();
+  trackerTimer = setInterval(updateTracker, 15000);
+}
+
+async function updateTracker() {
+  if (!myTokenId || !selectedShop) return;
+  try {
+    const res  = await fetch(`${WORKER}/public/position?shop_id=${selectedShop.id}&token_id=${myTokenId}`);
+    const {data} = await res.json();
+    const badge = document.getElementById('tracker-badge');
+    const sub   = document.getElementById('tracker-sub');
+
+    if (data.status === 'called') {
+      badge.className = 'tracker-badge called';
+      badge.textContent = '🔔 آپ کی باری آ گئی!';
+      sub.textContent = 'ابھی آئیں!';
+      clearInterval(trackerTimer);
+      if (navigator.vibrate) navigator.vibrate([200,100,200,100,400]);
+    } else if (data.status === 'completed') {
+      badge.className = 'tracker-badge done';
+      badge.textContent = '✅ مکمل';
+      sub.textContent = 'آپ کی سروس ہو گئی';
+      clearInterval(trackerTimer);
+    } else if (data.status === 'waiting') {
+      badge.className = 'tracker-badge waiting';
+      badge.textContent = `انتظار — نمبر ${data.position}`;
+      sub.textContent = `آگے ${data.people_ahead} لوگ · ~${data.estimated_wait} منٹ`;
+      document.getElementById('r-pos').textContent     = data.position;
+      document.getElementById('r-wait-val').textContent = data.estimated_wait + 'm';
+    }
+  } catch(e) {}
+}
+
+// ── FILTERS ────────────────────────────────────────────────
+function filterCat(cat) {
+  activeCategory = cat;
+  document.querySelectorAll('.cat-chip').forEach(c => c.classList.toggle('active', c.dataset.cat === cat));
+  applyFilters();
+}
+
+function filterArea(area) {
+  activeArea = area;
+  document.querySelectorAll('.area-chip').forEach(c => c.classList.toggle('active', c.dataset.area === area));
+  applyFilters();
+}
+
+function onSearch() {
+  searchQuery = document.getElementById('search-input').value.trim().toLowerCase();
+  applyFilters();
+}
+
+function applyFilters() {
+  filteredShops = allShops.filter(s => {
+    const catOk  = !activeCategory || s.category === activeCategory;
+    const areaOk = !activeArea     || (s.area||'').toLowerCase().includes(activeArea.toLowerCase());
+    const srchOk = !searchQuery    ||
+      s.name.toLowerCase().includes(searchQuery) ||
+      (s.area||'').toLowerCase().includes(searchQuery) ||
+      (s.category||'').toLowerCase().includes(searchQuery);
+    return catOk && areaOk && srchOk;
+  });
+  renderShops();
+}
+
+function renderAreaChips(areas) {
+  if (!areas.length) return;
+  const row = document.getElementById('area-row');
+  row.style.display = 'flex';
+  row.innerHTML = `<button class="area-chip active" onclick="filterArea('')" data-area="">سب علاقے</button>` +
+    areas.map(a => `<button class="area-chip" onclick="filterArea('${esc(a)}')" data-area="${esc(a)}">${esc(a)}</button>`).join('');
+}
+
+// ── HELPERS ────────────────────────────────────────────────
+function catIcon(cat) {
+  const icons = {barber:'✂️',clinic:'🏥',pharmacy:'💊',bank:'🏦',govt:'🏛️',tailor:'🧵'};
+  return icons[cat] || '🏪';
+}
+
+function catLabel(cat) {
+  const labels = {barber:'حجام',clinic:'کلینک',pharmacy:'فارمیسی',bank:'بینک',govt:'سرکاری',tailor:'درزی'};
+  return labels[cat] || cat || 'دیگر';
+}
+
+function esc(s) {
+  return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Enter key on name field
+document.getElementById('c-name').addEventListener('keydown', e => { if(e.key==='Enter') submitJoin(); });
+
+// ── BOOT ───────────────────────────────────────────────────
+loadShops();
+// Refresh every 60s in background
+setInterval(() => { if (!myTokenId) loadShops(); }, 60000);
+</script>
+</body>
+</html>
