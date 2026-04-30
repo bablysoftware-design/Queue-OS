@@ -673,8 +673,9 @@ async function changePin() {
 // ── Boot ───────────────────────────────────────────────────
 (function boot(){
   if('serviceWorker'in navigator)navigator.serviceWorker.register('/service-worker.js').catch(()=>{});
-  const id=localStorage.getItem('saf_shop_id'),name=localStorage.getItem('saf_shop_name'),open=localStorage.getItem('saf_is_open')==='1';
-  if(id&&name){state.shopId=id;state.shopName=name;state.isOpen=open;showDashboard();}
+  const id=localStorage.getItem('saf_shop_id'),name=localStorage.getItem('saf_shop_name'),open=localStorage.getItem('saf_is_open')==='1',tok=localStorage.getItem('saf_session_token');
+  if(id&&name&&tok){state.shopId=id;state.shopName=name;state.isOpen=open;state.sessionToken=tok;showDashboard();}
+  else{localStorage.clear();}
   document.getElementById('login-pin').addEventListener('keydown',e=>{if(e.key==='Enter')handleLogin();});
 })();
 </script>
