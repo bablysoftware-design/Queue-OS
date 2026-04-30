@@ -26,6 +26,13 @@ import { createClient }                               from './utils/db.js';
 import { preflight, notFound }                        from './utils/response.js';
 
 const ROUTES = [
+  // Health check
+  { method: 'GET',    path: '/ping',    handler: async (req, env) => {
+      const { ok } = await import('./utils/response.js');
+      const token = req.headers.get('x-session-token');
+      return ok({ pong: true, token_received: !!token, token_preview: token?.slice(0,20) || null });
+  }},
+
   // WhatsApp
   { method: 'GET',    path: '/webhook',                         handler: handleVerify },
   { method: 'POST',   path: '/webhook',                         handler: handleMessage },
