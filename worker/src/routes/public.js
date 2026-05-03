@@ -7,6 +7,7 @@
 
 import { createClient }  from '../utils/db.js';
 import { createToken }   from '../services/tokenService.js';
+import { checkSubscriptionValid } from '../services/subscriptionService.js';
 import { sanitizeParam, sanitizeSearch, sanitizeName } from '../utils/sanitize.js';
 import { ok, badRequest, notFound, serverError }       from '../utils/response.js';
 
@@ -129,6 +130,30 @@ export async function joinQueue(request, env) {
 
     const phone = customer_phone || `web-${Date.now()}`;
     const db    = createClient(env);
+
+    // ── Subscription check ──────────────────────────────────
+    const subCheck = await checkSubscriptionValid(db, shop_id);
+    if (!subCheck.valid) {
+      return badRequest('Aapka free trial khatam ho gaya hai. Continue karne ke liye plan khareed Lein. Shukria!');
+    }
+
+    // ── Shop details (open check + paid mode) ───────────────
+    const shopRows = await db.select('shops',
+      `select=id,name,is_open,is_active,token_mode,token_price&id=eq.${shop_id}&limit=1`
+    );
+    if (!shopRows?.length) return notFound('دکان نہیں ملی');
+    const shop = shopRows[0];
+    if (!shop.is_active) return badRequest('یہ دکان فعال نہیں ہے');
+    if (!shop.is_open)   return badRequest('دکان ابھی بند ہے');
+
+    // ── Paid token check ────────────────────────────────────
+    if (shop.token_mode === 'paid') {
+      return badRequest(
+        `Token lene ke liye payment zaruri hai. Amount: Rs ${shop.token_price}. ` +
+        `Payment screenshot apne naam aur phone number ke saath bhejein.`
+      );
+    }
+
     const result = await createToken(db, shop_id, phone, customer_name, env);
 
     return ok({

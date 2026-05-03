@@ -23,6 +23,8 @@ import { getPublicShops, getPublicShop,
          publicCancelToken }                          from './routes/public.js';
 import { getShareLink, getShopBySlug,
          getShopQR, getRelatedShops }                 from './routes/share.js';
+import { submitPaymentRequest, listPaymentRequests,
+         approvePaymentRequest, rejectPaymentRequest } from './routes/payments_manual.js';
 import { expireStaleSubscriptions }                   from './services/subscriptionService.js';
 import { resetDailyTokens }                           from './services/tokenService.js';
 import { createClient }                               from './utils/db.js';
@@ -52,10 +54,16 @@ const ROUTES = [
   { method: 'POST',   path: '/public/cancel',                   handler: publicCancelToken },
 
   // Share / QR / Slug (no auth) — specific paths before :id params
-  { method: 'GET',    path: '/shops/related',                   handler: getRelatedShops },
-  { method: 'GET',    path: '/shops/by-slug/:slug',             handler: getShopBySlug },
-  { method: 'GET',    path: '/shops/:id/share-link',            handler: getShareLink },
-  { method: 'GET',    path: '/shops/:id/qr',                    handler: getShopQR },
+  { method: 'GET',    path: '/shops/related',                            handler: getRelatedShops },
+  { method: 'GET',    path: '/shops/by-slug/:slug',                      handler: getShopBySlug },
+  { method: 'GET',    path: '/shops/:id/share-link',                     handler: getShareLink },
+  { method: 'GET',    path: '/shops/:id/qr',                             handler: getShopQR },
+
+  // Manual payment (paid token mode)
+  { method: 'POST',   path: '/public/payment-request',                   handler: submitPaymentRequest },
+  { method: 'GET',    path: '/admin/payment-requests',                   handler: listPaymentRequests },
+  { method: 'POST',   path: '/admin/payment-requests/:id/approve',       handler: approvePaymentRequest },
+  { method: 'POST',   path: '/admin/payment-requests/:id/reject',        handler: rejectPaymentRequest },
 
   // Tokens (auth required)
   { method: 'POST',   path: '/tokens',                          handler: createTokenHandler },
