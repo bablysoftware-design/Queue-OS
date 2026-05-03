@@ -3,7 +3,7 @@
 // Handles: caching + push notifications + notification actions
 // ============================================================
 
-const CACHE   = 'saf-queue-v6';
+const CACHE   = 'saf-queue-v7';
 const STATIC  = ['/', '/index.html', '/admin.html', '/customer.html', '/manifest.json', '/i18n.js', '/icons/icon-192.png', '/icons/icon-512.png'];
 const WORKER_HOST = 'saf-queue-worker.byker-software.workers.dev';
 
@@ -15,6 +15,29 @@ self.addEventListener('fetch', e => {
   // Never intercept API calls or non-http
   if (url.hostname === WORKER_HOST || url.hostname.includes('supabase') || !url.protocol.startsWith('http')) return;
   if (e.request.method !== 'GET') return;
+
+  // For HTML page navigations: network-first so ?shop= params and fresh pages always work
+  const isHTMLNav = e.request.mode === 'navigate' ||
+    (e.request.headers.get('accept') || '').includes('text/html');
+
+  if (isHTMLNav) {
+    e.respondWith(
+      fetch(e.request).then(res => {
+        if (res.ok && url.origin === self.location.origin) {
+          caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+        }
+        return res;
+      }).catch(() => {
+        // Network failed — serve from cache if available, else index
+        return caches.match(e.request)
+          .then(cached => cached || caches.match(url.pathname))
+          .then(cached => cached || caches.match('/index.html'));
+      })
+    );
+    return;
+  }
+
+  // For all other assets: cache-first
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
@@ -24,7 +47,7 @@ self.addEventListener('fetch', e => {
         }
         return res;
       });
-    }).catch(() => caches.match('/index.html'))
+    }).catch(() => null)
   );
 });
 

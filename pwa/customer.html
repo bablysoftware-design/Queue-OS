@@ -808,6 +808,10 @@ async function loadShops() {
     const res  = await fetch(url);
     const data = await res.json();
 
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || `HTTP ${res.status}`);
+    }
+
     allShops      = data.data?.shops ?? [];
     filteredShops = allShops;
 
@@ -945,6 +949,17 @@ function buildShopCard(s, i) {
 // ── OPEN SHOP MODAL ────────────────────────────────────────
 async function openShop(shopId) {
   selectedShop = allShops.find(s => s.id === shopId);
+
+  // If shop not in allShops yet (e.g. arrived via shared link before list loaded),
+  // fetch it directly from the public API
+  if (!selectedShop) {
+    try {
+      const res = await fetch(`${WORKER}/public/shop/${shopId}`);
+      const { data } = await res.json();
+      if (data) selectedShop = data;
+    } catch(e) {}
+  }
+
   if (!selectedShop) return;
 
   // Reset modal

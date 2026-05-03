@@ -275,7 +275,15 @@ async function loadShops() {
     renderShops();
     document.getElementById('last-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
   } catch(e) {
-    document.getElementById('shop-list').innerHTML = `<div class="empty-row">Error: ${e.message}</div>`;
+    if (e.message?.includes('denied') || e.message?.includes('Unauthorized') || e.message?.includes('401')) {
+      localStorage.removeItem('admin_secret');
+      SECRET = '';
+      document.getElementById('login-screen').style.display = 'flex';
+      document.getElementById('dash').style.display         = 'none';
+      document.getElementById('login-err').textContent      = 'Session expired. Please login again.';
+    } else {
+      document.getElementById('shop-list').innerHTML = `<div class="empty-row">Error: ${e.message}</div>`;
+    }
   }
 }
 
@@ -430,9 +438,21 @@ document.getElementById('secret-input').addEventListener('keydown', e => { if (e
   const saved = localStorage.getItem('admin_secret');
   if (saved) {
     SECRET = saved;
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('dash').style.display         = 'block';
-    loadAll();
+    // Validate the saved secret before hiding login screen
+    api('GET', '/admin/shops')
+      .then(() => {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('dash').style.display         = 'block';
+        loadAll();
+      })
+      .catch(() => {
+        // Secret invalid or expired — clear it and show login
+        localStorage.removeItem('admin_secret');
+        SECRET = '';
+        document.getElementById('login-screen').style.display = 'flex';
+        document.getElementById('dash').style.display         = 'none';
+        document.getElementById('login-err').textContent      = 'Session expired. Please login again.';
+      });
   }
 })();
 </script>
