@@ -22,7 +22,7 @@ export async function createTokenHandler(request, env) {
     if (!isValidUUID(shop_id))   return badRequest('Invalid shop_id');
     if (auth.shop_id !== shop_id) return badRequest('Unauthorized for this shop');
 
-    const result = await createToken(db, shop_id, customer_phone || `walkin-${Date.now()}`, customer_name);
+    const result = await createToken(db, shop_id, customer_phone || `walkin-${Date.now()}`, customer_name, env);
     return ok(result);
   } catch (err) { return badRequest(err.message); }
 }

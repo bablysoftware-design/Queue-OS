@@ -129,7 +129,7 @@ export async function joinQueue(request, env) {
 
     const phone = customer_phone || `web-${Date.now()}`;
     const db    = createClient(env);
-    const result = await createToken(db, shop_id, phone, customer_name);
+    const result = await createToken(db, shop_id, phone, customer_name, env);
 
     return ok({
       token_number:   result.token.token_number,
