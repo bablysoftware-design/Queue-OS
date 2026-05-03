@@ -438,21 +438,24 @@ document.getElementById('secret-input').addEventListener('keydown', e => { if (e
   const saved = localStorage.getItem('admin_secret');
   if (saved) {
     SECRET = saved;
-    // Validate the saved secret before hiding login screen
     api('GET', '/admin/shops')
       .then(() => {
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('dash').style.display         = 'block';
         loadAll();
       })
-      .catch(() => {
-        // Secret invalid or expired — clear it and show login
+      .catch(err => {
         localStorage.removeItem('admin_secret');
         SECRET = '';
         document.getElementById('login-screen').style.display = 'flex';
         document.getElementById('dash').style.display         = 'none';
-        document.getElementById('login-err').textContent      = 'Session expired. Please login again.';
+        document.getElementById('login-err').textContent =
+          err.message?.includes('denied') || err.message?.includes('Unauthorized')
+            ? 'Session expired. Please login again.'
+            : 'Could not connect: ' + (err.message || 'unknown error');
       });
+  } else {
+    document.getElementById('login-screen').style.display = 'flex';
   }
 })();
 </script>
