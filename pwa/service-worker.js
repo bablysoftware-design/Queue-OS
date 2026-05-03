@@ -3,7 +3,7 @@
 // Handles: caching + push notifications + notification actions
 // ============================================================
 
-const CACHE   = 'saf-queue-v7';
+const CACHE   = 'saf-queue-v8';
 const STATIC  = ['/', '/index.html', '/admin.html', '/customer.html', '/manifest.json', '/i18n.js', '/icons/icon-192.png', '/icons/icon-512.png'];
 const WORKER_HOST = 'saf-queue-worker.byker-software.workers.dev';
 
@@ -12,42 +12,40 @@ self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(keys => 
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
-  // Never intercept API calls or non-http
   if (url.hostname === WORKER_HOST || url.hostname.includes('supabase') || !url.protocol.startsWith('http')) return;
   if (e.request.method !== 'GET') return;
 
-  // For HTML page navigations: network-first so ?shop= params and fresh pages always work
   const isHTMLNav = e.request.mode === 'navigate' ||
     (e.request.headers.get('accept') || '').includes('text/html');
 
   if (isHTMLNav) {
+    // Network-first for HTML — always fetch fresh, fall back to cache offline
     e.respondWith(
       fetch(e.request).then(res => {
         if (res.ok && url.origin === self.location.origin) {
-          caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+          const toCache = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, toCache));
         }
         return res;
-      }).catch(() => {
-        // Network failed — serve from cache if available, else index
-        return caches.match(e.request)
-          .then(cached => cached || caches.match(url.pathname))
-          .then(cached => cached || caches.match('/index.html'));
-      })
+      }).catch(() =>
+        caches.match(url.pathname).then(r => r || caches.match('/index.html'))
+      )
     );
     return;
   }
 
-  // For all other assets: cache-first
+  // Cache-first for all other assets (JS, CSS, icons, fonts)
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
       return fetch(e.request).then(res => {
         if (res.ok && url.origin === self.location.origin) {
-          caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+          const toCache = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, toCache));
         }
         return res;
-      });
-    }).catch(() => null)
+      }).catch(() => new Response('', { status: 503 }));
+    })
   );
 });
 
