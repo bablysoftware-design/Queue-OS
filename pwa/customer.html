@@ -1049,6 +1049,11 @@ async function submitJoin() {
     myTokenId  = data.token_id;
     myTokenNum = data.token_number;
 
+    // Persist so tracker survives page refresh
+    localStorage.setItem('saf_token_id',   data.token_id);
+    localStorage.setItem('saf_token_num',  String(data.token_number));
+    localStorage.setItem('saf_token_shop', JSON.stringify(selectedShop));
+
     // Show result
     document.getElementById('join-form-wrap').style.display = 'none';
     document.getElementById('result-wrap').style.display    = 'block';
@@ -1108,8 +1113,7 @@ async function cancelMyToken() {
     const data = await res.json();
     if (data.success) {
       clearInterval(trackerTimer);
-      localStorage.removeItem('saf_token_id');
-      localStorage.removeItem('saf_token_num');
+      clearTokenStorage();
       myTokenId = null; myTokenNum = null;
       const badge = document.getElementById('tracker-badge');
       const sub   = document.getElementById('tracker-sub');
@@ -1165,37 +1169,52 @@ function urlBase64ToUint8Array(base64String) {
   return output;
 }
 
-// ── ALARM SOUND (Web Audio API — no file needed) ──────────────
+// ── ALARM SOUND (Web Audio API) ──────────────────────────────
 function playAlarm(type = 'called') {
   try {
-    const ctx  = new (window.AudioContext || window.webkitAudioContext)();
-    const gain = ctx.createGain();
-    gain.connect(ctx.destination);
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
 
-    const patterns = {
-      called:   [{ f:880, d:0.3 }, { f:0, d:0.1 }, { f:880, d:0.3 }, { f:0, d:0.1 }, { f:1100, d:0.5 }],
-      position: [{ f:660, d:0.2 }, { f:0, d:0.1 }, { f:880, d:0.3 }],
-      ready:    [{ f:440, d:0.15 }, { f:550, d:0.15 }, { f:660, d:0.2 }],
-    };
+    function beep(freq, startTime, duration, vol, wave) {
+      vol  = vol  || 0.7;
+      wave = wave || 'square';
+      var osc  = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = wave;
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(vol, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(startTime);
+      osc.stop(startTime + duration + 0.01);
+    }
 
-    let time = ctx.currentTime;
-    const pattern = patterns[type] || patterns.ready;
+    var t = ctx.currentTime;
 
-    pattern.forEach((note) => {
-      if (note.f > 0) {
-        const osc  = ctx.createOscillator();
-        const g    = ctx.createGain();
-        osc.type   = 'sine';
-        osc.frequency.value = note.f;
-        osc.connect(g);
-        g.connect(ctx.destination);
-        g.gain.setValueAtTime(0.4, time);
-        g.gain.exponentialRampToValueAtTime(0.001, time + note.d);
-        osc.start(time);
-        osc.stop(time + note.d);
-      }
-      time += note.d + 0.02;
-    });
+    if (type === 'called') {
+      // URGENT loud alarm — double burst
+      beep(880,  t + 0.00, 0.18, 0.9, 'square');
+      beep(1100, t + 0.22, 0.18, 0.9, 'square');
+      beep(880,  t + 0.44, 0.18, 0.9, 'square');
+      beep(1100, t + 0.66, 0.18, 0.9, 'square');
+      beep(1320, t + 0.88, 0.50, 1.0, 'square');
+      beep(880,  t + 1.50, 0.18, 0.9, 'square');
+      beep(1100, t + 1.72, 0.18, 0.9, 'square');
+      beep(1320, t + 1.94, 0.60, 1.0, 'square');
+      if (navigator.vibrate) navigator.vibrate([400,150,400,150,600,200,400,150,600]);
+    } else if (type === 'near') {
+      // 2-tone gentle warning — almost your turn
+      beep(660, t + 0.00, 0.20, 0.6, 'sine');
+      beep(880, t + 0.25, 0.20, 0.6, 'sine');
+      beep(660, t + 0.55, 0.20, 0.6, 'sine');
+      beep(880, t + 0.80, 0.30, 0.7, 'sine');
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+    } else {
+      // ready / join confirmation — soft ascending
+      beep(440, t + 0.00, 0.15, 0.5, 'sine');
+      beep(550, t + 0.18, 0.15, 0.5, 'sine');
+      beep(660, t + 0.36, 0.20, 0.5, 'sine');
+    }
   } catch (e) {}
 }
 
@@ -1244,69 +1263,117 @@ function updateCountdown(minutes, position) {
 }
 
 // ── LIVE TRACKER ───────────────────────────────────────────
+let _nearAlarmFired   = false;
+let _calledAlarmFired = false;
+
 function startTracker() {
+  _nearAlarmFired   = false;
+  _calledAlarmFired = false;
+  if (trackerTimer) clearInterval(trackerTimer);
   updateTracker();
-  trackerTimer = setInterval(updateTracker, 15000);
+  trackerTimer = setInterval(updateTracker, 10000);
 }
 
 async function updateTracker() {
   if (!myTokenId || !selectedShop) return;
   try {
     const res  = await fetch(`${WORKER}/public/position?shop_id=${selectedShop.id}&token_id=${myTokenId}`);
-    const {data} = await res.json();
-    const badge = document.getElementById('tracker-badge');
-    const sub   = document.getElementById('tracker-sub');
+    const json = await res.json();
+    const data = json.data;
+    if (!data) return;
+
+    const badge  = document.getElementById('tracker-badge');
+    const sub    = document.getElementById('tracker-sub');
+    const posEl  = document.getElementById('r-pos');
+    const waitEl = document.getElementById('r-wait-val');
 
     if (data.status === 'called') {
-      badge.className = 'tracker-badge called';
-      badge.textContent = '🔔 It\'s your turn!';
-      sub.textContent = 'Please come to the counter now!';
+      badge.className   = 'tracker-badge called';
+      badge.textContent = '🔔 آپ کی باری آ گئی!';
+      sub.textContent   = 'ابھی کاؤنٹر پر آئیں!';
+      if (posEl)  posEl.textContent  = '🎯';
+      if (waitEl) waitEl.textContent = '0 min';
       clearInterval(trackerTimer);
-      if (navigator.vibrate) navigator.vibrate([500,200,500,200,500,200,1000]);
-      playAlarm('called');
-      // Show grace countdown (2 minutes)
-      const graceSecs = 120;
+      if (!_calledAlarmFired) {
+        _calledAlarmFired = true;
+        playAlarm('called');
+        setTimeout(() => playAlarm('called'), 8000);
+        if (Notification.permission === 'granted') {
+          new Notification('آپ کی باری آ گئی! 🔔', { body: 'ابھی کاؤنٹر پر آئیں!', icon: '/icons/icon-192.png', tag: 'saf-called' });
+        }
+      }
       const graceEl = document.getElementById('grace-timer');
-      if (graceEl) {
+      if (graceEl && graceEl.style.display === 'none') {
         graceEl.style.display = 'block';
-        let rem = graceSecs;
+        let rem = 120;
         const gi = setInterval(() => {
           rem--;
           const m = Math.floor(rem/60), s = rem%60;
-          graceEl.querySelector('.grace-time').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+          const gt = graceEl.querySelector('.grace-time');
+          if (gt) gt.textContent = m + ':' + String(s).padStart(2,'0');
           if (rem <= 30) graceEl.style.borderColor = 'var(--red)';
-          if (rem <= 0) { clearInterval(gi); graceEl.querySelector('.grace-time').textContent = '0:00'; }
+          if (rem <= 0) clearInterval(gi);
         }, 1000);
       }
+
     } else if (data.status === 'shop_closed') {
-      badge.className = 'tracker-badge done';
+      badge.className   = 'tracker-badge done';
       badge.textContent = '🔒 دکان بند ہو گئی';
-      sub.textContent = 'آپ کا ٹوکن منسوخ ہو گیا';
+      sub.textContent   = 'آپ کا ٹوکن منسوخ ہو گیا';
       clearInterval(trackerTimer);
-      localStorage.removeItem('saf_token_id');
-      document.getElementById('cancel-token-btn') && (document.getElementById('cancel-token-btn').style.display='none');
-    } else if (data.status === 'cancelled') {
-      badge.className = 'tracker-badge done';
+      clearTokenStorage();
+      const cb = document.getElementById('cancel-token-btn');
+      if (cb) cb.style.display = 'none';
+
+    } else if (['cancelled','no_show','expired'].includes(data.status)) {
+      badge.className   = 'tracker-badge done';
       badge.textContent = '❌ منسوخ';
-      sub.textContent = 'آپ کا ٹوکن منسوخ ہو گیا';
+      sub.textContent   = 'آپ کا ٹوکن منسوخ ہو گیا';
       clearInterval(trackerTimer);
-      localStorage.removeItem('saf_token_id');
+      clearTokenStorage();
+
     } else if (data.status === 'completed') {
-      badge.className = 'tracker-badge done';
+      badge.className   = 'tracker-badge done';
       badge.textContent = '✅ مکمل';
-      sub.textContent = 'آپ کی سروس ہو گئی';
+      sub.textContent   = 'آپ کی سروس ہو گئی';
       clearInterval(trackerTimer);
-      localStorage.removeItem('saf_token_id');
+      clearTokenStorage();
+
     } else if (data.status === 'waiting') {
-      badge.className = 'tracker-badge waiting';
-      badge.textContent = `Waiting — Position #${data.position}`;
-      sub.textContent = `${data.people_ahead} people ahead · ~${data.estimated_wait} min`;
-      document.getElementById('r-pos').textContent      = data.position;
-      document.getElementById('r-wait-val').textContent = data.estimated_wait + ' min';
-      // Update countdown ring
-      updateCountdown(data.estimated_wait, data.position);
+      const pos   = data.position       || 0;
+      const ahead = data.people_ahead   || 0;
+      const wait  = data.estimated_wait || 0;
+
+      badge.className   = 'tracker-badge waiting';
+      badge.textContent = 'انتظار — نمبر #' + pos;
+      sub.textContent   = ahead + ' لوگ آگے · ~' + wait + ' منٹ • 10 سیکنڈ میں اپڈیٹ';
+      if (posEl)  posEl.textContent  = pos;
+      if (waitEl) waitEl.textContent = wait + ' min';
+      updateCountdown(wait, pos);
+
+      // Near alarm — fire once when ≤3 people ahead
+      if (ahead <= 3 && ahead > 0 && !_nearAlarmFired) {
+        _nearAlarmFired = true;
+        playAlarm('near');
+        if (Notification.permission === 'granted') {
+          new Notification('آپ کی باری قریب ہے! 🔔', { body: 'صرف ' + ahead + ' لوگ آگے ہیں — تیار رہیں!', icon: '/icons/icon-192.png', tag: 'saf-near' });
+        }
+      }
+      // Next-in-line extra alert
+      if (pos === 1 && !_calledAlarmFired) {
+        playAlarm('near');
+        if (Notification.permission === 'granted') {
+          new Notification('آپ اگلے ہیں! ⚡', { body: 'آپ قطار میں پہلے نمبر پر ہیں!', icon: '/icons/icon-192.png', tag: 'saf-next' });
+        }
+      }
     }
-  } catch(e) {}
+  } catch(e) { console.error('tracker:', e); }
+}
+
+function clearTokenStorage() {
+  localStorage.removeItem('saf_token_id');
+  localStorage.removeItem('saf_token_num');
+  localStorage.removeItem('saf_token_shop');
 }
 
 // ── FILTERS ────────────────────────────────────────────────
@@ -1368,6 +1435,32 @@ document.getElementById('c-name').addEventListener('keydown', e => { if(e.key===
 
 // ── BOOT ───────────────────────────────────────────────────
 (async function boot() {
+  // Restore active token from previous session
+  const savedTokenId  = localStorage.getItem('saf_token_id');
+  const savedTokenNum = localStorage.getItem('saf_token_num');
+  const savedShop     = localStorage.getItem('saf_token_shop');
+  if (savedTokenId && savedShop) {
+    try {
+      myTokenId    = savedTokenId;
+      myTokenNum   = parseInt(savedTokenNum) || null;
+      selectedShop = JSON.parse(savedShop);
+      // Verify token is still active before showing tracker
+      const res  = await fetch(`${WORKER}/public/position?shop_id=${selectedShop.id}&token_id=${myTokenId}`);
+      const json = await res.json();
+      const st   = json.data?.status;
+      if (st && !['completed','cancelled','expired','no_show','shop_closed'].includes(st)) {
+        // Token still active — restore tracker view
+        document.getElementById('r-num').textContent = myTokenNum || '?';
+        openShop(selectedShop.id);
+        startTracker();
+        // Request notification permission silently
+        if (Notification.permission === 'default') Notification.requestPermission();
+      } else {
+        clearTokenStorage();
+      }
+    } catch(e) { clearTokenStorage(); }
+  }
+
   await loadShops();
 
   // If ?shop= param: load featured shop AFTER all shops are loaded
