@@ -21,6 +21,8 @@ import { subscribePush, unsubscribePush, requestDelay } from './routes/push.js';
 import { getPublicShops, getPublicShop,
          joinQueue, checkPosition,
          publicCancelToken }                          from './routes/public.js';
+import { getShareLink, getShopBySlug,
+         getShopQR, getRelatedShops }                 from './routes/share.js';
 import { expireStaleSubscriptions }                   from './services/subscriptionService.js';
 import { resetDailyTokens }                           from './services/tokenService.js';
 import { createClient }                               from './utils/db.js';
@@ -47,8 +49,13 @@ const ROUTES = [
   { method: 'POST',   path: '/push/subscribe',                   handler: subscribePush },
   { method: 'DELETE', path: '/push/unsubscribe',                 handler: unsubscribePush },
   { method: 'POST',   path: '/push/delay',                       handler: requestDelay },
-
   { method: 'POST',   path: '/public/cancel',                   handler: publicCancelToken },
+
+  // Share / QR / Slug (no auth) — specific paths before :id params
+  { method: 'GET',    path: '/shops/related',                   handler: getRelatedShops },
+  { method: 'GET',    path: '/shops/by-slug/:slug',             handler: getShopBySlug },
+  { method: 'GET',    path: '/shops/:id/share-link',            handler: getShareLink },
+  { method: 'GET',    path: '/shops/:id/qr',                    handler: getShopQR },
 
   // Tokens (auth required)
   { method: 'POST',   path: '/tokens',                          handler: createTokenHandler },
