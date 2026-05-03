@@ -1097,7 +1097,7 @@ async function enableNotifications() {
   }
 }
 
-function cancelMyToken() {
+async function cancelMyToken() {
   if (!myTokenId || !selectedShop) return;
   if (!confirm('کیا آپ واقعی اپنا ٹوکن منسوخ کرنا چاہتے ہیں؟')) return;
   try {
