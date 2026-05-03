@@ -1,0 +1,5 @@
+# Route /s/:slug → customer.html?slug=:slug
+/s/:slug  /customer.html?slug=:slug  200
+
+# SPA fallback
+/*        /index.html                 200

@@ -514,6 +514,12 @@ body{font-family:'Noto Nastaliq Urdu',serif;background:var(--void);color:var(--t
       <div class="empty-icon">🔍</div>
       <div class="empty-txt">کوئی دکان نہیں ملی</div>
     </div>
+
+    <!-- Related shops — shown when arriving via shared link -->
+    <div id="related-shops-section" style="display:none;margin-top:24px;padding:0 4px">
+      <div class="sec-lbl" style="margin-bottom:10px">🏪 قریبی دکانیں</div>
+      <div id="related-shops-list" class="shop-list"></div>
+    </div>
   </div>
 
 </div>
@@ -625,17 +631,19 @@ resize();pts=Array.from({length:70},mkPt);draw();window.addEventListener('resize
 // ── State ──────────────────────────────────────────────────
 const WORKER = 'https://saf-queue-worker.byker-software.workers.dev';
 const params  = new URLSearchParams(window.location.search);
-const HIGHLIGHT_SHOP = params.get('shop'); // if shared link
+const HIGHLIGHT_SHOP = params.get('shop'); // shared link via ?shop=id
+const HIGHLIGHT_SLUG = params.get('slug'); // shared link via /s/slug
 
-let allShops      = [];
-let filteredShops = [];
-let activeCategory = '';
-let activeArea     = '';
-let searchQuery    = '';
-let selectedShop   = null;
-let myTokenId      = null;
-let myTokenNum     = null;
-let trackerTimer   = null;
+let allShops        = [];
+let filteredShops   = [];
+let activeCategory  = '';
+let activeArea      = '';
+let searchQuery     = '';
+let selectedShop    = null;
+let myTokenId       = null;
+let myTokenNum      = null;
+let trackerTimer    = null;
+let _resolvedShopId = null; // slug resolved to shop id
 
 
 // ── FEATURED SHOP (poster scan mode) ──────────────────────
@@ -1376,6 +1384,33 @@ function clearTokenStorage() {
   localStorage.removeItem('saf_token_shop');
 }
 
+// ── RELATED SHOPS (Growth Loop) ────────────────────────────
+async function loadRelatedShops(shopId) {
+  try {
+    const res  = await fetch(`${WORKER}/shops/related?shop_id=${shopId}`);
+    const json = await res.json();
+    const shops = json.data?.shops || [];
+    if (!shops.length) return;
+
+    const container = document.getElementById('related-shops-section');
+    if (!container) return;
+
+    container.style.display = 'block';
+    const list = document.getElementById('related-shops-list');
+    list.innerHTML = shops.map(s => `
+      <div class="shop-card" onclick="openShop('${s.id}')" style="cursor:pointer">
+        <div style="font-weight:700;font-size:14px;color:var(--gold)">${s.name}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">${s.category || ''} · ${s.area || ''}</div>
+        <div style="margin-top:6px;display:flex;gap:8px;align-items:center">
+          <span style="font-size:11px;color:${s.is_open ? 'var(--green)' : 'var(--red)'}">
+            ${s.is_open ? '🟢 کھلی' : '🔴 بند'}
+          </span>
+          <span style="font-size:11px;color:var(--muted)">ٹوکن: ${s.current_token || 0}</span>
+        </div>
+      </div>`).join('');
+  } catch(e) {}
+}
+
 // ── FILTERS ────────────────────────────────────────────────
 function filterCat(cat) {
   activeCategory = cat;
@@ -1461,34 +1496,37 @@ document.getElementById('c-name').addEventListener('keydown', e => { if(e.key===
     } catch(e) { clearTokenStorage(); }
   }
 
+  // Resolve /s/slug → shop id
+  if (HIGHLIGHT_SLUG && !HIGHLIGHT_SHOP) {
+    try {
+      const res  = await fetch(`${WORKER}/shops/by-slug/${encodeURIComponent(HIGHLIGHT_SLUG)}`);
+      const json = await res.json();
+      if (json.data?.id) _resolvedShopId = json.data.id;
+    } catch(e) {}
+  }
+  const effectiveShop = _resolvedShopId || HIGHLIGHT_SHOP;
+
   await loadShops();
 
-  // If ?shop= param: load featured shop AFTER all shops are loaded
-  // so suggestions can be built from allShops
-  if (HIGHLIGHT_SHOP) {
-    await loadFeaturedShop(HIGHLIGHT_SHOP);
-
-    // Hide search/filter bar — not the primary focus in poster scan mode
-    // (keep visible but de-emphasize)
+  // If shop param or slug: load featured shop
+  if (effectiveShop) {
+    await loadFeaturedShop(effectiveShop);
     document.querySelector('.search-wrap').style.opacity = '0.7';
-
-    // Auto-open token sheet ONLY if shop is open
-    // (gives user a chance to see the featured hero first, then 1.5s pause)
     try {
-      const res    = await fetch(`${WORKER}/public/shop/${HIGHLIGHT_SHOP}`);
+      const res    = await fetch(`${WORKER}/public/shop/${effectiveShop}`);
       const {data} = await res.json();
-      if (data?.is_open) {
-        setTimeout(() => openShop(HIGHLIGHT_SHOP), 1500);
-      }
+      if (data?.is_open) setTimeout(() => openShop(effectiveShop), 1500);
     } catch(e) {}
+
+    // Load related shops (growth loop)
+    loadRelatedShops(effectiveShop);
   }
 
   // Refresh every 60s in background
   setInterval(async () => {
     if (!myTokenId) {
       await loadShops();
-      // Also refresh featured hero stats
-      if (HIGHLIGHT_SHOP) await loadFeaturedShop(HIGHLIGHT_SHOP);
+      if (effectiveShop) await loadFeaturedShop(effectiveShop);
     }
   }, 60000);
 })();

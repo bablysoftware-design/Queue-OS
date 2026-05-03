@@ -314,6 +314,8 @@ function renderShops() {
         <button class="btn-xs plan" onclick="openPlanModal('${s.id}','${esc(s.name)}')">Plan</button>
         <button class="btn-xs ${s.is_active ? 'off' : 'on'}" onclick="toggleActive('${s.id}',${!s.is_active})">${s.is_active ? 'Deactivate' : 'Activate'}</button>
         <button class="btn-xs link" onclick="copyLink('${s.id}','${esc(s.name)}')">🔗 Link</button>
+        <button class="btn-xs link" onclick="shareWhatsApp('${s.id}')" style="background:rgba(37,211,102,0.15);border-color:rgba(37,211,102,0.4);color:#25d366">💬 WA</button>
+        <button class="btn-xs link" onclick="downloadQR('${s.id}','${esc(s.name)}')" style="background:rgba(212,175,55,0.1);border-color:rgba(212,175,55,0.3)">📱 QR</button>
         <button class="btn-xs del" onclick="deleteShop('${s.id}','${esc(s.name)}')">Delete</button>
       </div>
     </div>`;
@@ -361,11 +363,33 @@ async function toggleActive(id, state) {
   } catch(e) { showToast(e.message, 'error'); }
 }
 
-function copyLink(id, name) {
-  const url = `${location.origin}/customer.html?shop=${id}`;
-  navigator.clipboard?.writeText(url)
-    .then(() => showToast(`✅ Link copied for ${name}`, 'success'))
-    .catch(() => prompt('Copy this link:', url));
+async function copyLink(id, name) {
+  try {
+    const { data } = await api('GET', `/shops/${id}/share-link`);
+    await navigator.clipboard?.writeText(data.link);
+    showToast(`✅ Link copied: ${data.link}`, 'success');
+  } catch(e) {
+    // Fallback to basic URL
+    const url = `${location.origin}/customer.html?shop=${id}`;
+    navigator.clipboard?.writeText(url).catch(() => prompt('Copy this link:', url));
+    showToast(`Link copied for ${name}`, 'success');
+  }
+}
+
+async function shareWhatsApp(id) {
+  try {
+    const { data } = await api('GET', `/shops/${id}/share-link`);
+    window.open(data.whatsapp_url, '_blank');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function downloadQR(id, name) {
+  try {
+    const { data } = await api('GET', `/shops/${id}/qr`);
+    // Open QR in new tab so user can save it
+    window.open(data.qr_url, '_blank');
+    showToast(`QR code opened for ${name}`, 'success');
+  } catch(e) { showToast(e.message, 'error'); }
 }
 
 async function deleteShop(id, name) {
