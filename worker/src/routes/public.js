@@ -37,9 +37,13 @@ export async function getPublicShops(request, env) {
         p_limit:    limit,
         p_offset:   offset,
       });
-      shops = result?.shops || [];
-      areas = result?.areas || [];
-      total = result?.total || shops.length;
+      // Supabase may return the JSON as-is or wrapped in an array
+      const r = Array.isArray(result) ? result[0] : result;
+      shops = r?.shops || [];
+      areas = r?.areas || [];
+      total = r?.total || shops.length;
+      // Ensure shops is always an array (not null)
+      if (!Array.isArray(shops)) shops = [];
     } catch {
       // Fallback: direct query if RPC not yet created
       let query = `is_active=eq.true&select=id,name,category,area,address,description,opening_time,closing_time,is_open,current_token,avg_service_time_mins&order=is_open.desc,name.asc&limit=${limit}&offset=${offset}`;
@@ -78,7 +82,7 @@ export async function getPublicShops(request, env) {
     }
 
     return ok({ shops, areas, total, limit, offset });
-  } catch (err) { return serverError(err.message); }
+  } catch (err) { return serverError(`shops: ${err.message}`); }
 }
 
 /** GET /public/shop/:id — single shop with hours, address (FIX #18, #19) */
