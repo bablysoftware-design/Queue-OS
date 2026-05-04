@@ -612,6 +612,14 @@ body{font-family:'Noto Nastaliq Urdu',serif;background:var(--void);color:var(--t
       </div>
 
       <button class="btn-gold" onclick="closeModal(true)">Got it — Back to List</button>
+
+      <!-- Share after join — one tap -->
+      <div id="share-after-join" style="display:none;margin-top:14px;background:rgba(37,211,102,0.07);border:1px solid rgba(37,211,102,0.25);border-radius:14px;padding:14px 16px;text-align:center">
+        <div style="font-size:13px;font-weight:600;color:#25d366;margin-bottom:8px">دوستوں کو بھی بتائیں 👇</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px">وہ بھی گھر سے ٹوکن لے سکتے ہیں</div>
+        <button onclick="shareShopLink()" style="width:100%;padding:10px;border:none;border-radius:10px;background:#25d366;color:#fff;font-weight:700;font-size:14px;cursor:pointer">💬 واٹس ایپ پر شیئر کریں</button>
+      </div>
+
       <button id="cancel-token-btn" onclick="cancelMyToken()" style="width:100%;margin-top:10px;padding:12px;border:1px solid rgba(248,113,113,0.3);border-radius:12px;background:rgba(248,113,113,0.06);color:var(--red);font-family:'Sora',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s">
         Cancel my token
       </button>
@@ -1075,6 +1083,11 @@ async function submitJoin() {
     if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
     playAlarm('ready');
 
+    // Show share prompt after 2s
+    setTimeout(() => {
+      document.getElementById('share-after-join').style.display = 'block';
+    }, 2000);
+
     startTracker();
 
     // Ask for push permission
@@ -1411,6 +1424,27 @@ async function loadRelatedShops(shopId) {
   } catch(e) {}
 }
 
+// ── SHARE SHOP LINK (one tap after join) ──────────────────
+async function shareShopLink() {
+  if (!selectedShop) return;
+  try {
+    const res  = await fetch(`${WORKER}/shops/${selectedShop.id}/share-link`);
+    const json = await res.json();
+    const msg  = json.data?.message;
+    const waUrl = json.data?.whatsapp_url;
+    if (waUrl) {
+      window.open(waUrl, '_blank');
+    } else if (navigator.share) {
+      await navigator.share({ title: selectedShop.name, url: json.data?.link || location.href });
+    }
+  } catch(e) {
+    // Fallback: share current URL
+    const link = `${location.origin}/s/${selectedShop.slug || ''}?shop=${selectedShop.id}`;
+    if (navigator.share) navigator.share({ title: selectedShop.name, url: link });
+    else window.open(`https://wa.me/?text=${encodeURIComponent(link)}`, '_blank');
+  }
+}
+
 // ── FILTERS ────────────────────────────────────────────────
 function filterCat(cat) {
   activeCategory = cat;
@@ -1479,17 +1513,20 @@ document.getElementById('c-name').addEventListener('keydown', e => { if(e.key===
       myTokenId    = savedTokenId;
       myTokenNum   = parseInt(savedTokenNum) || null;
       selectedShop = JSON.parse(savedShop);
-      // Verify token is still active before showing tracker
+
       const res  = await fetch(`${WORKER}/public/position?shop_id=${selectedShop.id}&token_id=${myTokenId}`);
       const json = await res.json();
       const st   = json.data?.status;
+
       if (st && !['completed','cancelled','expired','no_show','shop_closed'].includes(st)) {
-        // Token still active — restore tracker view
-        document.getElementById('r-num').textContent = myTokenNum || '?';
-        openShop(selectedShop.id);
-        startTracker();
-        // Request notification permission silently
+        // Restore directly into result/tracker view — skip join form
+        document.getElementById('r-num').textContent           = myTokenNum || '?';
+        document.getElementById('r-greeting').textContent      = `${selectedShop.name} — ٹوکن بحال`;
+        document.getElementById('join-form-wrap').style.display = 'none';
+        document.getElementById('result-wrap').style.display    = 'block';
+        document.getElementById('token-modal').classList.add('show');
         if (Notification.permission === 'default') Notification.requestPermission();
+        startTracker();
       } else {
         clearTokenStorage();
       }
@@ -1530,6 +1567,68 @@ document.getElementById('c-name').addEventListener('keydown', e => { if(e.key===
     }
   }, 60000);
 })();
+
+// ── PWA INSTALL PROMPT ─────────────────────────────────────
+let _deferredInstall = null;
+const INSTALL_KEY    = 'saf_pwa_installed';
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _deferredInstall = e;
+  if (!localStorage.getItem(INSTALL_KEY)) showInstallBanner();
+});
+
+window.addEventListener('appinstalled', () => {
+  localStorage.setItem(INSTALL_KEY, '1');
+  hideInstallBanner();
+});
+
+function showInstallBanner() {
+  if (localStorage.getItem(INSTALL_KEY)) return;
+  let banner = document.getElementById('install-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'install-banner';
+    banner.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:28px">📲</span>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:14px;color:var(--gold)">ایپ انسٹال کریں</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">ٹوکن لیں — لائن سے بچیں</div>
+        </div>
+        <button onclick="doInstall()" style="background:var(--gold);color:#000;border:none;border-radius:20px;padding:8px 18px;font-weight:700;font-size:13px;cursor:pointer;flex-shrink:0">Install</button>
+        <button onclick="hideInstallBanner()" style="background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:0 4px">×</button>
+      </div>`;
+    Object.assign(banner.style, {
+      position:'fixed', bottom:'20px', left:'12px', right:'12px',
+      background:'var(--surface)', border:'1px solid rgba(212,175,55,.35)',
+      borderRadius:'16px', padding:'14px 16px', zIndex:'999',
+      boxShadow:'0 8px 32px rgba(0,0,0,.5)', animation:'sheetUp .4s ease both'
+    });
+    document.body.appendChild(banner);
+  }
+  banner.style.display = 'block';
+  // Re-show every 5 minutes if not installed
+  setTimeout(() => {
+    if (!localStorage.getItem(INSTALL_KEY)) showInstallBanner();
+  }, 5 * 60 * 1000);
+}
+
+function hideInstallBanner() {
+  const b = document.getElementById('install-banner');
+  if (b) b.style.display = 'none';
+}
+
+async function doInstall() {
+  if (!_deferredInstall) return;
+  _deferredInstall.prompt();
+  const { outcome } = await _deferredInstall.userChoice;
+  if (outcome === 'accepted') {
+    localStorage.setItem(INSTALL_KEY, '1');
+    hideInstallBanner();
+  }
+  _deferredInstall = null;
+}
 </script>
 </body>
 </html>
