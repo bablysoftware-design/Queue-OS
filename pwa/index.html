@@ -384,7 +384,7 @@ body::after {
 }
 .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
 
-.dash-body { flex: 1; overflow-y: auto; padding: 16px 16px 90px; display: flex; flex-direction: column; gap: 12px; }
+.dash-body { flex: 1; overflow-y: auto; padding: 10px 12px 80px; display: flex; flex-direction: column; gap: 10px; }
 .tab-panel { display: none; flex-direction: column; gap: 12px; }
 .tab-panel.active { display: flex; }
 
@@ -412,7 +412,7 @@ body::after {
 /* Token hero */
 .token-hero {
   text-align: center;
-  padding: 28px 16px 22px;
+  padding: 16px 16px 14px;
 }
 .token-hero::before {
   content: '';
@@ -425,7 +425,7 @@ body::after {
 
 .token-number {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 80px;
+  font-size: 64px;
   font-weight: 600;
   line-height: 1;
   color: var(--text);
@@ -450,43 +450,50 @@ body::after {
 
 .token-sub { font-size: 12px; color: var(--text2); margin-bottom: 18px; font-family: 'JetBrains Mono', monospace; }
 
-.btn-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.btn-row { flex-direction: column; gap: 10px; }
 
 .btn-next {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 11px 24px;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 20px;
   border: none;
-  border-radius: 100px;
+  border-radius: 18px;
   background: linear-gradient(135deg, var(--gold), var(--gold2));
   color: #0d1422;
   font-family: 'Sora', sans-serif;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 20px;
+  font-weight: 800;
   cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 16px rgba(232,184,75,0.25);
+  transition: all 0.15s;
+  box-shadow: 0 6px 24px rgba(232,184,75,0.4);
+  min-height: 64px;
+  letter-spacing: 0.3px;
 }
-.btn-next:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(232,184,75,0.4); }
+.btn-next:active { transform: scale(0.97); box-shadow: 0 2px 8px rgba(232,184,75,0.3); }
 .btn-next:disabled { opacity: 0.4; pointer-events: none; }
 
 .btn-noshow {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  padding: 11px 20px;
+  width: 100%;
+  padding: 14px;
   border: 1px solid var(--border2);
-  border-radius: 100px;
+  border-radius: 14px;
   background: transparent;
   color: var(--text2);
   font-family: 'Sora', sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  min-height: 48px;
 }
-.btn-noshow:hover { border-color: var(--red); color: var(--red); background: rgba(248,113,113,0.06); }
+.btn-noshow:active { border-color: var(--red); color: var(--red); background: rgba(248,113,113,0.06); }
 .btn-noshow:disabled { opacity: 0.4; pointer-events: none; }
 
 /* Stats */
@@ -799,8 +806,10 @@ body::after {
         </div>
 
         <div class="btn-row">
-          <button class="btn-next" id="next-btn" onclick="callNext()">▶ Next Customer</button>
-          <button class="btn-noshow" id="noshow-btn" onclick="handleNoShow()">✗ No Show</button>
+          <button class="btn-next" id="next-btn" onclick="callNext()">
+            <span style="font-size:24px">▶</span> <span id="lbl-next-btn">اگلا ٹوکن</span>
+          </button>
+          <button class="btn-noshow" id="noshow-btn" onclick="handleNoShow()">✗ <span id="lbl-noshow-btn">غیر حاضر</span></button>
         </div>
       </div>
 
