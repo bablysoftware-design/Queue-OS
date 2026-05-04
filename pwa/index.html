@@ -1396,6 +1396,8 @@ function toggleSettings() {
   const show  = panel.style.display !== 'block';
   panel.style.display = show ? 'block' : 'none';
   if (show) {
+    // Scroll settings into view smoothly
+    setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
     api('GET', `/shops/${state.shopId}`)
       .then(({ data }) => {
         if (data.opening_time)          document.getElementById('s-open').value  = data.opening_time;
