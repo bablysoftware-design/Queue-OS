@@ -551,10 +551,22 @@ body{font-family:'Noto Nastaliq Urdu',serif;background:var(--void);color:var(--t
         <label>فون نمبر (اختیاری)</label>
         <input id="c-phone" type="tel" placeholder="03001234567"/>
       </div>
-      <div class="join-form-center" style="margin-top:20px">
+
+      <!-- Paid token section — shown dynamically -->
+      <div id="paid-token-section" style="display:none;margin-top:10px;background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.25);border-radius:14px;padding:14px">
+        <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:4px">💳 ادائیگی ضروری ہے</div>
+        <div id="paid-amount-txt" style="font-size:12px;color:var(--muted);margin-bottom:10px"></div>
+        <div class="sheet-field" style="margin-bottom:8px">
+          <label style="font-size:11px">پیمنٹ اسکرین شاٹ لنک (اختیاری)</label>
+          <input id="c-screenshot" type="url" placeholder="https://..." style="font-size:12px"/>
+        </div>
+        <div style="font-size:10px;color:var(--muted)">ادائیگی کے بعد درخواست دیں — دکان منظور کرنے پر ٹوکن ملے گا</div>
+      </div>
+
+      <div class="join-form-center" style="margin-top:16px">
         <button class="big-join-btn" id="join-btn" onclick="submitJoin()">
           <span class="big-join-btn-icon">🎫</span>
-          GET MY TOKEN
+          <span id="join-btn-label">GET MY TOKEN</span>
         </button>
       </div>
       <div class="sheet-err" id="sheet-err"></div>
@@ -991,7 +1003,13 @@ async function openShop(shopId) {
   document.getElementById('c-name').value                  = '';
   document.getElementById('c-phone').value                 = '';
   document.getElementById('join-btn').disabled             = false;
-  document.getElementById('join-btn').textContent          = 'ٹوکن لیں';
+
+  // Paid token mode
+  const isPaid = selectedShop.token_mode === 'paid';
+  document.getElementById('paid-token-section').style.display = isPaid ? 'block' : 'none';
+  document.getElementById('join-btn-label').textContent = isPaid
+    ? `ادائیگی کی درخواست دیں — Rs ${selectedShop.token_price}`
+    : 'ٹوکن لیں';
 
   // Populate
   document.getElementById('m-shop-name').textContent = selectedShop.name;
@@ -1050,7 +1068,33 @@ async function submitJoin() {
 
   if (!name) { errEl.textContent = 'نام ضروری ہے'; return; }
 
-  btn.disabled = true; btn.textContent = '...';
+  btn.disabled = true;
+  document.getElementById('join-btn-label').textContent = '...';
+
+  // ── Paid mode: submit payment request instead ─────────
+  if (selectedShop.token_mode === 'paid') {
+    const screenshot = document.getElementById('c-screenshot')?.value.trim() || null;
+    if (!phone) { errEl.textContent = 'ادائیگی کے لیے فون نمبر ضروری ہے'; btn.disabled=false; document.getElementById('join-btn-label').textContent=`ادائیگی کی درخواست دیں — Rs ${selectedShop.token_price}`; return; }
+    try {
+      const res  = await fetch(`${WORKER}/public/payment-request`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ shop_id: selectedShop.id, customer_name: name, customer_phone: phone, screenshot_url: screenshot })
+      });
+      const { success, data, error } = await res.json();
+      if (!success) throw new Error(error);
+      errEl.style.color = 'var(--green)';
+      errEl.textContent = `✓ درخواست موصول! دکان منظور کرے گی تو ٹوکن ملے گا (ID: ${data.request_id?.slice(0,8)})`;
+      btn.disabled = false;
+      document.getElementById('join-btn-label').textContent = 'درخواست دی جا چکی';
+    } catch(e) {
+      errEl.style.color = '';
+      errEl.textContent = e.message;
+      btn.disabled = false;
+      document.getElementById('join-btn-label').textContent = `ادائیگی کی درخواست دیں — Rs ${selectedShop.token_price}`;
+    }
+    return;
+  }
 
   try {
     const res  = await fetch(`${WORKER}/public/join`, {
@@ -1099,7 +1143,8 @@ async function submitJoin() {
 
   } catch(e) {
     errEl.textContent = e.message || 'خرابی';
-    btn.disabled = false; btn.textContent = 'ٹوکن لیں';
+    btn.disabled = false;
+    document.getElementById('join-btn-label').textContent = 'ٹوکن لیں';
   }
 }
 

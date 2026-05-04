@@ -1,9 +1,9 @@
 // ── Manual Payment Routes ─────────────────────────────────────
 import { createClient }  from '../utils/db.js';
 import { createToken }   from '../services/tokenService.js';
-import { requireAdmin }  from '../utils/auth.js';
+import { requireAdmin, requireShopOrAdmin } from '../utils/auth.js';
 import { sanitizeParam, sanitizeName } from '../utils/sanitize.js';
-import { ok, badRequest, notFound, serverError, unauthorized } from '../utils/response.js';
+import { ok, badRequest, notFound, serverError } from '../utils/response.js';
 
 /**
  * POST /public/payment-request
@@ -53,11 +53,14 @@ export async function submitPaymentRequest(request, env) {
  * List pending payment requests for a shop
  */
 export async function listPaymentRequests(request, env) {
-  const authErr = requireAdmin(request, env);
-  if (authErr) return authErr;
+  const auth = await requireShopOrAdmin(request, env);
+  if (auth instanceof Response) return auth;
   try {
     const url    = new URL(request.url);
-    const shopId = sanitizeParam(url.searchParams.get('shop_id') || '');
+    // Shopkeeper can only see their own shop's requests
+    const shopId = auth.isAdmin
+      ? sanitizeParam(url.searchParams.get('shop_id') || '')
+      : auth.shop_id;
     const filter = shopId
       ? `shop_id=eq.${shopId}&order=created_at.desc`
       : `order=created_at.desc`;
@@ -74,8 +77,8 @@ export async function listPaymentRequests(request, env) {
  * Approve payment → instantly create token and notify customer
  */
 export async function approvePaymentRequest(request, env) {
-  const authErr = requireAdmin(request, env);
-  if (authErr) return authErr;
+  const auth = await requireShopOrAdmin(request, env);
+  if (auth instanceof Response) return auth;
   try {
     const url = new URL(request.url);
     const id  = sanitizeParam(url.pathname.split('/')[3]);

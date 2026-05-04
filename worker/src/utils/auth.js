@@ -61,3 +61,17 @@ export function requireAdmin(request, env) {
   }
   return null;
 }
+
+/**
+ * Allow either admin secret OR valid shop session token.
+ * Returns null (ok) or an error Response.
+ * Also returns the shop_id if authenticated via session token.
+ */
+export async function requireShopOrAdmin(request, env) {
+  const adminSecret = request.headers.get('x-admin-secret');
+  if (adminSecret && adminSecret === env.ADMIN_SECRET) return { shop_id: null, isAdmin: true };
+
+  const auth = await requireShopAuth(request, env);
+  if (auth instanceof Response) return auth; // 401
+  return { shop_id: auth.shop_id, isAdmin: false };
+}

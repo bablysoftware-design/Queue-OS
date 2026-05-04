@@ -878,6 +878,17 @@ body::after {
 
     </div><!-- /tab-queue -->
 
+      <!-- Payment Requests (paid token mode) -->
+      <div id="payment-requests-card" style="display:none" class="card">
+        <div class="sec-head" style="margin-bottom:10px">
+          <span class="sec-label">💳 PAYMENT REQUESTS</span>
+          <span id="pr-count" style="font-size:11px;color:var(--muted)"></span>
+        </div>
+        <div id="pr-list"><div style="font-size:12px;color:var(--muted);text-align:center;padding:10px">کوئی درخواست نہیں</div></div>
+      </div>
+
+    </div><!-- /tab-queue-outer -->
+
     <!-- Reports tab -->
     <div class="tab-panel" id="tab-reports">
       <div class="report-grid">
@@ -1112,6 +1123,7 @@ function showDashboard() {
   loadSubscription();
   refreshQueue();
   loadStats();
+  loadPaymentRequests();
   // Sync slider to current shop avg wait time
   api('GET', `/shops/${state.shopId}`)
     .then(({ data }) => { if (data.avg_service_time_mins) syncSliderToSettings(data.avg_service_time_mins); })
@@ -1388,6 +1400,54 @@ async function applyWaitOverride() {
   btn.disabled = false;
   btn.textContent = '✓ Apply for Next Customer';
   setTimeout(() => { stat.textContent = ''; }, 4000);
+}
+
+// ── Payment Requests (paid token mode) ───────────────────────
+async function loadPaymentRequests() {
+  try {
+    const res  = await fetch(`${WORKER}/admin/payment-requests?shop_id=${state.shopId}`, {
+      headers: { 'Content-Type':'application/json', 'x-session-token': state.sessionToken }
+    });
+    const json = await res.json();
+    const list = json.data || [];
+    const pending = list.filter(r => r.status === 'pending');
+
+    const card = document.getElementById('payment-requests-card');
+    if (!card) return;
+
+    // Only show card if shop has paid mode OR there are pending requests
+    if (pending.length === 0) { card.style.display = 'none'; return; }
+    card.style.display = 'block';
+    document.getElementById('pr-count').textContent = `${pending.length} زیر التواء`;
+
+    document.getElementById('pr-list').innerHTML = pending.map(r => `
+      <div style="border:1px solid rgba(212,175,55,.2);border-radius:12px;padding:12px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-weight:700;font-size:13px">${r.customer_name}</div>
+            <div style="font-size:11px;color:var(--muted)">${r.customer_phone} · Rs ${r.amount}</div>
+            ${r.screenshot_url ? `<a href="${r.screenshot_url}" target="_blank" style="font-size:11px;color:var(--gold)">📸 اسکرین شاٹ دیکھیں</a>` : ''}
+          </div>
+          <button onclick="approvePayment('${r.id}')"
+            style="padding:8px 14px;border:none;border-radius:8px;background:var(--gold);color:#0d1422;font-weight:700;font-size:12px;cursor:pointer">
+            ✓ منظور
+          </button>
+        </div>
+      </div>`).join('');
+  } catch(e) {}
+}
+
+async function approvePayment(requestId) {
+  try {
+    const res  = await fetch(`${WORKER}/admin/payment-requests/${requestId}/approve`, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'x-admin-secret': state.adminSecret || '', 'x-session-token': state.sessionToken }
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error);
+    showToast(`✓ ٹوکن #${json.data.token_number} جاری ہو گیا`, 'success');
+    loadPaymentRequests();
+  } catch(e) { showToast(e.message, 'error'); }
 }
 
 // ── Settings ──────────────────────────────────────────────────
