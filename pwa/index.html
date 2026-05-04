@@ -804,6 +804,26 @@ body::after {
         </div>
       </div>
 
+      <!-- Wait time override slider -->
+      <div class="card" id="wait-slider-card" style="padding:16px 18px">
+        <div class="card-label" style="margin-bottom:12px">⏱ NEXT CUSTOMER WAIT TIME</div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+          <input type="range" id="wait-slider" min="1" max="60" value="10"
+            oninput="updateWaitDisplay(this.value)"
+            style="flex:1;accent-color:var(--gold);height:6px;cursor:pointer"/>
+          <div style="min-width:52px;text-align:center;background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.3);border-radius:10px;padding:6px 10px;font-family:'Orbitron',monospace;font-weight:700;color:var(--gold);font-size:16px" id="wait-display">10</div>
+          <div style="font-size:11px;color:#64748b">min</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:#64748b;margin-bottom:10px">
+          <span>1 min</span><span>Default: <span id="wait-default-val">10</span> min</span><span>60 min</span>
+        </div>
+        <button onclick="applyWaitOverride()" id="wait-apply-btn"
+          style="width:100%;padding:10px;border:none;border-radius:10px;background:var(--gold);color:#0d1422;font-weight:700;font-size:13px;cursor:pointer">
+          ✓ Apply for Next Customer
+        </button>
+        <div id="wait-override-status" style="font-size:11px;color:#25d366;text-align:center;margin-top:6px;min-height:16px"></div>
+      </div>
+
       <!-- Manual token -->
       <div class="card">
         <div class="card-label" id="lbl-manual">ADD WALK-IN</div>
@@ -1083,6 +1103,10 @@ function showDashboard() {
   loadSubscription();
   refreshQueue();
   loadStats();
+  // Sync slider to current shop avg wait time
+  api('GET', `/shops/${state.shopId}`)
+    .then(({ data }) => { if (data.avg_service_time_mins) syncSliderToSettings(data.avg_service_time_mins); })
+    .catch(() => {});
   clearInterval(state.refreshTimer);
   state.refreshTimer = setInterval(refreshQueue, 15000);
 }
@@ -1256,12 +1280,106 @@ function loadStats() {
 }
 window.loadStats = loadStats;
 
-function shareShopLink() {
-  const url = `${location.origin}/customer.html?shop=${state.shopId}`;
-  if (navigator.share) { navigator.share({ title: state.shopName, url }); }
-  else { navigator.clipboard.writeText(url).then(() => showToast(t('linkCopied'), 'success')).catch(() => prompt('Copy link:', url)); }
+async function shareShopLink() {
+  // Fetch slug-based share data from worker
+  let link = `${location.origin}/customer.html?shop=${state.shopId}`;
+  let waUrl = null;
+  let qrUrl = null;
+  try {
+    const [shareRes, qrRes] = await Promise.all([
+      fetch(`${WORKER}/shops/${state.shopId}/share-link`, { headers: { 'x-session-token': state.sessionToken } }),
+      fetch(`${WORKER}/shops/${state.shopId}/qr`,         { headers: { 'x-session-token': state.sessionToken } }),
+    ]);
+    const shareData = await shareRes.json();
+    const qrData    = await qrRes.json();
+    if (shareData.data?.link)         link  = shareData.data.link;
+    if (shareData.data?.whatsapp_url) waUrl = shareData.data.whatsapp_url;
+    if (qrData.data?.qr_url)          qrUrl = qrData.data.qr_url;
+  } catch(e) {}
+
+  // Build share modal
+  let modal = document.getElementById('share-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'share-modal';
+    Object.assign(modal.style, {
+      position:'fixed', inset:'0', background:'rgba(0,0,0,.85)',
+      zIndex:'999', display:'flex', alignItems:'flex-end', justifyContent:'center',
+      backdropFilter:'blur(8px)'
+    });
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `
+    <div style="background:var(--surface,#1a2332);border-radius:24px 24px 0 0;padding:28px 24px 40px;width:100%;max-width:500px;border:1px solid rgba(212,175,55,.2)">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:18px;font-weight:700;color:var(--gold,#e8b84b)">📤 Share Shop</div>
+        <div style="font-size:12px;color:#94a3b8;margin-top:4px">${state.shopName}</div>
+      </div>
+      ${qrUrl ? `
+      <div style="text-align:center;margin-bottom:16px">
+        <img src="${qrUrl}" style="width:180px;height:180px;border-radius:12px;border:2px solid rgba(212,175,55,.3)" alt="QR Code"/>
+        <div style="font-size:11px;color:#94a3b8;margin-top:6px">QR Code — Print ya poster pe lagaein</div>
+        <a href="${qrUrl}" download="qr-${state.shopName}.png" target="_blank"
+           style="display:inline-block;margin-top:8px;padding:6px 16px;border:1px solid rgba(212,175,55,.4);border-radius:20px;color:var(--gold,#e8b84b);font-size:12px;text-decoration:none">
+          ⬇ Download QR
+        </a>
+      </div>` : ''}
+      <div style="background:rgba(255,255,255,.04);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#94a3b8;word-break:break-all;direction:ltr">${link}</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button onclick="navigator.clipboard.writeText('${link}').then(()=>showToast('Link copied!','success'))"
+          style="padding:13px;border:1px solid rgba(212,175,55,.3);border-radius:12px;background:transparent;color:var(--gold,#e8b84b);font-size:14px;font-weight:600;cursor:pointer">
+          🔗 Copy Link
+        </button>
+        ${waUrl ? `<button onclick="window.open('${waUrl}','_blank')"
+          style="padding:13px;border:none;border-radius:12px;background:#25d366;color:#fff;font-size:14px;font-weight:700;cursor:pointer">
+          💬 Share on WhatsApp
+        </button>` : ''}
+      </div>
+      <button onclick="document.getElementById('share-modal').style.display='none'"
+        style="width:100%;margin-top:14px;padding:12px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:transparent;color:#64748b;font-size:13px;cursor:pointer">
+        بند کریں
+      </button>
+    </div>`;
+  modal.style.display = 'flex';
+  modal.onclick = e => { if (e.target === modal) modal.style.display='none'; };
 }
 window.shareShopLink = shareShopLink;
+
+// ── Wait Time Override Slider ─────────────────────────────
+function updateWaitDisplay(val) {
+  document.getElementById('wait-display').textContent = val;
+}
+
+function syncSliderToSettings(avgMins) {
+  const slider = document.getElementById('wait-slider');
+  if (slider) slider.value = avgMins || 10;
+  updateWaitDisplay(avgMins || 10);
+  const defEl = document.getElementById('wait-default-val');
+  if (defEl) defEl.textContent = avgMins || 10;
+}
+
+async function applyWaitOverride() {
+  const mins = parseInt(document.getElementById('wait-slider').value, 10);
+  const btn  = document.getElementById('wait-apply-btn');
+  const stat = document.getElementById('wait-override-status');
+  btn.disabled = true;
+  btn.textContent = '...';
+  try {
+    await api('PATCH', `/shops/${state.shopId}/settings`, { avg_service_time_mins: mins });
+    stat.textContent = `✓ ${mins} min set for next customers`;
+    stat.style.color = '#25d366';
+    showToast(`Wait time set to ${mins} min`, 'success');
+    // Update default display
+    const defEl = document.getElementById('wait-default-val');
+    if (defEl) defEl.textContent = mins;
+  } catch(e) {
+    stat.textContent = e.message;
+    stat.style.color = '#f87171';
+  }
+  btn.disabled = false;
+  btn.textContent = '✓ Apply for Next Customer';
+  setTimeout(() => { stat.textContent = ''; }, 4000);
+}
 
 // ── Settings ──────────────────────────────────────────────────
 function toggleSettings() {
@@ -1273,7 +1391,10 @@ function toggleSettings() {
       .then(({ data }) => {
         if (data.opening_time)          document.getElementById('s-open').value  = data.opening_time;
         if (data.closing_time)          document.getElementById('s-close').value = data.closing_time;
-        if (data.avg_service_time_mins) document.getElementById('s-avg').value   = data.avg_service_time_mins;
+        if (data.avg_service_time_mins) {
+          document.getElementById('s-avg').value = data.avg_service_time_mins;
+          syncSliderToSettings(data.avg_service_time_mins);
+        }
       }).catch(() => {});
   }
 }
