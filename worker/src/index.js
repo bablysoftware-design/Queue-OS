@@ -23,6 +23,7 @@ import { getPublicShops, getPublicShop,
          publicCancelToken }                          from './routes/public.js';
 import { getShareLink, getShopBySlug,
          getShopQR, getRelatedShops }                 from './routes/share.js';
+import { searchLocations, searchCategories }          from './routes/search.js';
 import { submitPaymentRequest, listPaymentRequests,
          approvePaymentRequest, rejectPaymentRequest } from './routes/payments_manual.js';
 import { expireStaleSubscriptions }                   from './services/subscriptionService.js';
@@ -52,6 +53,10 @@ const ROUTES = [
   { method: 'DELETE', path: '/push/unsubscribe',                 handler: unsubscribePush },
   { method: 'POST',   path: '/push/delay',                       handler: requestDelay },
   { method: 'POST',   path: '/public/cancel',                   handler: publicCancelToken },
+
+  // Autocomplete search (no auth)
+  { method: 'GET',    path: '/search/locations',                         handler: searchLocations },
+  { method: 'GET',    path: '/search/categories',                        handler: searchCategories },
 
   // Share / QR / Slug (no auth) — specific paths before :id params
   { method: 'GET',    path: '/shops/related',                            handler: getRelatedShops },

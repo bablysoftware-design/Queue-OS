@@ -19,16 +19,16 @@ import { ok, badRequest, notFound, serverError }       from '../utils/response.j
 export async function getPublicShops(request, env) {
   try {
     const url      = new URL(request.url);
-    // FIX #4: Sanitize all inputs
     const area     = sanitizeParam(url.searchParams.get('area'));
     const category = sanitizeParam(url.searchParams.get('category'));
     const search   = sanitizeSearch(url.searchParams.get('search'));
+    const country  = sanitizeParam(url.searchParams.get('country'));
+    const city     = sanitizeParam(url.searchParams.get('city'));
     const limit    = Math.min(parseInt(url.searchParams.get('limit')  || '50', 10),  100);
     const offset   = Math.max(parseInt(url.searchParams.get('offset') || '0',  10), 0);
 
     const db = createClient(env);
 
-    // Try RPC first (fast), fall back to direct queries
     let shops = [], areas = [], total = 0;
 
     try {
@@ -37,13 +37,13 @@ export async function getPublicShops(request, env) {
         p_category: category || null,
         p_limit:    limit,
         p_offset:   offset,
+        p_country:  country  || null,
+        p_city:     city     || null,
       });
-      // Supabase may return the JSON as-is or wrapped in an array
       const r = Array.isArray(result) ? result[0] : result;
       shops = r?.shops || [];
       areas = r?.areas || [];
       total = r?.total || shops.length;
-      // Ensure shops is always an array (not null)
       if (!Array.isArray(shops)) shops = [];
     } catch {
       // Fallback: direct query if RPC not yet created
