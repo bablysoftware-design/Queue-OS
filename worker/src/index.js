@@ -25,7 +25,8 @@ import { getShareLink, getShopBySlug,
          getShopQR, getRelatedShops }                 from './routes/share.js';
 import { searchLocations, searchCategories }          from './routes/search.js';
 import { submitPaymentRequest, listPaymentRequests,
-         approvePaymentRequest, rejectPaymentRequest } from './routes/payments_manual.js';
+         approvePaymentRequest, rejectPaymentRequest,
+         checkPaymentStatus } from './routes/payments_manual.js';
 import { expireStaleSubscriptions }                   from './services/subscriptionService.js';
 import { resetDailyTokens }                           from './services/tokenService.js';
 import { createClient }                               from './utils/db.js';
@@ -66,6 +67,7 @@ const ROUTES = [
 
   // Manual payment (paid token mode)
   { method: 'POST',   path: '/public/payment-request',                   handler: submitPaymentRequest },
+  { method: 'GET',    path: '/public/payment-status',                     handler: checkPaymentStatus },
   { method: 'GET',    path: '/admin/payment-requests',                   handler: listPaymentRequests },
   { method: 'POST',   path: '/admin/payment-requests/:id/approve',       handler: approvePaymentRequest },
   { method: 'POST',   path: '/admin/payment-requests/:id/reject',        handler: rejectPaymentRequest },

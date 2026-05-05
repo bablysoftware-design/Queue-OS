@@ -126,3 +126,31 @@ export async function rejectPaymentRequest(request, env) {
     return ok({ message: 'Payment request reject ho gayi.' });
   } catch(err) { return serverError(err.message); }
 }
+
+/**
+ * GET /public/payment-status?request_id=xxx
+ * Customer polls this to know if their payment was approved
+ * Returns: { status: 'pending'|'approved'|'rejected', token_number?, token_id? }
+ */
+export async function checkPaymentStatus(request, env) {
+  try {
+    const url = new URL(request.url);
+    const id  = sanitizeParam(url.searchParams.get('request_id') || '');
+    if (!id) return badRequest('request_id ضروری ہے');
+
+    const db   = createClient(env);
+    const rows = await db.select('payment_requests',
+      `select=id,status,token_id,reviewed_at&id=eq.${id}&limit=1`
+    );
+    if (!rows?.length) return notFound('Request nahi mili');
+    const pr = rows[0];
+
+    let token_number = null;
+    if (pr.status === 'approved' && pr.token_id) {
+      const trows = await db.select('tokens', `select=token_number&id=eq.${pr.token_id}&limit=1`);
+      if (trows?.length) token_number = trows[0].token_number;
+    }
+
+    return ok({ status: pr.status, token_id: pr.token_id || null, token_number });
+  } catch(err) { return serverError(err.message); }
+}

@@ -577,12 +577,26 @@ body{font-family:'Noto Nastaliq Urdu',serif;background:var(--void);color:var(--t
       <!-- Paid token section — shown dynamically -->
       <div id="paid-token-section" style="display:none;margin-top:10px;background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.25);border-radius:14px;padding:14px">
         <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:4px">💳 ادائیگی ضروری ہے</div>
-        <div id="paid-amount-txt" style="font-size:12px;color:var(--muted);margin-bottom:10px"></div>
+        <div id="paid-amount-txt" style="font-size:13px;color:var(--text);margin-bottom:12px;font-weight:600"></div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.5">Easypaisa / JazzCash پر ادائیگی کریں، پھر اسکرین شاٹ یہاں اپلوڈ کریں:</div>
         <div class="sheet-field" style="margin-bottom:8px">
-          <label style="font-size:11px">پیمنٹ اسکرین شاٹ لنک (اختیاری)</label>
-          <input id="c-screenshot" type="url" placeholder="https://..." style="font-size:12px"/>
+          <label style="font-size:11px;color:var(--gold);font-weight:600;margin-bottom:6px;display:block">📸 پیمنٹ اسکرین شاٹ اپلوڈ کریں</label>
+          <input id="c-screenshot-file" type="file" accept="image/*" onchange="previewScreenshot(this)"
+            style="display:none"/>
+          <div onclick="document.getElementById('c-screenshot-file').click()"
+            id="screenshot-drop"
+            style="border:1.5px dashed rgba(212,175,55,.4);border-radius:10px;padding:18px;text-align:center;cursor:pointer;transition:all .2s;background:rgba(212,175,55,.03)"
+            onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='rgba(212,175,55,.4)'">
+            <div style="font-size:24px;margin-bottom:4px">📷</div>
+            <div style="font-size:12px;color:var(--muted)">تصویر منتخب کریں یا یہاں ٹیپ کریں</div>
+          </div>
+          <div id="screenshot-preview" style="display:none;margin-top:8px;position:relative">
+            <img id="screenshot-img" style="width:100%;border-radius:8px;max-height:140px;object-fit:cover;border:1px solid rgba(212,175,55,.2)"/>
+            <button onclick="clearScreenshot()" style="position:absolute;top:4px;right:4px;padding:2px 7px;border:none;border-radius:6px;background:rgba(255,69,96,.8);color:#fff;font-size:11px;cursor:pointer">✕</button>
+          </div>
         </div>
-        <div style="font-size:10px;color:var(--muted)">ادائیگی کے بعد درخواست دیں — دکان منظور کرنے پر ٹوکن ملے گا</div>
+        <input type="hidden" id="c-screenshot-data"/>
+        <div style="font-size:10px;color:var(--muted);margin-top:6px">اسکرین شاٹ لگانے کے بعد درخواست دیں — دکان منظور کرے گی تو فوری ٹوکن ملے گا</div>
       </div>
 
       <div class="join-form-center" style="margin-top:16px">
@@ -1083,6 +1097,87 @@ function handleOverlayClick(e) {
 }
 
 // ── SUBMIT JOIN ────────────────────────────────────────────
+// ── Screenshot upload helpers ─────────────────────────────────
+function previewScreenshot(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const data = e.target.result; // base64 data URL
+    document.getElementById('c-screenshot-data').value = data;
+    document.getElementById('screenshot-img').src = data;
+    document.getElementById('screenshot-preview').style.display = 'block';
+    document.getElementById('screenshot-drop').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+window.previewScreenshot = previewScreenshot;
+
+function clearScreenshot() {
+  document.getElementById('c-screenshot-data').value = '';
+  document.getElementById('c-screenshot-file').value = '';
+  document.getElementById('screenshot-preview').style.display = 'none';
+  document.getElementById('screenshot-drop').style.display = 'block';
+}
+window.clearScreenshot = clearScreenshot;
+
+// ── Payment approval polling ───────────────────────────────────
+let _payPollTimer = null;
+
+function startPaymentPolling(requestId, customerName, customerPhone) {
+  if (_payPollTimer) clearInterval(_payPollTimer);
+  let attempts = 0;
+  const maxAttempts = 120; // poll for up to 20 mins (10s interval)
+
+  _payPollTimer = setInterval(async () => {
+    attempts++;
+    if (attempts > maxAttempts) {
+      clearInterval(_payPollTimer);
+      const errEl = document.getElementById('sheet-err');
+      if (errEl) { errEl.style.color = ''; errEl.textContent = 'وقت ختم — براہ کرم دوبارہ کوشش کریں'; }
+      const btn = document.getElementById('join-btn');
+      const lbl = document.getElementById('join-btn-label');
+      if (btn) btn.disabled = false;
+      if (lbl) lbl.textContent = 'دوبارہ کوشش کریں';
+      return;
+    }
+
+    try {
+      const res  = await fetch(`${WORKER}/public/payment-status?request_id=${requestId}`);
+      const json = await res.json();
+      if (!json.success) return;
+
+      if (json.data.status === 'approved' && json.data.token_number) {
+        clearInterval(_payPollTimer);
+        // Token issued! Show the token card
+        myTokenId  = json.data.token_id;
+        myTokenNum = json.data.token_number;
+        localStorage.setItem('wm_token_id',    myTokenId);
+        localStorage.setItem('wm_token_num',   String(myTokenNum));
+        localStorage.setItem('wm_shop_id',     selectedShop?.id || '');
+        localStorage.setItem('wm_shop_name',   selectedShop?.name || '');
+        localStorage.setItem('wm_customer',    customerName);
+        localStorage.setItem('wm_phone',       customerPhone);
+        // Switch to result card
+        document.getElementById('join-form-wrap').style.display = 'none';
+        document.getElementById('result-wrap').style.display    = 'block';
+        document.getElementById('result-token-num').textContent = myTokenNum;
+        document.getElementById('result-shop-name').textContent = selectedShop?.name || '';
+        updateTracker();
+      } else if (json.data.status === 'rejected') {
+        clearInterval(_payPollTimer);
+        const errEl = document.getElementById('sheet-err');
+        if (errEl) { errEl.style.color = 'var(--red)'; errEl.textContent = '❌ ادائیگی رد کر دی گئی — براہ کرم دوبارہ کوشش کریں'; }
+        const btn = document.getElementById('join-btn');
+        const lbl = document.getElementById('join-btn-label');
+        if (btn) btn.disabled = false;
+        if (lbl) lbl.textContent = 'دوبارہ کوشش کریں';
+      }
+    } catch(e) { /* silent — keep polling */ }
+  }, 10000); // check every 10 seconds
+}
+window.startPaymentPolling = startPaymentPolling;
+
 async function submitJoin() {
   const name  = document.getElementById('c-name').value.trim();
   const phone = document.getElementById('c-phone').value.trim();
@@ -1097,7 +1192,7 @@ async function submitJoin() {
 
   // ── Paid mode: submit payment request instead ─────────
   if (selectedShop.token_mode === 'paid') {
-    const screenshot = document.getElementById('c-screenshot')?.value.trim() || null;
+    const screenshot = document.getElementById('c-screenshot-data')?.value || null;
     if (!phone) { errEl.textContent = 'ادائیگی کے لیے فون نمبر ضروری ہے'; btn.disabled=false; document.getElementById('join-btn-label').textContent=`ادائیگی کی درخواست دیں — Rs ${selectedShop.token_price}`; return; }
     try {
       const res  = await fetch(`${WORKER}/public/payment-request`, {
@@ -1108,9 +1203,11 @@ async function submitJoin() {
       const { success, data, error } = await res.json();
       if (!success) throw new Error(error);
       errEl.style.color = 'var(--green)';
-      errEl.textContent = `✓ درخواست موصول! دکان منظور کرے گی تو ٹوکن ملے گا (ID: ${data.request_id?.slice(0,8)})`;
-      btn.disabled = false;
-      document.getElementById('join-btn-label').textContent = 'درخواست دی جا چکی';
+      errEl.textContent = '✓ درخواست موصول! دکان منظور کرے گی تو خودبخود ٹوکن ملے گا...';
+      btn.disabled = true;
+      document.getElementById('join-btn-label').textContent = '⏳ منظوری کا انتظار...';
+      // Start polling for approval
+      startPaymentPolling(data.request_id, name, phone);
     } catch(e) {
       errEl.style.color = '';
       errEl.textContent = e.message;

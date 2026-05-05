@@ -1,7 +1,7 @@
 {
   "name": "WaitMate",
-  "short_name": "SafQueue",
-  "description": "Smart queue management for Pakistani businesses",
+  "short_name": "WaitMate",
+  "description": "Your Smart Queue Partner \u2014 Smart queue management",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
@@ -26,7 +26,10 @@
       "type": "image/png"
     }
   ],
-  "categories": ["business", "utilities"],
+  "categories": [
+    "business",
+    "utilities"
+  ],
   "lang": "ur",
   "screenshots": [
     {
