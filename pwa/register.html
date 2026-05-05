@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="theme-color" content="#050810"/>
-<title>دکان رجسٹریشن — ویٹ میٹ</title>
+<title>دکان رجسٹریشن — سف کیو</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
 <style>
 :root{--void:#050810;--surface:#0d1424;--glass:rgba(13,20,36,.8);--border:rgba(212,175,55,.12);--gold:#D4AF37;--gold2:#F5C842;--gold3:#FFE066;--cyan:#00D4FF;--red:#FF4560;--green:#00E396;--text:#EDE8D0;--muted:rgba(237,232,208,.4);}
@@ -52,6 +52,17 @@ h1{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;background:li
 .plan-name{font-family:'Orbitron',monospace;font-size:10px;font-weight:700;color:var(--gold);letter-spacing:1px;margin-bottom:6px;}
 .plan-price{font-size:12px;color:var(--text);font-weight:600;}
 .plan-days{font-size:10px;color:var(--muted);margin-top:3px;}
+
+.ac-drop{position:absolute;top:100%;left:0;right:0;background:#0d1424;border:1px solid rgba(212,175,55,.3);border-radius:10px;margin-top:4px;z-index:100;max-height:160px;overflow-y:auto;display:none;}
+.ac-drop.open{display:block;}
+.ac-item{padding:9px 14px;font-size:13px;color:rgba(237,232,208,.7);cursor:pointer;transition:background .15s;}
+.ac-item:hover{background:rgba(212,175,55,.08);color:#EDE8D0;}
+.token-mode-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.mode-card{background:rgba(5,8,16,.6);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:all .2s;}
+.mode-card.selected{border-color:var(--gold);background:rgba(212,175,55,.08);}
+.mode-card .mc-icon{font-size:22px;margin-bottom:5px;}
+.mode-card .mc-title{font-size:12px;font-weight:700;color:var(--gold);margin-bottom:3px;}
+.mode-card .mc-desc{font-size:10px;color:var(--muted);}
 </style>
 </head>
 <body>
@@ -61,7 +72,7 @@ h1{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;background:li
 
   <div class="header">
     <div class="orb"><div class="orb-inner">🏪</div></div>
-    <h1 style="font-family:Orbitron,monospace;font-size:20px;font-weight:900;background:linear-gradient(135deg,#e8b84b,#c9a227);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin:0">WaitMate</h1>
+    <h1>SAF QUEUE</h1>
     <p>اپنی دکان رجسٹر کریں اور 30 دن مفت استعمال کریں</p>
   </div>
 
@@ -83,53 +94,44 @@ h1{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;background:li
       <input id="r-pin" type="number" placeholder="مثال: 1234" maxlength="4"/>
     </div>
 
-    <!-- Category with autocomplete -->
-    <div class="field" style="position:relative">
-      <label>دکان کی قسم</label>
-      <input id="r-cat" type="text" placeholder="مثال: barber, clinic..." autocomplete="off" oninput="suggestCats()"/>
-      <div id="cat-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:#0d1424;border:1px solid rgba(212,175,55,.3);border-radius:10px;z-index:50;max-height:160px;overflow-y:auto;margin-top:4px"></div>
-    </div>
-
-    <!-- Country -->
     <div class="field" style="position:relative">
       <label>ملک *</label>
-      <input id="r-country" type="text" placeholder="مثال: Pakistan" autocomplete="off" oninput="suggestLocs('country')" value="Pakistan"/>
+      <input id="r-country" type="text" placeholder="مثال: Pakistan" autocomplete="off" oninput="acLoc(this,'country','ac-cnt')"/>
+      <div id="ac-cnt" class="ac-drop"></div>
     </div>
 
-    <!-- City with autocomplete -->
     <div class="field" style="position:relative">
       <label>شہر *</label>
-      <input id="r-city" type="text" placeholder="مثال: Islamabad" autocomplete="off" oninput="suggestLocs('city')"/>
-      <div id="city-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:#0d1424;border:1px solid rgba(212,175,55,.3);border-radius:10px;z-index:50;max-height:160px;overflow-y:auto;margin-top:4px"></div>
+      <input id="r-city" type="text" placeholder="مثال: Rawalpindi" autocomplete="off" oninput="acLoc(this,'city','ac-cty')"/>
+      <div id="ac-cty" class="ac-drop"></div>
     </div>
 
-    <!-- Area -->
+    <div class="field" style="position:relative">
+      <label>دکان کی قسم</label>
+      <input id="r-cat" type="text" placeholder="مثال: barber, clinic, pharmacy" autocomplete="off" oninput="acCat(this,'ac-catd')"/>
+      <div id="ac-catd" class="ac-drop"></div>
+    </div>
+
     <div class="field">
       <label>علاقہ</label>
-      <input id="r-area" type="text" placeholder="مثال: صدر، بلیو ایریا"/>
+      <input id="r-area" type="text" placeholder="مثال: صدر، لال کرتی"/>
     </div>
 
-    <!-- Token Mode -->
     <div class="field">
       <label>ٹوکن موڈ</label>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
-        <div id="mode-free" onclick="selectMode('free')"
-          style="border:2px solid var(--gold);border-radius:10px;padding:12px;text-align:center;cursor:pointer;background:rgba(212,175,55,.1)">
-          <div style="font-size:18px">🆓</div>
-          <div style="font-size:12px;font-weight:700;color:var(--gold);margin-top:4px">مفت</div>
-          <div style="font-size:10px;color:var(--muted)">ٹوکن مفت</div>
+      <div class="token-mode-row" id="token-mode-row">
+        <div class="mode-card selected" id="mode-free" onclick="selectMode('free')">
+          <div class="mc-icon">🆓</div>
+          <div class="mc-title">Free</div>
+          <div class="mc-desc">مفت ٹوکن</div>
         </div>
-        <div id="mode-paid" onclick="selectMode('paid')"
-          style="border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;cursor:pointer">
-          <div style="font-size:18px">💳</div>
-          <div style="font-size:12px;font-weight:700;color:var(--muted);margin-top:4px">ادائیگی</div>
-          <div style="font-size:10px;color:var(--muted)">ٹوکن فیس</div>
+        <div class="mode-card" id="mode-paid" onclick="selectMode('paid')">
+          <div class="mc-icon">💳</div>
+          <div class="mc-title">Paid</div>
+          <div class="mc-desc">ادائیگی کے ساتھ</div>
         </div>
       </div>
-      <input type="hidden" id="r-mode" value="free"/>
-      <div id="price-field" style="display:none;margin-top:8px">
-        <input id="r-price" type="number" placeholder="ٹوکن قیمت (PKR)" min="1"/>
-      </div>
+      <input type="hidden" id="r-token-mode" value="free"/>
     </div>
 
     <button class="btn-gold" id="reg-btn" onclick="submitReg()">رجسٹریشن درخواست دیں</button>
@@ -159,129 +161,112 @@ resize();pts=Array.from({length:60},mkPt);draw();window.addEventListener('resize
 
 const WORKER='https://saf-queue-worker.byker-software.workers.dev';
 
-// ── Token mode toggle ──────────────────────────────────────
-function selectMode(mode) {
-  document.getElementById('r-mode').value = mode;
-  const free = document.getElementById('mode-free');
-  const paid = document.getElementById('mode-paid');
-  const pf   = document.getElementById('price-field');
-  if (mode === 'free') {
-    free.style.border = '2px solid var(--gold)';
-    free.style.background = 'rgba(212,175,55,.1)';
-    free.querySelector('div:nth-child(2)').style.color = 'var(--gold)';
-    paid.style.border = '1px solid var(--border)';
-    paid.style.background = 'transparent';
-    paid.querySelector('div:nth-child(2)').style.color = 'var(--muted)';
-    pf.style.display = 'none';
-  } else {
-    paid.style.border = '2px solid var(--gold)';
-    paid.style.background = 'rgba(212,175,55,.1)';
-    paid.querySelector('div:nth-child(2)').style.color = 'var(--gold)';
-    free.style.border = '1px solid var(--border)';
-    free.style.background = 'transparent';
-    free.querySelector('div:nth-child(2)').style.color = 'var(--muted)';
-    pf.style.display = 'block';
-  }
+// ── Token mode selection ─────────
+function selectMode(mode){
+  document.getElementById('r-token-mode').value=mode;
+  ['free','paid'].forEach(m=>{
+    document.getElementById('mode-'+m).classList.toggle('selected',m===mode);
+  });
 }
 
-// ── Autocomplete helpers ───────────────────────────────────
-let _catTimer, _locTimer;
-
-async function suggestCats() {
-  clearTimeout(_catTimer);
-  _catTimer = setTimeout(async () => {
-    const q = document.getElementById('r-cat').value.trim();
-    const box = document.getElementById('cat-suggestions');
-    if (!q) { box.style.display='none'; return; }
-    try {
-      const res = await fetch(`${WORKER}/search/categories?q=${encodeURIComponent(q)}`);
-      const { data } = await res.json();
-      if (!data?.length) { box.style.display='none'; return; }
-      box.innerHTML = data.map(c =>
-        `<div onclick="pickCat('${c.name}')" style="padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid rgba(212,175,55,.1)">${c.icon||'🏪'} ${c.name}</div>`
-      ).join('');
-      box.style.display = 'block';
-    } catch(e) {}
-  }, 300);
+// ── Autocomplete helpers ──────────
+let _acT={};
+function acLoc(input,field,dropId){
+  const q=input.value.trim();
+  clearTimeout(_acT[dropId]);
+  if(q.length<1){closeAcR(dropId);return;}
+  _acT[dropId]=setTimeout(async()=>{
+    try{
+      const res=await fetch(`${WORKER}/search/locations?q=${encodeURIComponent(q)}`);
+      const json=await res.json();
+      const items=json.data||[];
+      const drop=document.getElementById(dropId);
+      if(!items.length){closeAcR(dropId);return;}
+      drop.innerHTML=items.map(item=>{
+        const val=field==='country'?(item.country||item.city||''):(item.city||item.area||item.country||'');
+        return `<div class="ac-item" onclick="pickAcR('${dropId}',\`${escR(val)}\`,'${input.id}')">${escR(val)}</div>`;
+      }).filter((v,i,a)=>a.indexOf(v)===i).join('');
+      drop.classList.add('open');
+    }catch(e){}
+  },280);
 }
 
-function pickCat(name) {
-  document.getElementById('r-cat').value = name;
-  document.getElementById('cat-suggestions').style.display = 'none';
+function acCat(input,dropId){
+  const q=input.value.trim();
+  clearTimeout(_acT[dropId]);
+  if(q.length<1){closeAcR(dropId);return;}
+  _acT[dropId]=setTimeout(async()=>{
+    try{
+      const res=await fetch(`${WORKER}/search/categories?q=${encodeURIComponent(q)}`);
+      const json=await res.json();
+      const items=json.data||[];
+      const drop=document.getElementById(dropId);
+      if(!items.length){closeAcR(dropId);return;}
+      drop.innerHTML=items.map(item=>{
+        const val=item.name||item.label||item;
+        return `<div class="ac-item" onclick="pickAcR('${dropId}','${escR(val)}','${input.id}')">${escR(val)}</div>`;
+      }).join('');
+      drop.classList.add('open');
+    }catch(e){}
+  },280);
 }
 
-async function suggestLocs(type) {
-  clearTimeout(_locTimer);
-  _locTimer = setTimeout(async () => {
-    const q = document.getElementById(type==='city' ? 'r-city' : 'r-country').value.trim();
-    const box = document.getElementById('city-suggestions');
-    if (!q || type !== 'city') return;
-    try {
-      const res = await fetch(`${WORKER}/search/locations?q=${encodeURIComponent(q)}`);
-      const { data } = await res.json();
-      if (!data?.length) { box.style.display='none'; return; }
-      const seen = new Set();
-      const items = data.filter(l => {
-        const k = l.city; if (seen.has(k)) return false; seen.add(k); return true;
-      });
-      box.innerHTML = items.map(l =>
-        `<div onclick="pickCity('${l.city}','${l.country||"Pakistan"}')" style="padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid rgba(212,175,55,.1)">📍 ${l.city}, ${l.country||''}</div>`
-      ).join('');
-      box.style.display = 'block';
-    } catch(e) {}
-  }, 300);
+function pickAcR(dropId,val,inputId){
+  document.getElementById(inputId).value=val;
+  closeAcR(dropId);
 }
 
-function pickCity(city, country) {
-  document.getElementById('r-city').value = city;
-  document.getElementById('r-country').value = country;
-  document.getElementById('city-suggestions').style.display = 'none';
-}
+function closeAcR(dropId){const d=document.getElementById(dropId);if(d)d.classList.remove('open');}
 
-// ── Submit ─────────────────────────────────────────────────
+document.addEventListener('click',e=>{
+  ['ac-cnt','ac-cty','ac-catd'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&!el.contains(e.target))el.classList.remove('open');
+  });
+});
+
+function escR(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+// ── Submit ────────────────────────
 async function submitReg(){
-  const name    = document.getElementById('r-name').value.trim();
-  const phone   = document.getElementById('r-phone').value.trim();
-  const pin     = document.getElementById('r-pin').value.trim();
-  const cat     = document.getElementById('r-cat').value.trim();
-  const area    = document.getElementById('r-area').value.trim();
-  const country = document.getElementById('r-country').value.trim();
-  const city    = document.getElementById('r-city').value.trim();
-  const mode    = document.getElementById('r-mode').value;
-  const errEl   = document.getElementById('reg-err');
-  const btn     = document.getElementById('reg-btn');
-  errEl.textContent = '';
+  const name=document.getElementById('r-name').value.trim();
+  const phone=document.getElementById('r-phone').value.trim();
+  const pin=document.getElementById('r-pin').value.trim();
+  const cat=document.getElementById('r-cat').value.trim();
+  const area=document.getElementById('r-area').value.trim();
+  const country=document.getElementById('r-country').value.trim();
+  const city=document.getElementById('r-city').value.trim();
+  const token_mode=document.getElementById('r-token-mode').value;
+  const errEl=document.getElementById('reg-err');
+  const btn=document.getElementById('reg-btn');
+  errEl.textContent='';
 
-  if (!name)               return errEl.textContent='دکان کا نام ضروری ہے';
-  if (!phone)              return errEl.textContent='فون نمبر ضروری ہے';
-  if (!pin||pin.length!==4) return errEl.textContent='پن 4 ہندسوں کا ہونا چاہیے';
-  if (!city)               return errEl.textContent='شہر ضروری ہے';
+  if(!name)return errEl.textContent='دکان کا نام ضروری ہے';
+  if(!phone)return errEl.textContent='فون نمبر ضروری ہے';
+  if(!pin||pin.length!==4)return errEl.textContent='پن 4 ہندسوں کا ہونا چاہیے';
 
-  btn.disabled=true; btn.textContent='...';
-  try {
-    const res = await fetch(`${WORKER}/register`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ name, owner_phone:phone, pin, category:cat, area, country, city, token_mode:mode })
-    });
-    const data = await res.json();
-    if (data.success) {
+  btn.disabled=true;btn.textContent='...';
+  try{
+    const body={name,owner_phone:phone,pin};
+    if(cat)body.category=cat;
+    if(area)body.area=area;
+    if(country)body.country=country;
+    if(city)body.city=city;
+    if(token_mode)body.token_mode=token_mode;
+    const res=await fetch(`${WORKER}/register`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const data=await res.json();
+    if(data.success){
       document.getElementById('form-card').style.display='none';
       document.getElementById('success-box').style.display='block';
-    } else {
-      errEl.textContent = data.error||'خرابی';
-      btn.disabled=false; btn.textContent='رجسٹریشن درخواست دیں';
+    }else{
+      errEl.textContent=data.error||'خرابی';
+      btn.disabled=false;btn.textContent='رجسٹریشن درخواست دیں';
     }
-  } catch(e) {
-    errEl.textContent = 'کنکشن خرابی';
-    btn.disabled=false; btn.textContent='رجسٹریشن درخواست دیں';
+  }catch(e){
+    errEl.textContent='کنکشن خرابی';
+    btn.disabled=false;btn.textContent='رجسٹریشن درخواست دیں';
   }
 }
-
-// Close dropdowns on outside click
-document.addEventListener('click', e => {
-  if (!e.target.closest('#r-cat')) document.getElementById('cat-suggestions').style.display='none';
-  if (!e.target.closest('#r-city')) document.getElementById('city-suggestions').style.display='none';
-});
 </script>
 </body>
 </html>

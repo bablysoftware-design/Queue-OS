@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <link rel="manifest" href="/manifest.json"/>
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"/>
-<title>WaitMate</title>
+<title>Saf Queue</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Noto+Nastaliq+Urdu:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
 <style>
@@ -630,7 +630,7 @@ body::after {
 .btn-save:hover { background: var(--gold2); }
 .btn-ghost-sm { padding: 10px 16px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text2); font-family: 'Sora', sans-serif; font-size: 13px; cursor: pointer; transition: all 0.2s; }
 .btn-ghost-sm:hover { border-color: var(--border2); color: var(--text); }
-.pin-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: end; margin-top: 4px; }
+.pin-row { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; } .pin-row .settings-field { width: 100%; } .pin-row .btn-save { width: 100%; padding: 12px; }
 .pin-msg { font-size: 11px; text-align: center; min-height: 16px; margin-top: 6px; }
 
 /* Bottom bar */
@@ -713,6 +713,30 @@ body::after {
 /* Install banner */
 .install-banner { display: none; position: fixed; bottom: 80px; left: 12px; right: 12px; background: var(--bg2); border: 1px solid rgba(232,184,75,0.25); border-radius: 14px; padding: 14px 16px; align-items: center; justify-content: space-between; gap: 12px; z-index: 100; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
 
+
+/* Autocomplete dropdown */
+.ac-drop {
+  position: absolute;
+  top: 100%;
+  left: 0; right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 9px;
+  margin-top: 4px;
+  z-index: 200;
+  max-height: 180px;
+  overflow-y: auto;
+  display: none;
+}
+.ac-drop.open { display: block; }
+.ac-item {
+  padding: 9px 12px;
+  font-size: 13px;
+  color: var(--text2);
+  cursor: pointer;
+  transition: background .15s;
+}
+.ac-item:hover { background: rgba(255,255,255,0.05); color: var(--text); }
 /* Animations */
 @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
 @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
@@ -730,7 +754,7 @@ body::after {
       <div class="logo-ring"></div>
       <div class="logo-inner">🏪</div>
     </div>
-    <div class="logo-name">WaitMate</div>
+    <div class="logo-name">Saf Queue</div>
     <div class="logo-tagline" id="login-tagline">Smart Queue Management</div>
   </div>
 
@@ -755,11 +779,49 @@ body::after {
       <span>🛍</span>
       <span id="cust-btn-txt">I'm a Customer — Get Token</span>
     </button>
-    <button type="button" onclick="window.location.assign('/register.html')"
-      style="width:100%;margin-top:10px;padding:14px;border:1px dashed rgba(212,175,55,.4);border-radius:14px;background:rgba(212,175,55,.05);color:var(--gold);font-family:'Sora',sans-serif;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s">
-      <span style="font-size:18px">🏪</span>
+
+    <div class="divider" style="margin-top:10px">— or —</div>
+    <button type="button" onclick="window.location.assign('/register.html')" style="width:100%;padding:13px;border:1.5px solid rgba(52,211,153,0.5);border-radius:10px;background:rgba(52,211,153,0.07);color:#34D399;font-family:'Sora',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:0.01em;" onmouseover="this.style.background='rgba(52,211,153,0.14)'" onmouseout="this.style.background='rgba(52,211,153,0.07)'">
+      <span style="font-size:16px">🏪</span>
       <span>Apna Business Add Karein</span>
     </button>
+    <div style="margin-top:10px">
+      <button onclick="showDirectory()" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:9px;background:transparent;color:var(--text3);font-family:var(--font);font-size:12px;cursor:pointer">🔍 Browse Shops Directory</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ DIRECTORY ═══════════ -->
+<div id="directory-screen" class="screen" style="flex-direction:column;gap:0">
+  <div style="padding:16px 16px 0;display:flex;align-items:center;justify-content:space-between;background:rgba(8,12,20,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50">
+    <div style="font-size:16px;font-weight:700;color:var(--gold)">🏪 Shop Directory</div>
+    <button onclick="showScreen('login-screen')" style="padding:6px 12px;border:1px solid var(--border);border-radius:100px;background:transparent;color:var(--text2);font-family:var(--font);font-size:11px;cursor:pointer">← Back</button>
+  </div>
+  <div style="padding:12px 14px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:8px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div style="position:relative">
+        <input id="filter-country" type="text" placeholder="Country" autocomplete="off"
+          style="width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:9px;padding:9px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;transition:border-color .2s"
+          oninput="acFilter(this,'country','ac-country')"/>
+        <div id="ac-country" class="ac-drop"></div>
+      </div>
+      <div style="position:relative">
+        <input id="filter-city" type="text" placeholder="City" autocomplete="off"
+          style="width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:9px;padding:9px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;transition:border-color .2s"
+          oninput="acFilter(this,'city','ac-city')"/>
+        <div id="ac-city" class="ac-drop"></div>
+      </div>
+    </div>
+    <div style="position:relative">
+      <input id="filter-category" type="text" placeholder="Category (barber, clinic...)" autocomplete="off"
+        style="width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:9px;padding:9px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;transition:border-color .2s"
+        oninput="acFilter(this,'category','ac-category')"/>
+      <div id="ac-category" class="ac-drop"></div>
+    </div>
+    <button onclick="loadDirectory()" style="padding:9px;border:none;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0d1422;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer">🔍 Search Shops</button>
+  </div>
+  <div id="dir-list" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px">
+    <div style="text-align:center;padding:40px;color:var(--text3);font-size:13px">Use filters above to search shops</div>
   </div>
 </div>
 
@@ -833,7 +895,7 @@ body::after {
         </div>
         <button onclick="applyWaitOverride()" id="wait-apply-btn"
           style="width:100%;padding:10px;border:none;border-radius:10px;background:var(--gold);color:#0d1422;font-weight:700;font-size:13px;cursor:pointer">
-          ✓ Apply for Next Customer
+          <span id="lbl-apply-wait">✓ Apply for Next Customer</span>
         </button>
         <div id="wait-override-status" style="font-size:11px;color:#25d366;text-align:center;margin-top:6px;min-height:16px"></div>
       </div>
@@ -1063,6 +1125,7 @@ function applyLanguage() {
   document.getElementById('bar-share').textContent          = t('shareLink');
   document.getElementById('bar-settings').textContent       = t('settings');
   document.getElementById('bar-logout').textContent         = t('logout');
+  const awEl = document.getElementById('lbl-apply-wait'); if(awEl) awEl.textContent = t('applyWaitBtn');
   document.getElementById('modal-admin-title').textContent  = t('adminAccess');
   document.getElementById('lbl-admin-secret').textContent   = t('adminSecret');
   document.getElementById('admin-login-btn').textContent    = t('adminLogin');
@@ -1403,7 +1466,7 @@ async function applyWaitOverride() {
     stat.style.color = '#f87171';
   }
   btn.disabled = false;
-  btn.textContent = '✓ Apply for Next Customer';
+  const lblAW = document.getElementById('lbl-apply-wait'); if(lblAW) lblAW.textContent = t('applyWaitBtn'); else btn.textContent = t('applyWaitBtn');
   setTimeout(() => { stat.textContent = ''; }, 4000);
 }
 
@@ -1567,8 +1630,8 @@ async function api(method, path, body) {
   const opts = { method, headers };
   if (body) opts.body = JSON.stringify(body);
   const res  = await fetch(WORKER + path, opts);
-  // Auto-logout on auth errors — clears stale tokens
-  if (res.status === 401) {
+  // Auto-logout on auth errors — but NOT on login route itself
+  if (res.status === 401 && !path.includes('/login')) {
     localStorage.clear();
     state.sessionToken = null;
     showScreen('login-screen');
@@ -1590,6 +1653,102 @@ function showToast(msg, type = '') {
   clearTimeout(toastT); toastT = setTimeout(() => el.className = '', 3500);
 }
 
+// ── Shop Directory ────────────────────────────────────────────
+function showDirectory() {
+  showScreen('directory-screen');
+  loadDirectory();
+}
+window.showDirectory = showDirectory;
+
+let acTimers = {};
+
+function acFilter(input, type, dropId) {
+  const q = input.value.trim();
+  clearTimeout(acTimers[type]);
+  if (q.length < 1) { closeAc(dropId); return; }
+  acTimers[type] = setTimeout(async () => {
+    try {
+      let url;
+      if (type === 'category') {
+        url = `${WORKER}/search/categories?q=${encodeURIComponent(q)}`;
+      } else {
+        url = `${WORKER}/search/locations?q=${encodeURIComponent(q)}`;
+      }
+      const res  = await fetch(url);
+      const json = await res.json();
+      const items = json.data || [];
+      const drop = document.getElementById(dropId);
+      if (!items.length) { closeAc(dropId); return; }
+      drop.innerHTML = items.map(item => {
+        const label = type === 'category'
+          ? (item.name || item.label || item)
+          : (type === 'country' ? (item.country || item.city) : (item.city || item.area || item.country));
+        return `<div class="ac-item" onclick="pickAc('${dropId}','${esc2(label)}','${input.id}')">${esc2(label)}</div>`;
+      }).join('');
+      drop.classList.add('open');
+    } catch(e) {}
+  }, 280);
+}
+window.acFilter = acFilter;
+
+function pickAc(dropId, val, inputId) {
+  document.getElementById(inputId).value = val;
+  closeAc(dropId);
+  loadDirectory();
+}
+window.pickAc = pickAc;
+
+function closeAc(dropId) {
+  const d = document.getElementById(dropId);
+  if (d) d.classList.remove('open');
+}
+
+// Close dropdowns on outside click
+document.addEventListener('click', e => {
+  ['ac-country','ac-city','ac-category'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.contains(e.target)) el.classList.remove('open');
+  });
+});
+
+async function loadDirectory() {
+  const country  = (document.getElementById('filter-country')?.value  || '').trim();
+  const city     = (document.getElementById('filter-city')?.value     || '').trim();
+  const category = (document.getElementById('filter-category')?.value || '').trim();
+  const listEl   = document.getElementById('dir-list');
+  listEl.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text3);font-size:12px">Loading...</div>';
+
+  const params = new URLSearchParams();
+  if (country)  params.set('country',  country);
+  if (city)     params.set('city',     city);
+  if (category) params.set('category', category);
+
+  try {
+    const res  = await fetch(`${WORKER}/public/shops?${params}`);
+    const json = await res.json();
+    const shops = json.data?.shops || json.data || [];
+    if (!shops.length) {
+      listEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);font-size:13px">No shops found</div>';
+      return;
+    }
+    listEl.innerHTML = shops.map(s => `
+      <div style="background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px"
+           onclick="window.location.href='/customer.html?shop=${s.id}'">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px">${esc(s.name)}</div>
+          <div style="font-size:11px;color:var(--text3)">${[s.category,s.city||s.area].filter(Boolean).join(' · ')}</div>
+          ${s.is_open ? '<div style="font-size:10px;color:var(--green);margin-top:3px">● Open</div>' : '<div style="font-size:10px;color:var(--text3);margin-top:3px">● Closed</div>'}
+        </div>
+        <div style="font-size:18px;opacity:.5">›</div>
+      </div>`).join('');
+  } catch(e) {
+    listEl.innerHTML = `<div style="text-align:center;padding:32px;color:var(--red);font-size:12px">${e.message}</div>`;
+  }
+}
+window.loadDirectory = loadDirectory;
+
+function esc2(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
 // ── Boot ──────────────────────────────────────────────────────
 (function boot() {
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/service-worker.js').catch(() => {});
@@ -1606,16 +1765,9 @@ function showToast(msg, type = '') {
     state.shopName     = nm;
     state.isOpen       = op;
     state.sessionToken = tok;
-    // Verify session is still valid before showing dashboard
-    api('GET', `/tokens/queue?shop_id=${id}&limit=1`)
-      .then(() => { showDashboard(); })
-      .catch(() => {
-        // Session expired or invalid — clear and show login with message
-        localStorage.clear();
-        state.shopId = state.shopName = state.sessionToken = null;
-        const errEl = document.getElementById('login-error');
-        if (errEl) errEl.textContent = 'Session expired — please sign in again';
-      });
+    showDashboard();
+  } else {
+    localStorage.clear();
   }
 
   document.getElementById('login-pin').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });

@@ -76,6 +76,7 @@ const STRINGS = {
     shareLink:      'Share',
     settings:       'Settings',
     logout:         'Logout',
+    applyWaitBtn:   '✓ Apply for Next Customer',
 
     // Toasts
     shopOpen:       '✅ Shop is now open!',
@@ -195,6 +196,7 @@ const STRINGS = {
     shareLink:      'شیئر',
     settings:       'ترتیبات',
     logout:         'باہر',
+    applyWaitBtn:   '✓ اگلے گاہک کے لیے سیٹ کریں',
 
     shopOpen:       '✅ دکان کھل گئی!',
     shopClosed:     '🔴 دکان بند ہو گئی',
