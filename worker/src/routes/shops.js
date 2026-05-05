@@ -148,7 +148,7 @@ export async function updateShopSettingsHandler(request, env) {
     if (auth.shop_id !== shopId) return unauthorized('این دکان آپ کی نہیں');
 
     const body = await request.json();
-    const allowed = ['opening_time','closing_time','avg_service_time_mins','description','address'];
+    const allowed = ['opening_time','closing_time','avg_service_time_mins','description','address','token_mode','token_price'];
     const update  = {};
     allowed.forEach(k => { if (body[k] !== undefined) update[k] = body[k]; });
 

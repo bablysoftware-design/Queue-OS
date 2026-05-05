@@ -994,7 +994,29 @@ body::after {
             <input id="s-avg" type="number" min="1" max="120" value="10"/>
           </div>
         </div>
-        <div class="settings-actions">
+
+        <!-- Token Mode -->
+        <div style="margin-top:14px;margin-bottom:6px">
+          <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.06em;margin-bottom:8px">TOKEN MODE</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div id="smode-free" onclick="setShopMode('free')" style="border:1px solid rgba(212,175,55,.4);border-radius:10px;padding:10px;text-align:center;cursor:pointer;transition:all .2s;background:rgba(212,175,55,.08)">
+              <div style="font-size:18px">🆓</div>
+              <div style="font-size:11px;font-weight:700;color:var(--gold);margin-top:4px">Free</div>
+            </div>
+            <div id="smode-paid" onclick="setShopMode('paid')" style="border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;cursor:pointer;transition:all .2s">
+              <div style="font-size:18px">💳</div>
+              <div style="font-size:11px;font-weight:700;color:var(--text3);margin-top:4px">Paid</div>
+            </div>
+          </div>
+        </div>
+        <div id="s-price-row" style="display:none;margin-top:8px">
+          <label style="font-size:11px;color:var(--text3);font-weight:600">Token Price (Rs)</label>
+          <input id="s-token-price" type="number" min="1" max="9999" placeholder="e.g. 100"
+            style="width:100%;background:rgba(5,8,16,.6);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;margin-top:4px;direction:ltr"/>
+        </div>
+        <input type="hidden" id="s-token-mode" value="free"/>
+
+        <div class="settings-actions" style="margin-top:14px">
           <button class="btn-save" id="save-btn" onclick="saveSettings()">Save</button>
           <button class="btn-ghost-sm" id="close-settings-btn" onclick="toggleSettings()">Close</button>
         </div>
@@ -1024,6 +1046,7 @@ body::after {
 
   <div class="bottombar">
     <button class="bar-btn" onclick="refreshQueue()"><span class="bar-icon">↺</span><span id="bar-refresh">Refresh</span></button>
+    <button class="bar-btn" id="bar-pay-btn" onclick="togglePaymentPanel()" style="display:none"><span class="bar-icon">💳</span><span id="bar-pay">Payments</span></button>
     <button class="bar-btn" onclick="shareShopLink()"><span class="bar-icon">🔗</span><span id="bar-share">Share</span></button>
     <button class="bar-btn" onclick="toggleSettings()"><span class="bar-icon">⚙</span><span id="bar-settings">Settings</span></button>
     <button class="bar-btn" onclick="handleLogout()"><span class="bar-icon">→</span><span id="bar-logout">Logout</span></button>
@@ -1194,8 +1217,12 @@ function showDashboard() {
   loadPaymentRequests();
   // Sync slider to current shop avg wait time
   api('GET', `/shops/${state.shopId}`)
-    .then(({ data }) => { if (data.avg_service_time_mins) syncSliderToSettings(data.avg_service_time_mins); })
-    .catch(() => {});
+    .then(({ data }) => {
+      if (data.avg_service_time_mins) syncSliderToSettings(data.avg_service_time_mins);
+      // Show payments button if shop is paid mode
+      const payBtn = document.getElementById('bar-pay-btn');
+      if (payBtn && data.token_mode === 'paid') payBtn.style.display = 'flex';
+    }).catch(() => {});
   clearInterval(state.refreshTimer);
   state.refreshTimer = setInterval(refreshQueue, 15000);
 }
@@ -1518,6 +1545,33 @@ async function approvePayment(requestId) {
   } catch(e) { showToast(e.message, 'error'); }
 }
 
+// ── Token mode selector in settings ───────────────────────────
+function setShopMode(mode, doSave = false) {
+  document.getElementById('s-token-mode').value = mode;
+  const freeEl = document.getElementById('smode-free');
+  const paidEl = document.getElementById('smode-paid');
+  const priceRow = document.getElementById('s-price-row');
+  if (freeEl) { freeEl.style.background = mode==='free' ? 'rgba(212,175,55,.08)' : 'transparent'; freeEl.style.borderColor = mode==='free' ? 'rgba(212,175,55,.4)' : 'var(--border)'; freeEl.querySelector('div:last-child').style.color = mode==='free' ? 'var(--gold)' : 'var(--text3)'; }
+  if (paidEl) { paidEl.style.background = mode==='paid' ? 'rgba(212,175,55,.08)' : 'transparent'; paidEl.style.borderColor = mode==='paid' ? 'rgba(212,175,55,.4)' : 'var(--border)'; paidEl.querySelector('div:last-child').style.color = mode==='paid' ? 'var(--gold)' : 'var(--text3)'; }
+  if (priceRow) priceRow.style.display = mode==='paid' ? 'block' : 'none';
+  const payBtn = document.getElementById('bar-pay-btn');
+  if (payBtn) payBtn.style.display = mode==='paid' ? 'flex' : 'none';
+}
+window.setShopMode = setShopMode;
+
+// ── Toggle payment requests panel ─────────────────────────────
+function togglePaymentPanel() {
+  const card = document.getElementById('payment-requests-card');
+  if (!card) return;
+  const visible = card.style.display === 'block';
+  card.style.display = visible ? 'none' : 'block';
+  if (!visible) {
+    loadPaymentRequests();
+    setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  }
+}
+window.togglePaymentPanel = togglePaymentPanel;
+
 // ── Settings ──────────────────────────────────────────────────
 function toggleSettings() {
   const panel = document.getElementById('settings-panel');
@@ -1534,6 +1588,13 @@ function toggleSettings() {
           document.getElementById('s-avg').value = data.avg_service_time_mins;
           syncSliderToSettings(data.avg_service_time_mins);
         }
+        // Load token mode + price
+        const mode = data.token_mode || 'free';
+        setShopMode(mode, /*save=*/false);
+        if (data.token_price) {
+          const priceEl = document.getElementById('s-token-price');
+          if (priceEl) priceEl.value = data.token_price;
+        }
       }).catch(() => {});
   }
 }
@@ -1541,11 +1602,19 @@ window.toggleSettings = toggleSettings;
 
 async function saveSettings() {
   try {
-    await api('PATCH', `/shops/${state.shopId}/settings`, {
+    const mode  = document.getElementById('s-token-mode')?.value || 'free';
+    const price = parseInt(document.getElementById('s-token-price')?.value || '0', 10);
+    const body  = {
       opening_time:          document.getElementById('s-open').value,
       closing_time:          document.getElementById('s-close').value,
       avg_service_time_mins: parseInt(document.getElementById('s-avg').value, 10),
-    });
+      token_mode:            mode,
+    };
+    if (mode === 'paid' && price > 0) body.token_price = price;
+    await api('PATCH', `/shops/${state.shopId}/settings`, body);
+    // Update payment tab visibility
+    const payBtn = document.getElementById('bar-pay-btn');
+    if (payBtn) payBtn.style.display = mode === 'paid' ? 'flex' : 'none';
     showToast(t('settingsSaved'), 'success');
     document.getElementById('settings-panel').style.display = 'none';
   } catch(e) { showToast(e.message, 'error'); }

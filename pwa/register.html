@@ -70,9 +70,13 @@ h1{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;background:li
 <div class="holo-grid"></div>
 <div class="container">
 
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <button onclick="history.length>1?history.back():window.location.href='/'" style="padding:8px 16px;border:1px solid rgba(212,175,55,.3);border-radius:100px;background:transparent;color:rgba(237,232,208,.6);font-family:inherit;font-size:12px;cursor:pointer;transition:all .2s" onmouseover="this.style.color='#D4AF37';this.style.borderColor='#D4AF37'" onmouseout="this.style.color='rgba(237,232,208,.6)';this.style.borderColor='rgba(212,175,55,.3)'">← واپس</button>
+    <div style="font-size:11px;color:rgba(237,232,208,.4)">WaitMate</div>
+  </div>
   <div class="header">
     <div class="orb"><div class="orb-inner">🏪</div></div>
-    <h1>SAF QUEUE</h1>
+    <h1>WaitMate</h1>
     <p>اپنی دکان رجسٹر کریں اور 30 دن مفت استعمال کریں</p>
   </div>
 
@@ -134,6 +138,12 @@ h1{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;background:li
       <input type="hidden" id="r-token-mode" value="free"/>
     </div>
 
+    <div class="field" id="price-field" style="display:none">
+      <label>ٹوکن قیمت (روپے) *</label>
+      <input id="r-token-price" type="number" min="1" max="9999" placeholder="مثال: 100" style="direction:ltr;text-align:left"/>
+      <div style="font-size:11px;color:rgba(237,232,208,.4);margin-top:5px">گاہک کو ٹوکن لینے سے پہلے یہ رقم ادا کرنی ہوگی</div>
+    </div>
+
     <button class="btn-gold" id="reg-btn" onclick="submitReg()">رجسٹریشن درخواست دیں</button>
     <div class="err" id="reg-err"></div>
   </div>
@@ -167,6 +177,8 @@ function selectMode(mode){
   ['free','paid'].forEach(m=>{
     document.getElementById('mode-'+m).classList.toggle('selected',m===mode);
   });
+  const priceField = document.getElementById('price-field');
+  if(priceField) priceField.style.display = mode==='paid' ? 'block' : 'none';
 }
 
 // ── Autocomplete helpers ──────────
@@ -253,6 +265,11 @@ async function submitReg(){
     if(country)body.country=country;
     if(city)body.city=city;
     if(token_mode)body.token_mode=token_mode;
+    if(token_mode==='paid'){
+      const price=parseInt(document.getElementById('r-token-price')?.value||'0',10);
+      if(!price||price<1){errEl.textContent='ادا شدہ موڈ میں قیمت ضروری ہے';btn.disabled=false;btn.textContent='رجسٹریشن درخواست دیں';return;}
+      body.token_price=price;
+    }
     const res=await fetch(`${WORKER}/register`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const data=await res.json();
     if(data.success){
