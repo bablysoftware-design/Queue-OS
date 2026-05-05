@@ -635,9 +635,16 @@ body{font-family:'Noto Nastaliq Urdu',serif;background:var(--void);color:var(--t
       </div>
 
       <div class="tracker-box">
-        <div class="tracker-hd">LIVE POSITION</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div class="tracker-hd">LIVE POSITION</div>
+          <button id="mute-btn" onclick="toggleMute()"
+            style="display:flex;align-items:center;gap:5px;padding:5px 10px;border:1px solid rgba(212,175,55,.25);border-radius:20px;background:transparent;cursor:pointer;font-size:11px;font-family:'Sora',sans-serif;transition:all .2s">
+            <span id="mute-icon">🔊</span>
+            <span id="mute-label" style="color:var(--gold)">Alerts On</span>
+          </button>
+        </div>
         <div class="tracker-badge waiting" id="tracker-badge">انتظار میں ہیں</div>
-        <div class="tracker-sub" id="tracker-sub">ہر 15 سیکنڈ میں خودبخود اپڈیٹ ہوتا ہے</div>
+        <div class="tracker-sub" id="tracker-sub">ہر 10 سیکنڈ میں خودبخود اپڈیٹ ہوتا ہے</div>
       </div>
 
       <!-- Notification prompt -->
@@ -1483,13 +1490,122 @@ function updateCountdown(minutes, position) {
 }
 
 // ── LIVE TRACKER ───────────────────────────────────────────
-let _nearAlarmFired   = false;
+// ── ALERT STATE ────────────────────────────────────────────
+// Stages: 5 ahead, 3 ahead, 1 ahead, 0 (called)
+const ALERT_STAGES = new Set(); // tracks which stages already fired this session
+
 let _calledAlarmFired = false;
 
-function startTracker() {
-  _nearAlarmFired   = false;
+function resetAlertStages() {
+  ALERT_STAGES.clear();
   _calledAlarmFired = false;
+}
+
+// ── MUTE SYSTEM ────────────────────────────────────────────
+function isMuted() {
+  return localStorage.getItem('queue_mute') === 'true';
+}
+
+function toggleMute() {
+  const muted = !isMuted();
+  localStorage.setItem('queue_mute', muted ? 'true' : 'false');
+  updateMuteUI();
+  if (!muted) playBeep(660, 0.15); // confirmation beep on unmute
+}
+
+function updateMuteUI() {
+  const muted   = isMuted();
+  const icon    = document.getElementById('mute-icon');
+  const label   = document.getElementById('mute-label');
+  const btn     = document.getElementById('mute-btn');
+  if (!icon) return;
+  icon.textContent  = muted ? '🔇' : '🔊';
+  if (label) label.textContent = muted ? 'Muted' : 'Alerts On';
+  if (label) label.style.color = muted ? 'var(--muted)' : 'var(--gold)';
+  if (btn)   btn.style.opacity = muted ? '0.6' : '1';
+}
+
+// ── VOICE ANNOUNCEMENT ─────────────────────────────────────
+function playVoice(text) {
+  if (isMuted()) return;
+  if (!('speechSynthesis' in window)) return;
+  // Only play if page is visible
+  if (document.hidden) return;
+  try {
+    window.speechSynthesis.cancel(); // clear queue
+    const utt  = new SpeechSynthesisUtterance(text);
+    utt.lang   = 'ur-PK';
+    utt.rate   = 0.9;
+    utt.pitch  = 1.0;
+    utt.volume = 1.0;
+    // fallback to en-US if ur-PK not available
+    const voices = window.speechSynthesis.getVoices();
+    const urdu   = voices.find(v => v.lang.startsWith('ur'));
+    if (urdu) utt.voice = urdu;
+    window.speechSynthesis.speak(utt);
+  } catch(e) { /* silent fallback — WhatsApp handles it */ }
+}
+
+// ── SOUND BEEP ─────────────────────────────────────────────
+function playBeep(freq, duration, vol) {
+  if (isMuted()) return;
+  if (document.hidden) return;
+  freq     = freq     || 880;
+  duration = duration || 0.2;
+  vol      = vol      || 0.5;
+  try {
+    const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + duration + 0.01);
+  } catch(e) {}
+}
+
+// ── TRIGGER ALERT (voice + sound) ─────────────────────────
+function triggerAlert(stage) {
+  if (ALERT_STAGES.has(stage)) return; // already fired
+  ALERT_STAGES.add(stage);
+
+  const messages = {
+    5:      '5 log baqi hain aap ki bari ke liye',
+    3:      '3 log baqi hain aap ki bari ke liye',
+    1:      '1 shakhs baqi hai',
+    0:      'Aap ki bari aa gai hay',
+  };
+
+  const beeps = {
+    5: [660, 0.2, 0.4],
+    3: [880, 0.2, 0.5],
+    1: [1100, 0.25, 0.6],
+    0: null, // playAlarm('called') handles this
+  };
+
+  if (stage === 0) {
+    // Final call — use existing loud alarm
+    playAlarm('called');
+    playVoice(messages[0]);
+    if (navigator.vibrate) navigator.vibrate([400, 150, 400, 150, 600]);
+  } else {
+    const [freq, dur, vol] = beeps[stage];
+    playBeep(freq, dur, vol);
+    // Small delay so beep finishes before voice
+    setTimeout(() => playVoice(messages[stage]), 600);
+    if (navigator.vibrate) navigator.vibrate([stage === 1 ? 300 : 150]);
+  }
+}
+
+// ── TRACKER ────────────────────────────────────────────────
+function startTracker() {
+  resetAlertStages();
   if (trackerTimer) clearInterval(trackerTimer);
+  updateMuteUI();
   updateTracker();
   trackerTimer = setInterval(updateTracker, 10000);
 }
@@ -1516,8 +1632,8 @@ async function updateTracker() {
       clearInterval(trackerTimer);
       if (!_calledAlarmFired) {
         _calledAlarmFired = true;
-        playAlarm('called');
-        setTimeout(() => playAlarm('called'), 8000);
+        triggerAlert(0);
+        setTimeout(() => { if (!isMuted()) playAlarm('called'); }, 9000);
         if (Notification.permission === 'granted') {
           new Notification('آپ کی باری آ گئی! 🔔', { body: 'ابھی کاؤنٹر پر آئیں!', icon: '/icons/icon-192.png', tag: 'saf-called' });
         }
@@ -1571,21 +1687,15 @@ async function updateTracker() {
       if (waitEl) waitEl.textContent = wait + ' min';
       updateCountdown(wait, pos);
 
-      // Near alarm — fire once when ≤3 people ahead
-      if (ahead <= 3 && ahead > 0 && !_nearAlarmFired) {
-        _nearAlarmFired = true;
-        playAlarm('near');
-        if (Notification.permission === 'granted') {
-          new Notification('آپ کی باری قریب ہے! 🔔', { body: 'صرف ' + ahead + ' لوگ آگے ہیں — تیار رہیں!', icon: '/icons/icon-192.png', tag: 'saf-near' });
-        }
-      }
-      // Next-in-line extra alert
-      if (pos === 1 && !_calledAlarmFired) {
-        playAlarm('near');
-        if (Notification.permission === 'granted') {
-          new Notification('آپ اگلے ہیں! ⚡', { body: 'آپ قطار میں پہلے نمبر پر ہیں!', icon: '/icons/icon-192.png', tag: 'saf-next' });
-        }
-      }
+      // ── Smart staged alerts ────────────────────────────
+      // Stage 5: 5 people ahead
+      if (ahead === 5) triggerAlert(5);
+      // Stage 3: 3 people ahead
+      if (ahead === 3) triggerAlert(3);
+      // Stage 1: 1 person ahead
+      if (ahead === 1) triggerAlert(1);
+      // Stage 0 (position 1 = next up) — softer pre-warning
+      if (pos === 1 && !ALERT_STAGES.has(0)) triggerAlert(1); // re-uses stage 1 message
     }
   } catch(e) { console.error('tracker:', e); }
 }
@@ -1712,6 +1822,7 @@ document.getElementById('c-name').addEventListener('keydown', e => { if(e.key===
 
 // ── BOOT ───────────────────────────────────────────────────
 (async function boot() {
+  updateMuteUI(); // init mute button state from localStorage
   // Restore active token from previous session
   const savedTokenId  = localStorage.getItem('saf_token_id');
   const savedTokenNum = localStorage.getItem('saf_token_num');
