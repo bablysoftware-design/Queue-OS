@@ -4,6 +4,7 @@ import { hashPin } from '../utils/crypto.js';
 // ============================================================
 
 import { createClient } from '../utils/db.js';
+import { assignPlan } from '../services/subscriptionService.js';
 import { ok, badRequest, serverError } from '../utils/response.js';
 import { isValidPin } from '../utils/validation.js';
 
@@ -90,10 +91,15 @@ export async function approveRegistration(request, env) {
       city:        reg.city     || null,
       token_mode:  reg.token_mode || 'free',
       status:      'approved',
+      is_active:   true,
     });
 
     // Create shopkeeper PIN
-    await db.insert('shopkeepers', { shop_id: shop.id, pin: reg.pin });
+    // reg.pin is already a bcrypt hash (hashed at registration time)
+    await db.insert('shopkeepers', { shop_id: shop.id, pin: '', pin_hash: reg.pin });
+
+    // Provision free 30-day trial
+    try { await assignPlan(db, shop.id, 'free'); } catch(e) { /* plans table may vary */ }
 
     // Mark registration approved
     await db.update('shop_registrations', `id=eq.${regId}`, { status: 'approved' });
