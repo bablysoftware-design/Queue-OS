@@ -10,14 +10,16 @@ export function buildShareLink(shop) {
 export function generateShareMessage(shop) {
   const link = buildShareLink(shop);
   return [
-    `💈 *${shop.name}*`,
+    `🏪 *${shop.name}* — Ab Line Mein Khare Rehne Ki Zarurat Nahi!`,
     ``,
-    `Line mein wait karne ki zarurat nahi.`,
-    `Ghar se token lein 👇`,
+    `✅ Ghar baithe apna token lein`,
+    `✅ Apni position live dekhein`,
+    `✅ Apni baari pe khud aa jaein`,
     ``,
     `👉 ${link}`,
     ``,
-    `Aapka number aane par WhatsApp pe alert mil jayega.`,
+    `🚀 *WaitMate* — Your Smart Queue Partner`,
+    `Apna waqt bachayein. Smart banein.`,
   ].join('\n');
 }
 
