@@ -1695,7 +1695,7 @@ async function updateTracker() {
       // Stage 1: 1 person ahead
       if (ahead === 1) triggerAlert(1);
       // Stage 0 (position 1 = next up) — softer pre-warning
-      if (pos === 1 && !ALERT_STAGES.has(0)) triggerAlert(1); // re-uses stage 1 message
+      if (pos === 1 && !ALERT_STAGES.has(0)) triggerAlert(0); // final call — you're next
     }
   } catch(e) { console.error('tracker:', e); }
 }
