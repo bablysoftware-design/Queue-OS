@@ -444,7 +444,7 @@ body{font-family:'Noto Nastaliq Urdu',serif;background:var(--void);color:var(--t
       <div class="topbar-gem">🏪</div>
       <div>
         <div class="topbar-name">WaitMate</div>
-        <div class="topbar-sub">Your Smart Queue</div>
+        <div class="topbar-sub">Your Smart Queue Partner Partner</div>
       </div>
     </div>
     <button class="topbar-lang-btn" onclick="toggleLangAndReload()" style="padding:6px 12px;border:1px solid var(--border);border-radius:100px;background:transparent;color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;font-family:'Sora',sans-serif;" id="cust-lang-btn">اردو</button>
@@ -887,11 +887,13 @@ async function loadShops() {
     renderShops();
 
     // Auto-open highlighted shop (from shared link)
-    if (HIGHLIGHT_SHOP) {
+    // Featured shop: scroll to it but don't click (openShop is called from boot)
+    if (HIGHLIGHT_SHOP || _resolvedShopId) {
+      const targetId = _resolvedShopId || HIGHLIGHT_SHOP;
       setTimeout(() => {
-        const card = document.getElementById(`shop-${HIGHLIGHT_SHOP}`);
-        if (card) { card.scrollIntoView({behavior:'smooth',block:'center'}); card.click(); }
-      }, 600);
+        const card = document.getElementById(`shop-${targetId}`);
+        if (card) card.scrollIntoView({behavior:'smooth', block:'center'});
+      }, 400);
     }
 
   } catch (e) {
@@ -1610,6 +1612,41 @@ async function shareShopLink() {
   }
 }
 
+// ── POLL PAYMENT APPROVAL ──────────────────────────────────
+async function pollPaymentApproval(requestId) {
+  let attempts = 0;
+  const maxAttempts = 60; // 10 min at 10s intervals
+  const interval = setInterval(async () => {
+    attempts++;
+    if (attempts > maxAttempts) {
+      clearInterval(interval);
+      localStorage.removeItem('saf_pending_payment');
+      return;
+    }
+    try {
+      // Check position — if token exists for this request, it was approved
+      const res  = await fetch(`${WORKER}/public/payment-status?request_id=${requestId}`);
+      const json = await res.json();
+      if (json.data?.status === 'approved' && json.data?.token_id) {
+        clearInterval(interval);
+        localStorage.removeItem('saf_pending_payment');
+        // Set token and switch to tracker
+        myTokenId  = json.data.token_id;
+        myTokenNum = json.data.token_number;
+        localStorage.setItem('saf_token_id',   myTokenId);
+        localStorage.setItem('saf_token_num',  String(myTokenNum));
+        localStorage.setItem('saf_token_shop', JSON.stringify(selectedShop));
+        document.getElementById('r-num').textContent           = myTokenNum;
+        document.getElementById('r-greeting').textContent      = `🎉 منظور! آپ قطار میں ہیں`;
+        document.getElementById('join-form-wrap').style.display = 'none';
+        document.getElementById('result-wrap').style.display    = 'block';
+        playAlarm('ready');
+        startTracker();
+      }
+    } catch(e) {}
+  }, 10000);
+}
+
 // ── FILTERS ────────────────────────────────────────────────
 function filterCity(city) {
   activeCity = city;
@@ -1697,7 +1734,11 @@ document.getElementById('c-name').addEventListener('keydown', e => { if(e.key===
         document.getElementById('r-greeting').textContent      = `${selectedShop.name} — ٹوکن بحال`;
         document.getElementById('join-form-wrap').style.display = 'none';
         document.getElementById('result-wrap').style.display    = 'block';
-        document.getElementById('token-modal').classList.add('show');
+        // Show modal and overlay
+        const modal = document.getElementById('token-modal');
+        const overlay = document.getElementById('modal-overlay') || document.querySelector('.modal-overlay');
+        if (modal) modal.classList.add('show');
+        if (overlay) overlay.classList.add('show');
         if (Notification.permission === 'default') Notification.requestPermission();
         startTracker();
       } else {
@@ -1767,7 +1808,7 @@ function showInstallBanner() {
         <span style="font-size:28px">📲</span>
         <div style="flex:1">
           <div style="font-weight:700;font-size:14px;color:var(--gold)">ایپ انسٹال کریں</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:2px">ویٹ میٹ — Your Smart Queue</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">WaitMate — Your Smart Queue Partner Partner</div>
         </div>
         <button onclick="doInstall()" style="background:var(--gold);color:#000;border:none;border-radius:20px;padding:8px 18px;font-weight:700;font-size:13px;cursor:pointer;flex-shrink:0">Install</button>
         <button onclick="hideInstallBanner()" style="background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:0 4px">×</button>

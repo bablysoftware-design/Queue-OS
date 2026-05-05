@@ -113,8 +113,8 @@ export async function approvePaymentRequest(request, env) {
  * Reject a payment request
  */
 export async function rejectPaymentRequest(request, env) {
-  const authErr = requireAdmin(request, env);
-  if (authErr) return authErr;
+  const auth = await requireShopOrAdmin(request, env);
+  if (auth instanceof Response) return auth;
   try {
     const url = new URL(request.url);
     const id  = sanitizeParam(url.pathname.split('/')[3]);
