@@ -1151,23 +1151,34 @@ function startPaymentPolling(requestId, customerName, customerPhone) {
 
       if (json.data.status === 'approved' && json.data.token_number) {
         clearInterval(_payPollTimer);
-        // Token issued! Show the token card
+        localStorage.removeItem('saf_pending_payment');
+        // Token issued — set state
         myTokenId  = json.data.token_id;
         myTokenNum = json.data.token_number;
-        localStorage.setItem('wm_token_id',    myTokenId);
-        localStorage.setItem('wm_token_num',   String(myTokenNum));
-        localStorage.setItem('wm_shop_id',     selectedShop?.id || '');
-        localStorage.setItem('wm_shop_name',   selectedShop?.name || '');
-        localStorage.setItem('wm_customer',    customerName);
-        localStorage.setItem('wm_phone',       customerPhone);
-        // Switch to result card
+
+        // Save with CORRECT keys so restore-on-refresh works
+        localStorage.setItem('saf_token_id',   myTokenId);
+        localStorage.setItem('saf_token_num',  String(myTokenNum));
+        localStorage.setItem('saf_token_shop', JSON.stringify(selectedShop));
+
+        // Show result card using CORRECT element IDs
+        document.getElementById('token-modal').classList.add('show');
         document.getElementById('join-form-wrap').style.display = 'none';
         document.getElementById('result-wrap').style.display    = 'block';
-        document.getElementById('result-token-num').textContent = myTokenNum;
-        document.getElementById('result-shop-name').textContent = selectedShop?.name || '';
-        updateTracker();
+        document.getElementById('r-num').textContent            = myTokenNum;
+        document.getElementById('r-greeting').textContent       = `🎉 منظور! ${selectedShop?.name} — آپ قطار میں ہیں`;
+
+        playAlarm('ready');
+        startTracker();
+
+        // Show share prompt after 2s
+        setTimeout(() => {
+          const sp = document.getElementById('share-after-join');
+          if (sp) sp.style.display = 'block';
+        }, 2000);
       } else if (json.data.status === 'rejected') {
         clearInterval(_payPollTimer);
+        localStorage.removeItem('saf_pending_payment');
         const errEl = document.getElementById('sheet-err');
         if (errEl) { errEl.style.color = 'var(--red)'; errEl.textContent = '❌ ادائیگی رد کر دی گئی — براہ کرم دوبارہ کوشش کریں'; }
         const btn = document.getElementById('join-btn');
@@ -1208,6 +1219,10 @@ async function submitJoin() {
       errEl.textContent = '✓ درخواست موصول! دکان منظور کرے گی تو خودبخود ٹوکن ملے گا...';
       btn.disabled = true;
       document.getElementById('join-btn-label').textContent = '⏳ منظوری کا انتظار...';
+      // Save so restore works on refresh
+      localStorage.setItem('saf_pending_payment', JSON.stringify({
+        reqId: data.request_id, shopData: selectedShop
+      }));
       // Start polling for approval
       startPaymentPolling(data.request_id, name, phone);
     } catch(e) {
@@ -1613,40 +1628,6 @@ async function shareShopLink() {
 }
 
 // ── POLL PAYMENT APPROVAL ──────────────────────────────────
-async function pollPaymentApproval(requestId) {
-  let attempts = 0;
-  const maxAttempts = 60; // 10 min at 10s intervals
-  const interval = setInterval(async () => {
-    attempts++;
-    if (attempts > maxAttempts) {
-      clearInterval(interval);
-      localStorage.removeItem('saf_pending_payment');
-      return;
-    }
-    try {
-      // Check position — if token exists for this request, it was approved
-      const res  = await fetch(`${WORKER}/public/payment-status?request_id=${requestId}`);
-      const json = await res.json();
-      if (json.data?.status === 'approved' && json.data?.token_id) {
-        clearInterval(interval);
-        localStorage.removeItem('saf_pending_payment');
-        // Set token and switch to tracker
-        myTokenId  = json.data.token_id;
-        myTokenNum = json.data.token_number;
-        localStorage.setItem('saf_token_id',   myTokenId);
-        localStorage.setItem('saf_token_num',  String(myTokenNum));
-        localStorage.setItem('saf_token_shop', JSON.stringify(selectedShop));
-        document.getElementById('r-num').textContent           = myTokenNum;
-        document.getElementById('r-greeting').textContent      = `🎉 منظور! آپ قطار میں ہیں`;
-        document.getElementById('join-form-wrap').style.display = 'none';
-        document.getElementById('result-wrap').style.display    = 'block';
-        playAlarm('ready');
-        startTracker();
-      }
-    } catch(e) {}
-  }, 10000);
-}
-
 // ── FILTERS ────────────────────────────────────────────────
 function filterCity(city) {
   activeCity = city;
@@ -1718,6 +1699,25 @@ document.getElementById('c-name').addEventListener('keydown', e => { if(e.key===
   const savedTokenId  = localStorage.getItem('saf_token_id');
   const savedTokenNum = localStorage.getItem('saf_token_num');
   const savedShop     = localStorage.getItem('saf_token_shop');
+
+  // Restore pending payment poll if customer refreshed while waiting for approval
+  const pendingPayment = localStorage.getItem('saf_pending_payment');
+  if (pendingPayment && !savedTokenId) {
+    try {
+      const { reqId, shopData } = JSON.parse(pendingPayment);
+      if (reqId && shopData) {
+        selectedShop = shopData;
+        // Re-open the modal showing "waiting for approval"
+        await openShop(shopData.id);
+        document.getElementById('join-btn').disabled = true;
+        document.getElementById('join-btn-label').textContent = '⏳ منظوری کا انتظار...';
+        document.getElementById('sheet-err').style.color = 'var(--green)';
+        document.getElementById('sheet-err').textContent = '✓ درخواست موصول! دکان منظور کرے گی تو خودبخود ٹوکن ملے گا...';
+        startPaymentPolling(reqId, '', '');
+      }
+    } catch(e) { localStorage.removeItem('saf_pending_payment'); }
+  }
+
   if (savedTokenId && savedShop) {
     try {
       myTokenId    = savedTokenId;
