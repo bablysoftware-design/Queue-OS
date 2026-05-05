@@ -1513,8 +1513,6 @@ async function applyWaitOverride() {
 }
 
 // ── Payment Requests (paid token mode) ───────────────────────
-let _lastPaymentCount = 0;
-
 function renderPaymentRequests(pending) {
   const countEl = document.getElementById('pr-count');
   if (countEl) countEl.textContent = pending.length + ' زیر التواء';
