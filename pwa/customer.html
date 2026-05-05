@@ -1211,7 +1211,7 @@ function startPaymentPolling(requestId, customerName, customerPhone) {
         if (lbl) lbl.textContent = 'دوبارہ کوشش کریں';
       }
     } catch(e) { /* silent — keep polling */ }
-  }, 10000); // check every 10 seconds
+  }, 5000); // check every 5 seconds
 }
 window.startPaymentPolling = startPaymentPolling;
 
@@ -1840,7 +1840,7 @@ document.getElementById('c-name').addEventListener('keydown', e => { if(e.key===
         document.getElementById('join-btn').disabled = true;
         document.getElementById('join-btn-label').textContent = '⏳ منظوری کا انتظار...';
         document.getElementById('sheet-err').style.color = 'var(--green)';
-        document.getElementById('sheet-err').textContent = '✓ درخواست موصول! دکان منظور کرے گی تو خودبخود ٹوکن ملے گا...';
+        document.getElementById('sheet-err').textContent = '✓ درخواست موصول! ہر 5 سیکنڈ میں چیک ہو رہا ہے...';
         startPaymentPolling(reqId, '', '');
       }
     } catch(e) { localStorage.removeItem('saf_pending_payment'); }

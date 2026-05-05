@@ -30,18 +30,27 @@ export async function submitPaymentRequest(request, env) {
     const shop = shopRows[0];
     if (shop.token_mode !== 'paid') return badRequest('یہ دکان فری ٹوکن موڈ پر ہے');
 
+    // Truncate base64 screenshots — store only a marker, not the full data URI
+    const screenshotStored = screenshot_url
+      ? (screenshot_url.startsWith('data:') ? 'base64_uploaded' : screenshot_url)
+      : null;
+
     const pr = await db.insert('payment_requests', {
       shop_id,
       customer_name,
       customer_phone,
-      amount: shop.token_price,
-      screenshot_url,
+      amount: shop.token_price || 0,
+      screenshot_url: screenshotStored,
       status: 'pending',
     });
 
+    // db.insert returns array or single object depending on implementation
+    const prRecord = Array.isArray(pr) ? pr[0] : pr;
+    if (!prRecord?.id) throw new Error('Payment request save nahi hui — dobara try karein');
+
     return ok({
-      request_id:   pr.id,
-      message:      `Payment request submit ho gayi. Shop approve karne ke baad aapko token mil jayega.`,
+      request_id:   prRecord.id,
+      message:      'Payment request submit ho gayi. Shop approve karne ke baad aapko token mil jayega.',
       amount:       shop.token_price,
       shop_name:    shop.name,
     });
@@ -151,6 +160,6 @@ export async function checkPaymentStatus(request, env) {
       if (trows?.length) token_number = trows[0].token_number;
     }
 
-    return ok({ status: pr.status, token_id: pr.token_id || null, token_number });
+    return ok({ status: pr.status, token_id: pr.token_id || null, token_number, shop_id: pr.shop_id || null });
   } catch(err) { return serverError(err.message); }
 }
