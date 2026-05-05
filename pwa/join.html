@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#080c14"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<title>Saf Queue — Get Token</title>
+<title>WaitMate — Get Token</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Noto+Nastaliq+Urdu:wght@400;600;700&family=JetBrains+Mono:wght@300;400;600;700&display=swap" rel="stylesheet"/>
 <style>
 :root {
@@ -557,7 +557,7 @@ async function loadShop() {
     const { data } = await res.json();
     shopData = data;
 
-    document.title = `${data.name} — Saf Queue`;
+    document.title = `${data.name} — WaitMate`;
 
     // Fill header
     document.getElementById('j-name').textContent = data.name;
