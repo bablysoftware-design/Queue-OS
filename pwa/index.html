@@ -755,6 +755,11 @@ body::after {
       <span>🛍</span>
       <span id="cust-btn-txt">I'm a Customer — Get Token</span>
     </button>
+    <button type="button" onclick="window.location.assign('/register.html')"
+      style="width:100%;margin-top:10px;padding:14px;border:1px dashed rgba(212,175,55,.4);border-radius:14px;background:rgba(212,175,55,.05);color:var(--gold);font-family:'Sora',sans-serif;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s">
+      <span style="font-size:18px">🏪</span>
+      <span>Apna Business Add Karein</span>
+    </button>
   </div>
 </div>
 
@@ -1601,9 +1606,16 @@ function showToast(msg, type = '') {
     state.shopName     = nm;
     state.isOpen       = op;
     state.sessionToken = tok;
-    showDashboard();
-  } else {
-    localStorage.clear();
+    // Verify session is still valid before showing dashboard
+    api('GET', `/tokens/queue?shop_id=${id}&limit=1`)
+      .then(() => { showDashboard(); })
+      .catch(() => {
+        // Session expired or invalid — clear and show login with message
+        localStorage.clear();
+        state.shopId = state.shopName = state.sessionToken = null;
+        const errEl = document.getElementById('login-error');
+        if (errEl) errEl.textContent = 'Session expired — please sign in again';
+      });
   }
 
   document.getElementById('login-pin').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
