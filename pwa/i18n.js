@@ -7,8 +7,7 @@ const STRINGS = {
   en: {
     // App
     appName:        'Saf Queue',
-    appTagline:     'Your Smart Queue Partner',
-    langSwitch:     'اردو',
+    appTagline:     'Your Smart Queue Partner',    langSwitch:     'اردو',
 
     // Login
     shopLogin:      'Shopkeeper Login',
@@ -135,7 +134,7 @@ const STRINGS = {
 
   ur: {
     appName:        'سف کیو',
-    appTagline:     'Your Smart Queue Partner',
+    appTagline:     'سمارٹ قطار انتظام',
     langSwitch:     'English',
 
     shopLogin:      'دکان لاگ ان',

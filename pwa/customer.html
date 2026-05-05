@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#050810"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <title>ویٹ میٹ — ٹوکن لیں</title>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Noto+Nastaliq+Urdu:wght@400;600;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Noto+Nastaliq+Urdu:wght@400;600;700&family=Orbitron:wght@700;900&family=Dancing+Script:wght@700&display=swap" rel="stylesheet"/>
 <style>
 :root{
   --void:#050810;--surface:#0d1424;--glass:rgba(13,20,36,.78);
@@ -444,7 +444,7 @@ body{font-family:'Noto Nastaliq Urdu',serif;background:var(--void);color:var(--t
       <div class="topbar-gem">🏪</div>
       <div>
         <div class="topbar-name">WaitMate</div>
-        <div class="topbar-sub" style="font-family:'Dancing Script',cursive;font-size:12px;letter-spacing:0.02em;background:linear-gradient(90deg,var(--gold),var(--gold3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Your Smart Queue Partner</div>
+        <div class="topbar-sub" style="font-family:'Dancing Script',cursive;font-size:13px;background:linear-gradient(90deg,var(--gold),#fff8e7,var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:0.3px">Your Smart Queue Partner</div>
       </div>
     </div>
     <button class="topbar-lang-btn" onclick="toggleLangAndReload()" style="padding:6px 12px;border:1px solid var(--border);border-radius:100px;background:transparent;color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;font-family:'Sora',sans-serif;" id="cust-lang-btn">اردو</button>
@@ -712,7 +712,7 @@ async function loadFeaturedShop(shopId) {
 
     // Update page title
     document.title = `${data.name} — ویٹ میٹ`;
-    // topbar-sub is the app tagline — don't overwrite it
+    document.querySelector('.topbar-sub').textContent = data.name;
 
     renderFeaturedHero(data);
     renderSuggestions(data);
@@ -1036,21 +1036,24 @@ async function openShop(shopId) {
 
   if (!selectedShop) return;
 
-  // ── KEY FIX: if customer already has an active token for this shop, show it ──
-  if (myTokenId && selectedShop.id === (JSON.parse(localStorage.getItem('saf_token_shop') || '{}')).id) {
-    const modal   = document.getElementById('token-modal');
-    const overlay = document.getElementById('modal-overlay') || document.querySelector('.modal-overlay');
-    document.getElementById('join-form-wrap').style.display = 'none';
-    document.getElementById('result-wrap').style.display    = 'block';
-    document.getElementById('r-num').textContent            = myTokenNum || '?';
-    document.getElementById('r-greeting').textContent       = selectedShop.name;
-    if (modal)   modal.classList.add('show');
-    if (overlay) overlay.classList.add('show');
-    updateTracker();
-    return;
+  // If customer already has an active token for THIS shop → show tracker, not join form
+  const savedShop = localStorage.getItem('saf_token_shop');
+  const savedId   = localStorage.getItem('saf_token_id');
+  if (savedId && savedShop) {
+    try {
+      const saved = JSON.parse(savedShop);
+      if (saved.id === shopId && myTokenId) {
+        document.getElementById('join-form-wrap').style.display = 'none';
+        document.getElementById('result-wrap').style.display    = 'block';
+        document.getElementById('token-modal').classList.add('show');
+        document.getElementById('r-num').textContent = myTokenNum || '?';
+        document.getElementById('r-greeting').textContent = `${selectedShop.name} — آپ کا ٹوکن`;
+        return;
+      }
+    } catch(e) {}
   }
 
-  // Reset modal
+  // Reset modal to join form
   document.getElementById('join-form-wrap').style.display = 'block';
   document.getElementById('result-wrap').style.display    = 'none';
   document.getElementById('sheet-err').textContent         = '';

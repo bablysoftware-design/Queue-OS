@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"/>
 <title>Saf Queue</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Noto+Nastaliq+Urdu:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Noto+Nastaliq+Urdu:wght@400;600;700&family=JetBrains+Mono:wght@400;600&family=Dancing+Script:wght@700&display=swap" rel="stylesheet"/>
 <style>
 :root {
   --bg:      #080c14;
@@ -158,10 +158,14 @@ body::after {
 }
 
 .logo-tagline {
-  font-size: 13px;
-  color: var(--text2);
-  font-weight: 400;
-  letter-spacing: 0.02em;
+  font-family: 'Dancing Script', cursive;
+  font-size: 17px;
+  font-weight: 700;
+  background: linear-gradient(90deg, var(--gold), #fff8e7, var(--gold2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 0.3px;
 }
 
 /* Login card */
@@ -741,7 +745,6 @@ body::after {
 @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
 @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
 </style>
-  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
 </head>
 <body>
 <div id="app">
@@ -756,7 +759,7 @@ body::after {
       <div class="logo-inner">🏪</div>
     </div>
     <div class="logo-name">WaitMate</div>
-    <div class="logo-tagline" id="login-tagline" style="font-family:'Dancing Script',cursive;font-size:16px;background:linear-gradient(90deg,var(--gold),var(--cyan),var(--gold3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:0.03em">Your Smart Queue Partner</div>
+    <div class="logo-tagline" id="login-tagline">Your Smart Queue Partner</div>
   </div>
 
   <div class="login-card">
@@ -1229,7 +1232,10 @@ function showDashboard() {
       if (payBtn && data.token_mode === 'paid') payBtn.style.display = 'flex';
     }).catch(() => {});
   clearInterval(state.refreshTimer);
-  state.refreshTimer = setInterval(refreshQueue, 15000);
+  state.refreshTimer = setInterval(() => {
+    refreshQueue();
+    checkNewPaymentRequests();
+  }, 10000); // every 10s (was 15s)
 }
 
 function switchTab(name) {
@@ -1507,41 +1513,53 @@ async function applyWaitOverride() {
 }
 
 // ── Payment Requests (paid token mode) ───────────────────────
+let _lastPaymentCount = 0;
+
+function renderPaymentRequests(pending) {
+  const countEl = document.getElementById('pr-count');
+  if (countEl) countEl.textContent = pending.length + ' زیر التواء';
+  document.getElementById('pr-list').innerHTML = pending.map(r => `
+    <div style="border:1px solid rgba(212,175,55,.2);border-radius:12px;padding:12px;margin-bottom:8px;animation:fadeIn .3s ease both">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:13px">${esc(r.customer_name)}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">${esc(r.customer_phone)} · <span style="color:var(--gold);font-weight:700">Rs ${r.amount}</span></div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">${new Date(r.created_at).toLocaleTimeString('ur-PK',{hour:'2-digit',minute:'2-digit'})}</div>
+          ${r.screenshot_url
+            ? `<button onclick="viewScreenshot('${r.screenshot_url}')" style="display:block;margin-top:6px;padding:5px 10px;border:1px solid rgba(212,175,55,.3);border-radius:8px;background:transparent;color:var(--gold);font-size:11px;cursor:pointer">📸 Screenshot دیکھیں</button>`
+            : `<span style="font-size:11px;color:var(--muted)">📷 کوئی screenshot نہیں</span>`}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+          <button onclick="approvePayment('${r.id}')"
+            style="padding:10px 18px;border:none;border-radius:10px;background:var(--gold);color:#0d1422;font-weight:800;font-size:13px;cursor:pointer">
+            ✓ منظور کریں
+          </button>
+          <button onclick="rejectPayment('${r.id}')"
+            style="padding:8px 18px;border:1px solid rgba(248,113,113,.4);border-radius:10px;background:transparent;color:var(--red);font-size:12px;cursor:pointer">
+            ✗ رد کریں
+          </button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
 async function loadPaymentRequests() {
   try {
     const res  = await fetch(`${WORKER}/admin/payment-requests?shop_id=${state.shopId}`, {
       headers: { 'Content-Type':'application/json', 'x-session-token': state.sessionToken }
     });
     const json = await res.json();
-    const list = json.data || [];
-    const pending = list.filter(r => r.status === 'pending');
+    const pending = (json.data || []).filter(r => r.status === 'pending');
+    _lastPaymentCount = pending.length;
 
     const card = document.getElementById('payment-requests-card');
     if (!card) return;
-
-    // Only show card if shop has paid mode OR there are pending requests
-    if (pending.length === 0) { card.style.display = 'none'; return; }
+    if (!pending.length) { card.style.display = 'none'; return; }
     card.style.display = 'block';
-    document.getElementById('pr-count').textContent = `${pending.length} زیر التواء`;
+    renderPaymentRequests(pending);
 
-    document.getElementById('pr-list').innerHTML = pending.map(r => `
-      <div style="border:1px solid rgba(212,175,55,.2);border-radius:12px;padding:12px;margin-bottom:8px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <div style="font-weight:700;font-size:13px">${r.customer_name}</div>
-            <div style="font-size:11px;color:var(--muted)">${r.customer_phone} · Rs ${r.amount}</div>
-            ${r.screenshot_url ? `<button onclick="viewScreenshot('${r.screenshot_url}')" style="display:block;margin-top:4px;padding:4px 10px;border:1px solid rgba(212,175,55,.3);border-radius:8px;background:transparent;color:var(--gold);font-size:11px;cursor:pointer">📸 Screenshot دیکھیں</button>` : '<span style="font-size:11px;color:var(--muted)">📷 کوئی screenshot نہیں</span>'}
-          </div>
-          <button onclick="approvePayment('${r.id}')"
-            style="padding:8px 14px;border:none;border-radius:8px;background:var(--gold);color:#0d1422;font-weight:700;font-size:12px;cursor:pointer">
-            ✓ منظور
-          </button>
-          <button onclick="rejectPayment('${r.id}')"
-            style="padding:8px 12px;border:1px solid rgba(248,113,113,.4);border-radius:8px;background:transparent;color:var(--red);font-size:12px;cursor:pointer;margin-top:4px">
-            ✗ رد
-          </button>
-        </div>
-      </div>`).join('');
+    // Ask for notification permission silently on first load
+    if (Notification.permission === 'default') Notification.requestPermission();
   } catch(e) {}
 }
 
@@ -1598,6 +1616,60 @@ function togglePaymentPanel() {
   }
 }
 window.togglePaymentPanel = togglePaymentPanel;
+
+// ── Payment request watcher — alerts business on new requests ─
+let _lastPaymentCount = 0;
+
+async function checkNewPaymentRequests() {
+  try {
+    const res  = await fetch(`${WORKER}/admin/payment-requests?shop_id=${state.shopId}`, {
+      headers: { 'Content-Type':'application/json', 'x-session-token': state.sessionToken }
+    });
+    const json = await res.json();
+    const pending = (json.data || []).filter(r => r.status === 'pending');
+    const count   = pending.length;
+
+    if (count > _lastPaymentCount) {
+      // New request arrived — alert business
+      playAlertSound();
+      showToast(`🔔 نئی ادائیگی کی درخواست! (${count})`, 'success');
+      // Show notification if permission granted
+      if (Notification.permission === 'granted') {
+        new Notification('WaitMate — نئی ادائیگی درخواست', {
+          body: `${count} درخواست منظوری کی منتظر ہے`,
+          icon: '/icons/icon-192.png',
+          tag: 'payment-request',
+        });
+      }
+      // Re-render the payment card
+      renderPaymentRequests(pending);
+      const card = document.getElementById('payment-requests-card');
+      if (card) {
+        card.style.display = 'block';
+        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+    _lastPaymentCount = count;
+  } catch(e) {}
+}
+
+function playAlertSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [[880, 0], [1100, 0.2], [880, 0.4], [1320, 0.6]].forEach(([freq, t]) => {
+      const osc = ctx.createOscillator();
+      const g   = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      g.gain.setValueAtTime(0.5, ctx.currentTime + t);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.18);
+      osc.connect(g); g.connect(ctx.destination);
+      osc.start(ctx.currentTime + t);
+      osc.stop(ctx.currentTime + t + 0.2);
+    });
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+  } catch(e) {}
+}
 
 // ── Cancel queue token (shopkeeper) ─────────────────────────
 async function cancelQueueToken(tokenId) {
