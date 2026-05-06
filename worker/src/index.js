@@ -35,7 +35,6 @@ import { preflight, notFound, ok, serverError }                        from './u
 const ROUTES = [
   // Health check
   { method: 'GET',    path: '/ping',    handler: async (req, env) => {
-      const { ok } = await import('./utils/response.js');
       const token = req.headers.get('x-session-token');
       return ok({ pong: true, token_received: !!token, token_preview: token?.slice(0,20) || null });
   }},
@@ -150,7 +149,6 @@ export default {
     await Promise.all([
       expireStaleSubscriptions(db),
       resetDailyTokens(db),
-      db.rpc('cleanup_sessions'),
     ]);
   },
 };

@@ -1,4 +1,3 @@
-import { triggerPositionNotifications, notifyTokenCalled, payloadTokenCreated, sendPush } from './pushService.js';
 // ============================================================
 // services/tokenService.js — Queue token management
 // Fixes: #1/#26 (atomic), #5 (reset), #6 (dedup), #8 (name), #14 (cancel), #22 (close notify)
