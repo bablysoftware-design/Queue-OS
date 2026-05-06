@@ -233,3 +233,19 @@ export async function publicCancelToken(request, env) {
     return ok({ cancelled: true });
   } catch (err) { return serverError(err.message); }
 }
+
+/** GET /public/stats — global platform stats for landing page */
+export async function getGlobalStats(request, env) {
+  try {
+    const db = createClient(env);
+    const [shops, tokens] = await Promise.all([
+      db.select('shops', 'is_active=eq.true&select=id,is_open'),
+      db.select('tokens', `created_at=gte.${new Date().toISOString().split('T')[0]}T00:00:00&select=id`),
+    ]);
+    return ok({
+      total_shops:  shops.length,
+      open_shops:   shops.filter(s => s.is_open).length,
+      tokens_today: tokens.length,
+    });
+  } catch(err) { return serverError(err.message); }
+}

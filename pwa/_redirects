@@ -1,5 +1,7 @@
-# Route /s/:slug → customer.html?slug=:slug
-/s/:slug  /customer.html?slug=:slug  200
+# Root → Landing page
+/           /landing.html   200
 
-# SPA fallback
-/*        /index.html                 200
+# Short shop links
+/s/:slug    /customer.html?slug=:slug   200
+
+# SPA fallback (everything else stays as-is)

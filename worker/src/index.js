@@ -20,7 +20,7 @@ import { submitRegistration, listRegistrations,
 import { subscribePush, unsubscribePush, requestDelay } from './routes/push.js';
 import { getPublicShops, getPublicShop,
          joinQueue, checkPosition,
-         publicCancelToken }                          from './routes/public.js';
+         publicCancelToken, getGlobalStats }                          from './routes/public.js';
 import { getShareLink, getShopBySlug,
          getShopQR, getRelatedShops }                 from './routes/share.js';
 import { searchLocations, searchCategories }          from './routes/search.js';
@@ -53,6 +53,7 @@ const ROUTES = [
   { method: 'DELETE', path: '/push/unsubscribe',                 handler: unsubscribePush },
   { method: 'POST',   path: '/push/delay',                       handler: requestDelay },
   { method: 'POST',   path: '/public/cancel',                   handler: publicCancelToken },
+  { method: 'GET',    path: '/public/stats',                     handler: getGlobalStats },
 
   // Autocomplete search (no auth)
   { method: 'GET',    path: '/search/locations',                         handler: searchLocations },

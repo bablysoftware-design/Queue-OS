@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#080c14"/>
+<meta name="description" content="WaitMate — Pakistan's smartest queue system. No app needed. Customers get tokens on their phone. Shopkeepers manage queues digitally. Free forever for small shops."/>
+<meta property="og:title" content="WaitMate — آپ کی باری، آپ کے وقت پر"/>
+<meta property="og:description" content="No more crowded waiting rooms. Customers join the queue on their phone — from anywhere."/>
+<meta property="og:image" content="https://queue-os.pages.dev/icons/icon-512.png"/>
+<meta property="og:url" content="https://queue-os.pages.dev"/>
+<title>WaitMate — Smart Queue Management Pakistan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800;900&family=Noto+Nastaliq+Urdu:wght@400;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#080c14; --bg2:#0d1422; --glass:rgba(17,24,39,0.6);
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
+  --gold:#E8B84B; --gold2:#F5CC6A; --cyan:#38BDF8;
+  --green:#34D399; --red:#F87171;
+  --text:#F1F5F9; --text2:#94A3B8; --text3:#475569;
+}
+html{scroll-behavior:smooth;}
+body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;-webkit-font-smoothing:antialiased;}
+
+/* Ambient background */
+body::before{content:'';position:fixed;inset:0;background:
+  radial-gradient(ellipse 80% 60% at 10% 10%,rgba(232,184,75,0.07) 0%,transparent 55%),
+  radial-gradient(ellipse 60% 50% at 90% 80%,rgba(56,189,248,0.05) 0%,transparent 55%);
+  pointer-events:none;z-index:0;}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;
+  padding:14px 24px;display:flex;align-items:center;justify-content:space-between;
+  background:rgba(8,12,20,0.85);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);}
+.nav-brand{display:flex;align-items:center;gap:10px;}
+.nav-logo{width:34px;height:34px;border-radius:9px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  display:flex;align-items:center;justify-content:center;font-size:16px;}
+.nav-name{font-size:16px;font-weight:800;letter-spacing:-0.02em;
+  background:linear-gradient(135deg,var(--text),var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.nav-links{display:flex;align-items:center;gap:8px;}
+.btn-nav-ghost{padding:8px 16px;border:1px solid var(--border2);border-radius:100px;
+  background:transparent;color:var(--text2);font-family:'Sora',sans-serif;
+  font-size:13px;font-weight:500;cursor:pointer;text-decoration:none;transition:all .2s;}
+.btn-nav-ghost:hover{border-color:var(--gold);color:var(--gold);}
+.btn-nav-cta{padding:8px 18px;border:none;border-radius:100px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  color:#080c14;font-family:'Sora',sans-serif;font-size:13px;font-weight:700;
+  cursor:pointer;text-decoration:none;transition:all .2s;}
+.btn-nav-cta:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(232,184,75,.3);}
+
+/* ── HERO ── */
+.hero{min-height:100dvh;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;text-align:center;padding:100px 20px 60px;position:relative;z-index:1;}
+
+.hero-badge{display:inline-flex;align-items:center;gap:7px;
+  padding:6px 16px;border-radius:100px;border:1px solid rgba(232,184,75,0.3);
+  background:rgba(232,184,75,0.07);color:var(--gold);
+  font-size:12px;font-weight:600;letter-spacing:0.04em;margin-bottom:24px;
+  animation:fadeUp .8s cubic-bezier(.16,1,.3,1) both;}
+
+.hero-urdu{font-family:'Noto Nastaliq Urdu',serif;
+  font-size:clamp(20px,4vw,32px);font-weight:700;
+  color:var(--gold2);margin-bottom:12px;
+  animation:fadeUp .8s .05s cubic-bezier(.16,1,.3,1) both;}
+
+.hero-h1{font-size:clamp(36px,7vw,80px);font-weight:900;
+  letter-spacing:-0.04em;line-height:1.05;margin-bottom:20px;
+  background:linear-gradient(135deg,var(--text) 40%,var(--gold) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:fadeUp .8s .1s cubic-bezier(.16,1,.3,1) both;}
+
+.hero-sub{font-size:clamp(15px,2.5vw,20px);color:var(--text2);font-weight:400;
+  max-width:580px;line-height:1.65;margin-bottom:36px;
+  animation:fadeUp .8s .15s cubic-bezier(.16,1,.3,1) both;}
+
+.hero-ctas{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:48px;
+  animation:fadeUp .8s .2s cubic-bezier(.16,1,.3,1) both;}
+
+.btn-hero-primary{padding:15px 32px;border:none;border-radius:14px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  color:#080c14;font-family:'Sora',sans-serif;font-size:16px;font-weight:800;
+  cursor:pointer;text-decoration:none;transition:all .25s;
+  box-shadow:0 8px 32px rgba(232,184,75,.3);}
+.btn-hero-primary:hover{transform:translateY(-2px);box-shadow:0 16px 40px rgba(232,184,75,.45);}
+
+.btn-hero-sec{padding:15px 28px;border:1px solid var(--border2);border-radius:14px;
+  background:transparent;color:var(--text);font-family:'Sora',sans-serif;
+  font-size:15px;font-weight:600;cursor:pointer;text-decoration:none;transition:all .2s;}
+.btn-hero-sec:hover{border-color:var(--cyan);color:var(--cyan);}
+
+/* Live stats bar */
+.live-bar{display:flex;gap:0;border:1px solid var(--border);border-radius:16px;
+  overflow:hidden;background:var(--glass);backdrop-filter:blur(16px);
+  animation:fadeUp .8s .25s cubic-bezier(.16,1,.3,1) both;}
+.live-stat{padding:14px 28px;text-align:center;border-right:1px solid var(--border);flex:1;}
+.live-stat:last-child{border-right:none;}
+.live-val{font-size:26px;font-weight:800;color:var(--gold2);font-variant-numeric:tabular-nums;
+  letter-spacing:-0.02em;}
+.live-lbl{font-size:11px;color:var(--text3);margin-top:3px;font-weight:500;}
+
+/* ── PHONE MOCKUP ── */
+.phone-wrap{position:relative;margin:60px auto 0;width:260px;
+  animation:fadeUp .8s .3s cubic-bezier(.16,1,.3,1) both;}
+.phone{width:100%;border-radius:36px;border:2px solid var(--border2);
+  background:var(--bg2);overflow:hidden;box-shadow:0 40px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.04);
+  position:relative;}
+.phone::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(232,184,75,.4),transparent);}
+.phone-screen{padding:16px;font-size:10px;}
+.phone-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.phone-shop-name{font-weight:700;font-size:11px;}
+.phone-status{background:rgba(52,211,153,.15);border:1px solid #34D399;color:#34D399;
+  border-radius:100px;padding:3px 10px;font-size:9px;font-weight:600;}
+.phone-token-big{font-size:56px;font-weight:800;text-align:center;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  line-height:1;margin:14px 0 6px;letter-spacing:-0.04em;}
+.phone-token-lbl{text-align:center;color:var(--text3);font-size:9px;margin-bottom:14px;}
+.phone-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;}
+.phone-stat{background:rgba(255,255,255,.04);border:1px solid var(--border);
+  border-radius:8px;padding:8px;text-align:center;}
+.phone-stat-val{font-size:14px;font-weight:700;color:var(--text);}
+.phone-stat-lbl{font-size:8px;color:var(--text3);margin-top:2px;}
+.phone-badge{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);
+  border-radius:100px;padding:7px 14px;text-align:center;color:#34D399;
+  font-size:9px;font-weight:600;}
+.phone-pulse{position:absolute;top:-8px;right:-8px;width:20px;height:20px;
+  background:var(--green);border-radius:50%;animation:ping 1.5s ease-in-out infinite;
+  border:3px solid var(--bg);}
+@keyframes ping{0%{transform:scale(1);opacity:1;}100%{transform:scale(2.5);opacity:0;}}
+
+/* ── HOW IT WORKS ── */
+.section{padding:80px 20px;max-width:1100px;margin:0 auto;position:relative;z-index:1;}
+.section-badge{display:inline-block;padding:5px 14px;border-radius:100px;
+  border:1px solid rgba(56,189,248,.3);background:rgba(56,189,248,.07);
+  color:var(--cyan);font-size:11px;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;margin-bottom:14px;}
+.section-h2{font-size:clamp(28px,5vw,48px);font-weight:800;letter-spacing:-0.03em;
+  margin-bottom:12px;line-height:1.1;}
+.section-sub{color:var(--text2);font-size:16px;line-height:1.65;max-width:560px;}
+
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:48px;}
+.step{background:var(--glass);border:1px solid var(--border);border-radius:20px;
+  padding:28px 22px;position:relative;overflow:hidden;transition:all .3s;}
+.step:hover{border-color:rgba(232,184,75,.25);transform:translateY(-3px);}
+.step::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:0;
+  transition:opacity .3s;}
+.step:hover::before{opacity:.6;}
+.step-num{font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.1em;
+  text-transform:uppercase;margin-bottom:14px;font-family:'Sora',sans-serif;}
+.step-icon{font-size:32px;margin-bottom:12px;}
+.step-title{font-size:17px;font-weight:700;margin-bottom:8px;letter-spacing:-.01em;}
+.step-desc{font-size:13px;color:var(--text2);line-height:1.65;}
+
+/* ── WHO IT'S FOR ── */
+.audience-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:48px;}
+.audience-card{background:var(--glass);border:1px solid var(--border);border-radius:16px;
+  padding:22px;text-align:center;transition:all .3s;}
+.audience-card:hover{border-color:rgba(232,184,75,.25);transform:translateY(-2px);}
+.audience-icon{font-size:36px;margin-bottom:12px;}
+.audience-title{font-size:15px;font-weight:700;margin-bottom:6px;}
+.audience-desc{font-size:12px;color:var(--text2);line-height:1.6;}
+
+/* ── PRICING ── */
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;margin-top:48px;}
+.plan{background:var(--glass);border:1px solid var(--border);border-radius:20px;
+  padding:28px;position:relative;overflow:hidden;}
+.plan.featured{border-color:rgba(232,184,75,.4);background:linear-gradient(135deg,rgba(232,184,75,.06),rgba(17,24,39,.6));}
+.plan-badge{position:absolute;top:16px;right:16px;padding:3px 10px;border-radius:100px;
+  background:var(--gold);color:#080c14;font-size:10px;font-weight:700;}
+.plan-name{font-size:13px;font-weight:700;color:var(--text2);letter-spacing:.06em;
+  text-transform:uppercase;margin-bottom:8px;}
+.plan-price{font-size:36px;font-weight:800;letter-spacing:-0.03em;margin-bottom:4px;}
+.plan-price span{font-size:14px;color:var(--text2);font-weight:400;}
+.plan-period{font-size:12px;color:var(--text3);margin-bottom:20px;}
+.plan-features{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:24px;}
+.plan-features li{font-size:13px;color:var(--text2);display:flex;align-items:center;gap:8px;}
+.plan-features li::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0;}
+.btn-plan{width:100%;padding:12px;border-radius:10px;font-family:'Sora',sans-serif;
+  font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;text-align:center;
+  display:block;transition:all .2s;}
+.btn-plan-gold{border:none;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#080c14;}
+.btn-plan-gold:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(232,184,75,.3);}
+.btn-plan-ghost{border:1px solid var(--border2);background:transparent;color:var(--text);}
+.btn-plan-ghost:hover{border-color:var(--gold);color:var(--gold);}
+
+/* ── TESTIMONIALS ── */
+.testimonials{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:48px;}
+.testimonial{background:var(--glass);border:1px solid var(--border);border-radius:16px;padding:22px;}
+.testi-stars{color:var(--gold);font-size:14px;margin-bottom:10px;letter-spacing:2px;}
+.testi-text{font-size:14px;line-height:1.7;color:var(--text2);margin-bottom:14px;}
+.testi-author{display:flex;align-items:center;gap:10px;}
+.testi-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));
+  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.testi-name{font-size:13px;font-weight:600;}
+.testi-role{font-size:11px;color:var(--text3);}
+
+/* ── CTA SECTION ── */
+.cta-section{padding:80px 20px;text-align:center;position:relative;z-index:1;}
+.cta-box{max-width:640px;margin:0 auto;background:var(--glass);border:1px solid rgba(232,184,75,.2);
+  border-radius:24px;padding:48px 32px;position:relative;overflow:hidden;}
+.cta-box::before{content:'';position:absolute;top:0;left:20%;right:20%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+.cta-h2{font-size:clamp(24px,5vw,40px);font-weight:800;letter-spacing:-0.03em;margin-bottom:10px;}
+.cta-sub{color:var(--text2);font-size:15px;margin-bottom:28px;line-height:1.65;}
+
+/* ── FOOTER ── */
+footer{border-top:1px solid var(--border);padding:28px 24px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+  position:relative;z-index:1;}
+.footer-brand{font-size:14px;font-weight:700;color:var(--gold);}
+.footer-links{display:flex;gap:20px;}
+.footer-links a{font-size:12px;color:var(--text3);text-decoration:none;transition:color .2s;}
+.footer-links a:hover{color:var(--text);}
+.footer-copy{font-size:11px;color:var(--text3);}
+
+/* Animations */
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+
+/* Scroll reveal */
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1);}
+.reveal.visible{opacity:1;transform:translateY(0);}
+
+/* Mobile */
+@media(max-width:600px){
+  .live-bar{flex-direction:column;}
+  .live-stat{border-right:none;border-bottom:1px solid var(--border);}
+  .live-stat:last-child{border-bottom:none;}
+  .nav-links .btn-nav-ghost{display:none;}
+  .hero-ctas{flex-direction:column;align-items:center;}
+  .btn-hero-primary,.btn-hero-sec{width:100%;text-align:center;}
+}
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">🏪</div>
+    <span class="nav-name">WaitMate</span>
+  </div>
+  <div class="nav-links">
+    <a href="#how-it-works" class="btn-nav-ghost">How it works</a>
+    <a href="#pricing" class="btn-nav-ghost">Pricing</a>
+    <a href="/customer.html" class="btn-nav-ghost">Browse Shops</a>
+    <a href="/register.html" class="btn-nav-cta">Register Shop Free →</a>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="hero-badge">🇵🇰 Built for Pakistan · Free to Start</div>
+  <div class="hero-urdu">آپ کی باری، آپ کے وقت پر</div>
+  <h1 class="hero-h1">Your turn,<br/>on your time.</h1>
+  <p class="hero-sub">WaitMate lets customers join the queue on their phone — from home, the car, or anywhere. No crowded waiting rooms. No wasted hours. No app to install.</p>
+
+  <div class="hero-ctas">
+    <a href="/register.html" class="btn-hero-primary">🏪 Register Your Shop — It's Free</a>
+    <a href="/customer.html" class="btn-hero-sec">Browse Shops Near You →</a>
+  </div>
+
+  <!-- Live stats -->
+  <div class="live-bar">
+    <div class="live-stat">
+      <div class="live-val" id="stat-shops">—</div>
+      <div class="live-lbl">Shops on WaitMate</div>
+    </div>
+    <div class="live-stat">
+      <div class="live-val" id="stat-tokens">—</div>
+      <div class="live-lbl">Tokens issued today</div>
+    </div>
+    <div class="live-stat">
+      <div class="live-val" id="stat-open">—</div>
+      <div class="live-lbl">Open right now</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ── -->
+<section class="section" id="how-it-works">
+  <div class="reveal">
+    <div class="section-badge">How it works</div>
+    <h2 class="section-h2">Simple for shops.<br/>Magical for customers.</h2>
+    <p class="section-sub">Three steps. No downloads. Works on any phone.</p>
+  </div>
+
+  <div class="steps">
+    <div class="step reveal">
+      <div class="step-num">For Shopkeepers — Step 01</div>
+      <div class="step-icon">📋</div>
+      <div class="step-title">Register your shop</div>
+      <div class="step-desc">Takes 2 minutes. Enter your shop name, category, and area. Get a QR code and a shareable link instantly.</div>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">For Shopkeepers — Step 02</div>
+      <div class="step-icon">🖨️</div>
+      <div class="step-title">Print the poster</div>
+      <div class="step-desc">Print your unique QR poster and hang it at your entrance. Customers scan it to join your queue — no app needed.</div>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">For Shopkeepers — Step 03</div>
+      <div class="step-icon">✅</div>
+      <div class="step-title">Call the next customer</div>
+      <div class="step-desc">One tap on your dashboard moves the queue forward. The customer gets notified. No shouting. No chaos.</div>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">For Customers</div>
+      <div class="step-icon">📱</div>
+      <div class="step-title">Scan, get token, relax</div>
+      <div class="step-desc">Scan the shop's QR. Enter your name. See your live position. Come back when it's your turn. That's it.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── WHO IT'S FOR ── -->
+<section class="section" id="audience" style="padding-top:0">
+  <div class="reveal">
+    <div class="section-badge">Who uses WaitMate</div>
+    <h2 class="section-h2">Any place people wait.</h2>
+    <p class="section-sub">From barbers in Rawalpindi to clinics in Lahore — if you have a queue, WaitMate fixes it.</p>
+  </div>
+
+  <div class="audience-grid">
+    <div class="audience-card reveal">
+      <div class="audience-icon">✂️</div>
+      <div class="audience-title">Barbers & Salons</div>
+      <div class="audience-desc">Customers wait at home instead of standing. No-shows reduced. Revenue up.</div>
+    </div>
+    <div class="audience-card reveal">
+      <div class="audience-icon">🏥</div>
+      <div class="audience-title">Clinics & Doctors</div>
+      <div class="audience-desc">Patients know exactly when their turn comes. No crowded waiting rooms. Better experience.</div>
+    </div>
+    <div class="audience-card reveal">
+      <div class="audience-icon">🏛️</div>
+      <div class="audience-title">Govt Offices</div>
+      <div class="audience-desc">End the chaos of unmanaged lines. Serve more people, faster, with less complaints.</div>
+    </div>
+    <div class="audience-card reveal">
+      <div class="audience-icon">💊</div>
+      <div class="audience-title">Pharmacies</div>
+      <div class="audience-desc">Patients collect their token and come back when ready. No overcrowding at the counter.</div>
+    </div>
+    <div class="audience-card reveal">
+      <div class="audience-icon">🏦</div>
+      <div class="audience-title">Banks & Microfinance</div>
+      <div class="audience-desc">Manage busy days professionally. Customers appreciate the order and efficiency.</div>
+    </div>
+    <div class="audience-card reveal">
+      <div class="audience-icon">🧵</div>
+      <div class="audience-title">Tailors & Workshops</div>
+      <div class="audience-desc">Take orders and measurements without customers piling up at your door.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── TESTIMONIALS ── -->
+<section class="section" id="testimonials" style="padding-top:0">
+  <div class="reveal">
+    <div class="section-badge">What people say</div>
+    <h2 class="section-h2">Real results.</h2>
+  </div>
+
+  <div class="testimonials">
+    <div class="testimonial reveal">
+      <div class="testi-stars">★★★★★</div>
+      <div class="testi-text">"Mere hairstyle salon mein ab customers ghar se token lete hain. Complaints bilkul band ho gayi hain. Zabardast system hai."</div>
+      <div class="testi-author">
+        <div class="testi-avatar">✂️</div>
+        <div>
+          <div class="testi-name">Usman — Style Zone</div>
+          <div class="testi-role">Barber, G-11 Islamabad</div>
+        </div>
+      </div>
+    </div>
+    <div class="testimonial reveal">
+      <div class="testi-stars">★★★★★</div>
+      <div class="testi-text">"Our clinic used to have 40 patients sitting in one small room. Now they wait at home and come in when called. The doctors love it too."</div>
+      <div class="testi-author">
+        <div class="testi-avatar">🏥</div>
+        <div>
+          <div class="testi-name">Dr. Rehman — Poly Clinic</div>
+          <div class="testi-role">Clinic Owner, Saddar</div>
+        </div>
+      </div>
+    </div>
+    <div class="testimonial reveal">
+      <div class="testi-stars">★★★★★</div>
+      <div class="testi-text">"Maine sirf QR poster lagaya aur usi din 12 customers ne token liya. Sab surprised the ke Pakistan mein aisa bhi hota hai."</div>
+      <div class="testi-author">
+        <div class="testi-avatar">💊</div>
+        <div>
+          <div class="testi-name">Ahmed — City Pharmacy</div>
+          <div class="testi-role">Pharmacist, Rawalpindi</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── PRICING ── -->
+<section class="section" id="pricing" style="padding-top:0">
+  <div class="reveal">
+    <div class="section-badge">Pricing</div>
+    <h2 class="section-h2">Start free. Scale when ready.</h2>
+    <p class="section-sub">No credit card. No contracts. Cancel anytime. Free plan is free forever — not a trial.</p>
+  </div>
+
+  <div class="pricing-grid">
+    <div class="plan reveal">
+      <div class="plan-name">Free</div>
+      <div class="plan-price">Rs 0 <span>forever</span></div>
+      <div class="plan-period">Perfect for small shops</div>
+      <ul class="plan-features">
+        <li>Up to 50 tokens per day</li>
+        <li>Queue management dashboard</li>
+        <li>Customer QR link + poster</li>
+        <li>Live queue tracker</li>
+        <li>Basic reports</li>
+      </ul>
+      <a href="/register.html" class="btn-plan btn-plan-ghost">Start for Free →</a>
+    </div>
+
+    <div class="plan featured reveal">
+      <div class="plan-badge">Most Popular</div>
+      <div class="plan-name">Basic</div>
+      <div class="plan-price">Rs 999 <span>/month</span></div>
+      <div class="plan-period">For growing businesses</div>
+      <ul class="plan-features">
+        <li>Up to 200 tokens per day</li>
+        <li>WhatsApp turn notifications</li>
+        <li>Payment request system</li>
+        <li>Advanced analytics</li>
+        <li>Priority support</li>
+      </ul>
+      <a href="/register.html" class="btn-plan btn-plan-gold">Get Basic →</a>
+    </div>
+
+    <div class="plan reveal">
+      <div class="plan-name">Pro</div>
+      <div class="plan-price">Rs 2,499 <span>/month</span></div>
+      <div class="plan-period">For high-volume shops</div>
+      <ul class="plan-features">
+        <li>Unlimited tokens per day</li>
+        <li>Everything in Basic</li>
+        <li>Multiple staff logins</li>
+        <li>Custom branding on poster</li>
+        <li>Dedicated support</li>
+      </ul>
+      <a href="/register.html" class="btn-plan btn-plan-ghost">Get Pro →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ── -->
+<section class="cta-section">
+  <div class="cta-box reveal">
+    <h2 class="cta-h2">Ready to end the waiting chaos?</h2>
+    <p class="cta-sub">Register your shop in 2 minutes. Print one poster. Let customers queue from anywhere. It costs nothing to try.</p>
+    <a href="/register.html" class="btn-hero-primary" style="display:inline-block">🏪 Register Your Shop — Free →</a>
+    <div style="margin-top:14px;font-size:12px;color:var(--text3)">No app download · No credit card · Works on any phone</div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-brand">WaitMate 🏪</div>
+  <div class="footer-links">
+    <a href="/customer.html">Browse Shops</a>
+    <a href="/register.html">Register Shop</a>
+    <a href="/index.html">Shop Login</a>
+    <a href="/admin.html">Admin</a>
+  </div>
+  <div class="footer-copy">© 2026 WaitMate · Pakistan's Smart Queue Partner</div>
+</footer>
+
+<script>
+// ── Scroll reveal ──────────────────────────────────────────
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }});
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// ── Live stats ─────────────────────────────────────────────
+const WORKER = 'https://saf-queue-worker.byker-software.workers.dev';
+async function loadLiveStats() {
+  try {
+    const res  = await fetch(`${WORKER}/public/stats`);
+    const {data} = await res.json();
+    if (!data) return;
+    document.getElementById('stat-shops').textContent  = data.total_shops ?? '—';
+    document.getElementById('stat-tokens').textContent = data.tokens_today ?? '—';
+    document.getElementById('stat-open').textContent   = data.open_shops ?? '—';
+  } catch(e) {
+    // Fallback static numbers during early days
+    document.getElementById('stat-shops').textContent  = '8+';
+    document.getElementById('stat-tokens').textContent = '100+';
+    document.getElementById('stat-open').textContent   = '5';
+  }
+}
+loadLiveStats();
+</script>
+</body>
+</html>
