@@ -1,6 +1,6 @@
-# Landing/marketing page at /home or /about
-/home           /landing.html   200
-/about          /landing.html   200
+# Marketing page
+/home           /landing.html        200
+/about          /landing.html        200
 
 # SEO area pages
 /area/:area     /area.html?area=:area   200
@@ -8,9 +8,3 @@
 
 # Short shop links
 /s/:slug        /customer.html?slug=:slug   200
-
-# Root → login (shopkeeper dashboard)
-/               /index.html     200
-
-# SPA fallback
-/*              /index.html     200

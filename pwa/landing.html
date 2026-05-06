@@ -251,7 +251,7 @@ footer{border-top:1px solid var(--border);padding:28px 24px;
     <a href="#how-it-works" class="btn-nav-ghost">How it works</a>
     <a href="#pricing" class="btn-nav-ghost">Pricing</a>
     <a href="/customer.html" class="btn-nav-ghost">Browse Shops</a>
-    <a href="/index.html" class="btn-nav-ghost btn-login-always" style="border-color:rgba(232,184,75,.3);color:var(--gold)">Shop Login</a>
+    <a href="/index.html" class="btn-nav-ghost btn-login-always" style="border-color:rgba(232,184,75,.3);color:var(--gold)">Business Login</a>
     <a href="/register.html" class="btn-nav-cta">Register Free →</a>
   </div>
 </nav>
@@ -264,7 +264,7 @@ footer{border-top:1px solid var(--border);padding:28px 24px;
   <p class="hero-sub">WaitMate lets customers join the queue on their phone — from home, the car, or anywhere. No crowded waiting rooms. No wasted hours. No app to install.</p>
 
   <div class="hero-ctas">
-    <a href="/register.html" class="btn-hero-primary">🏪 Register Your Shop — It's Free</a>
+    <a href="/register.html" class="btn-hero-primary">🏪 Register Your Business — It's Free</a>
     <a href="/customer.html" class="btn-hero-sec">Browse Shops Near You →</a>
   </div>
 
@@ -297,8 +297,8 @@ footer{border-top:1px solid var(--border);padding:28px 24px;
     <div class="step reveal">
       <div class="step-num">For Shopkeepers — Step 01</div>
       <div class="step-icon">📋</div>
-      <div class="step-title">Register your shop</div>
-      <div class="step-desc">Takes 2 minutes. Enter your shop name, category, and area. Get a QR code and a shareable link instantly.</div>
+      <div class="step-title">Register your business</div>
+      <div class="step-desc">Takes 2 minutes. Enter your business name, category, and area. Get a QR code and a shareable link instantly.</div>
     </div>
     <div class="step reveal">
       <div class="step-num">For Shopkeepers — Step 02</div>
@@ -471,8 +471,8 @@ footer{border-top:1px solid var(--border);padding:28px 24px;
 <section class="cta-section">
   <div class="cta-box reveal">
     <h2 class="cta-h2">Ready to end the waiting chaos?</h2>
-    <p class="cta-sub">Register your shop in 2 minutes. Print one poster. Let customers queue from anywhere. It costs nothing to try.</p>
-    <a href="/register.html" class="btn-hero-primary" style="display:inline-block">🏪 Register Your Shop — Free →</a>
+    <p class="cta-sub">Register your business in 2 minutes. Print one poster. Let customers queue from anywhere. It costs nothing to try.</p>
+    <a href="/register.html" class="btn-hero-primary" style="display:inline-block">🏪 Register Your Business — Free →</a>
     <div style="margin-top:14px;font-size:12px;color:var(--text3)">No app download · No credit card · Works on any phone</div>
   </div>
 </section>
@@ -482,8 +482,8 @@ footer{border-top:1px solid var(--border);padding:28px 24px;
   <div class="footer-brand">WaitMate 🏪</div>
   <div class="footer-links">
     <a href="/customer.html">Browse Shops</a>
-    <a href="/register.html">Register Shop</a>
-    <a href="/index.html">Shop Login</a>
+    <a href="/register.html">Register Business</a>
+    <a href="/index.html">Business Login</a>
     <a href="/admin.html">Admin</a>
   </div>
   <div class="footer-copy">© 2026 WaitMate · Pakistan's Smart Queue Partner</div>
@@ -514,6 +514,25 @@ async function loadLiveStats() {
   }
 }
 loadLiveStats();
+
+// Language toggle for landing page
+function toggleLandingLang() {
+  const cur  = localStorage.getItem('sq_lang') || 'en';
+  const next = cur === 'en' ? 'ur' : 'en';
+  localStorage.setItem('sq_lang', next);
+  document.getElementById('lang-label-landing').textContent = next === 'ur' ? 'English' : 'اردو';
+  // Landing page is English-only content, just toggle preference for other pages
+  alert(next === 'ur'
+    ? 'زبان اردو میں تبدیل ہو گئی — Customer اور Dashboard میں اردو نظر آئے گی'
+    : 'Language set to English — will apply on Customer and Dashboard pages');
+}
+
+// Set correct label on load
+(function() {
+  const lang = localStorage.getItem('sq_lang') || 'en';
+  const lbl  = document.getElementById('lang-label-landing');
+  if (lbl) lbl.textContent = lang === 'ur' ? 'English' : 'اردو';
+})();
 </script>
 
 
