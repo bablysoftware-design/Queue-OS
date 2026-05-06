@@ -14,7 +14,7 @@ import { isValidPin } from '../utils/validation.js';
  */
 export async function submitRegistration(request, env) {
   try {
-    const { name, owner_phone, category, area, country, city, token_mode, pin } = await request.json();
+    const { name, owner_phone, category, area, country, city, token_mode, token_price, pin } = await request.json();
 
     if (!name)            return badRequest('نام ضروری ہے');
     if (!owner_phone)     return badRequest('فون نمبر ضروری ہے');
@@ -35,9 +35,10 @@ export async function submitRegistration(request, env) {
     const pinHash = await hashPin(String(pin));
     const [reg] = await db.insert('shop_registrations', {
       name, owner_phone, category, area,
-      country: country || null,
-      city:    city    || null,
-      token_mode: token_mode || 'free',
+      country:     country     || null,
+      city:        city        || null,
+      token_mode:  token_mode  || 'free',
+      token_price: token_price || 0,
       pin: pinHash, status: 'pending'
     });
 
@@ -89,7 +90,8 @@ export async function approveRegistration(request, env) {
       area:        reg.area,
       country:     reg.country  || null,
       city:        reg.city     || null,
-      token_mode:  reg.token_mode || 'free',
+      token_mode:  reg.token_mode  || 'free',
+      token_price: reg.token_price || 0,
       status:      'approved',
       is_active:   true,
     });
