@@ -1064,7 +1064,11 @@ body::after {
 
   <div class="bottombar">
     <button class="bar-btn" onclick="refreshQueue()"><span class="bar-icon">↺</span><span id="bar-refresh">Refresh</span></button>
-    <button class="bar-btn" id="bar-pay-btn" onclick="togglePaymentPanel()" style="display:none"><span class="bar-icon">💳</span><span id="bar-pay">Payments</span></button>
+    <button class="bar-btn" id="bar-pay-btn" onclick="togglePaymentPanel()" style="display:none;position:relative">
+      <span class="bar-icon">💳</span>
+      <span id="bar-pay">Payments</span>
+      <span id="pay-badge" style="display:none;position:absolute;top:4px;right:6px;min-width:16px;height:16px;background:#F87171;border-radius:100px;font-size:9px;font-weight:700;color:#fff;display:none;align-items:center;justify-content:center;padding:0 4px;font-family:'Sora',sans-serif;line-height:1;border:1.5px solid var(--bg)">0</span>
+    </button>
     <button class="bar-btn" onclick="shareShopLink()"><span class="bar-icon">🔗</span><span id="bar-share">Share</span></button>
     <button class="bar-btn" onclick="openQRModal(state.shopId, state.shopName)"><span class="bar-icon">📱</span><span>QR</span></button>
     <button class="bar-btn" onclick="toggleSettings()"><span class="bar-icon">⚙</span><span id="bar-settings">Settings</span></button>
@@ -1237,6 +1241,7 @@ function showDashboard() {
   loadSubscription();
   refreshQueue();
   loadStats();
+  checkNewPaymentRequests(); // set badge immediately on load
   loadPaymentRequests();
   // Sync slider to current shop avg wait time
   api('GET', `/shops/${state.shopId}`)
@@ -1593,6 +1598,18 @@ function setShopMode(mode, doSave = false) {
 }
 window.setShopMode = setShopMode;
 
+// ── Payment badge ──────────────────────────────────────────────
+function updatePayBadge(count) {
+  const badge = document.getElementById('pay-badge');
+  if (!badge) return;
+  if (count > 0) {
+    badge.textContent    = count > 9 ? '9+' : count;
+    badge.style.display  = 'flex';
+  } else {
+    badge.style.display  = 'none';
+  }
+}
+
 // ── Toggle payment requests panel ─────────────────────────────
 function togglePaymentPanel() {
   const card = document.getElementById('payment-requests-card');
@@ -1601,6 +1618,7 @@ function togglePaymentPanel() {
   card.style.display = visible ? 'none' : 'block';
   if (!visible) {
     loadPaymentRequests();
+    updatePayBadge(0); // clear badge when panel opened
     setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   }
 }
@@ -1638,6 +1656,7 @@ async function checkNewPaymentRequests() {
         card.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }
+    updatePayBadge(count);
     _lastPaymentCount = count;
   } catch(e) {}
 }
