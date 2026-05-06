@@ -1,7 +1,11 @@
 # Root → Landing page
-/           /landing.html   200
+/               /landing.html   200
+
+# SEO area pages
+/area/:area     /area.html?area=:area   200
+/city/:city     /area.html?city=:city   200
 
 # Short shop links
-/s/:slug    /customer.html?slug=:slug   200
+/s/:slug        /customer.html?slug=:slug   200
 
-# SPA fallback (everything else stays as-is)
+# Named pages stay as-is (no wildcard needed)

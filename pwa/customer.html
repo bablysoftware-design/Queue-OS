@@ -146,6 +146,15 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
 .btn-cancel{width:100%;padding:12px;border:1px solid var(--border);border-radius:12px;background:transparent;color:var(--muted);font-family:inherit;font-size:13px;cursor:pointer;margin-top:8px;transition:all .2s;}
 .btn-cancel:hover{border-color:var(--red);color:var(--red);}
 
+/* ── RATING PROMPT ── */
+.rating-prompt{background:var(--glass);border:1px solid rgba(232,184,75,.25);border-radius:16px;padding:18px 16px;margin-top:12px;text-align:center;display:none;}
+.rating-title{font-size:14px;font-weight:700;margin-bottom:4px;}
+.rating-sub{font-size:11px;color:var(--muted);margin-bottom:14px;}
+.stars-row{display:flex;justify-content:center;gap:8px;margin-bottom:12px;}
+.star-btn{font-size:28px;background:none;border:none;cursor:pointer;transition:transform .15s;filter:grayscale(1);}
+.star-btn:hover,.star-btn.active{filter:grayscale(0);transform:scale(1.2);}
+.rating-done{font-size:13px;color:var(--green);font-weight:600;display:none;}
+
 /* ── TOKEN RESULT SHEET ── */
 .result-wrap{display:none;text-align:center;}
 .big-num{font-family:'JetBrains Mono',monospace;font-size:100px;font-weight:700;letter-spacing:-0.04em;background:linear-gradient(135deg,var(--gold),var(--gold3),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;filter:drop-shadow(0 8px 24px rgba(212,175,55,.4));animation:numPulse 2s ease-in-out infinite;}
@@ -697,6 +706,20 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
         <button onclick="shareShopLink()" style="width:100%;padding:10px;border:none;border-radius:10px;background:#25d366;color:#fff;font-weight:700;font-size:14px;cursor:pointer">💬 واٹس ایپ پر شیئر کریں</button>
       </div>
 
+      <!-- Rating prompt (shows after service complete) -->
+      <div class="rating-prompt" id="rating-prompt">
+        <div class="rating-title">How was your experience?</div>
+        <div class="rating-sub">Rate your visit at <span id="rating-shop-name"></span></div>
+        <div class="stars-row" id="stars-row">
+          <button class="star-btn" onclick="submitRating(1)">⭐</button>
+          <button class="star-btn" onclick="submitRating(2)">⭐</button>
+          <button class="star-btn" onclick="submitRating(3)">⭐</button>
+          <button class="star-btn" onclick="submitRating(4)">⭐</button>
+          <button class="star-btn" onclick="submitRating(5)">⭐</button>
+        </div>
+        <div class="rating-done" id="rating-done">✅ Thanks for your feedback!</div>
+      </div>
+
       <button id="cancel-token-btn" onclick="cancelMyToken()" style="width:100%;margin-top:10px;padding:12px;border:1px solid rgba(248,113,113,0.3);border-radius:12px;background:rgba(248,113,113,0.06);color:var(--red);font-family:'Sora',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s">
         Cancel my token
       </button>
@@ -973,7 +996,17 @@ function renderShops() {
     return (a.queue_length||0) - (b.queue_length||0);
   });
 
-  document.getElementById('shop-list').innerHTML = sorted.map((s, i) => buildShopCard(s, i)).join('');
+  // Build shop list with mid-list CTA after 3rd card
+  const cards = sorted.map((s, i) => buildShopCard(s, i));
+  const midCta = `
+    <div onclick="window.location.href='/register.html'" style="cursor:pointer;background:linear-gradient(135deg,rgba(232,184,75,.1),rgba(232,184,75,.04));border:1px dashed rgba(232,184,75,.35);border-radius:16px;padding:18px;text-align:center;transition:all .25s" onmouseover="this.style.borderColor='rgba(232,184,75,.7)'" onmouseout="this.style.borderColor='rgba(232,184,75,.35)'">
+      <div style="font-size:22px;margin-bottom:8px">🏪</div>
+      <div style="font-size:14px;font-weight:700;color:#E8B84B;margin-bottom:4px">Own a shop? Join WaitMate Free</div>
+      <div style="font-size:11px;color:#94A3B8">Register in 2 minutes. Get your QR poster instantly.</div>
+    </div>`;
+  if (cards.length > 3) cards.splice(3, 0, midCta);
+  else if (cards.length > 0) cards.push(midCta);
+  document.getElementById('shop-list').innerHTML = cards.join('');
 }
 
 function buildShopCard(s, i) {
@@ -1545,6 +1578,30 @@ function updateCountdown(minutes, position) {
   val.classList.toggle('urgent', isUrgent);
 }
 
+// ── RATING ───────────────────────────────────────────────────
+function showRatingPrompt() {
+  const prompt = document.getElementById('rating-prompt');
+  const shopNameEl = document.getElementById('rating-shop-name');
+  if (prompt && selectedShop) {
+    if (shopNameEl) shopNameEl.textContent = selectedShop.name;
+    prompt.style.display = 'block';
+  }
+}
+
+async function submitRating(stars) {
+  // Highlight selected stars
+  document.querySelectorAll('.star-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', i < stars);
+  });
+  // Store locally (backend endpoint can be added later)
+  try {
+    const key = `rating_${selectedShop?.id}_${new Date().toISOString().split('T')[0]}`;
+    localStorage.setItem(key, stars);
+  } catch(e) {}
+  document.getElementById('stars-row').style.display = 'none';
+  document.getElementById('rating-done').style.display = 'block';
+}
+
 // ── LIVE TRACKER ───────────────────────────────────────────
 // ── ALERT STATE ────────────────────────────────────────────
 // Stages: 5 ahead, 3 ahead, 1 ahead, 0 (called)
@@ -1850,9 +1907,14 @@ async function shareShopLink() {
 // ── POLL PAYMENT APPROVAL ──────────────────────────────────
 // ── FILTERS ────────────────────────────────────────────────
 function filterCity(city) {
-  activeCity = city;
+  if (city) {
+    // Navigate to SEO area page for indexability
+    window.location.href = `/area.html?area=${encodeURIComponent(city)}`;
+    return;
+  }
+  activeCity = '';
   document.querySelectorAll('#city-filter-row .cat-chip').forEach(c =>
-    c.classList.toggle('active', c.dataset.city === city)
+    c.classList.toggle('active', c.dataset.city === '')
   );
   loadShops();
 }

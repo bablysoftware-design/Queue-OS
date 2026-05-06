@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#080c14"/>
+<title id="page-title">WaitMate — Shops Near You</title>
+<meta name="description" id="page-desc" content="Find shops using WaitMate queue system near you. Skip the wait — get your token on your phone."/>
+<meta property="og:title" id="og-title" content="WaitMate Shops Near You"/>
+<meta property="og:image" content="https://queue-os.pages.dev/icons/icon-512.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Noto+Nastaliq+Urdu:wght@400;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{--bg:#080c14;--bg2:#0d1422;--glass:rgba(17,24,39,.6);--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);--gold:#E8B84B;--gold2:#F5CC6A;--cyan:#38BDF8;--green:#34D399;--red:#F87171;--text:#F1F5F9;--text2:#94A3B8;--text3:#475569;}
+body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;-webkit-font-smoothing:antialiased;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 50% at 20% 10%,rgba(232,184,75,.06),transparent 55%);pointer-events:none;}
+nav{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;background:rgba(8,12,20,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;}
+.nav-brand{display:flex;align-items:center;gap:8px;text-decoration:none;}
+.nav-logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:14px;}
+.nav-name{font-size:15px;font-weight:800;letter-spacing:-.02em;color:var(--gold);}
+.nav-right{display:flex;gap:8px;}
+.btn-sm{padding:7px 14px;border-radius:100px;font-family:'Sora',sans-serif;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;transition:all .2s;}
+.btn-outline{border:1px solid var(--border2);background:transparent;color:var(--text2);}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold);}
+.btn-gold{border:none;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#080c14;}
+.hero{padding:48px 20px 32px;max-width:700px;margin:0 auto;text-align:center;position:relative;z-index:1;}
+.breadcrumb{font-size:11px;color:var(--text3);margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:6px;}
+.breadcrumb a{color:var(--gold);text-decoration:none;}
+.page-h1{font-size:clamp(24px,5vw,40px);font-weight:800;letter-spacing:-.03em;margin-bottom:10px;}
+.page-sub{font-size:15px;color:var(--text2);line-height:1.65;margin-bottom:24px;}
+.cat-tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:8px;}
+.cat-tab{padding:7px 16px;border:1px solid var(--border);border-radius:100px;background:transparent;color:var(--text2);font-family:'Sora',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;text-decoration:none;}
+.cat-tab:hover,.cat-tab.active{border-color:var(--gold);color:var(--gold);background:rgba(232,184,75,.07);}
+.container{max-width:900px;margin:0 auto;padding:16px 16px 80px;position:relative;z-index:1;}
+.shops-grid{display:flex;flex-direction:column;gap:10px;}
+.shop-card{background:var(--glass);border:1px solid var(--border);border-radius:16px;padding:18px;backdrop-filter:blur(12px);cursor:pointer;transition:all .25s;}
+.shop-card:hover{border-color:rgba(232,184,75,.25);transform:translateX(-2px);}
+.shop-card.closed{opacity:.55;cursor:default;}
+.shop-card.closed:hover{transform:none;}
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px;}
+.shop-icon{width:44px;height:44px;border-radius:12px;background:rgba(232,184,75,.1);border:1px solid rgba(232,184,75,.15);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.shop-info{flex:1;}
+.shop-name{font-size:16px;font-weight:700;margin-bottom:3px;}
+.shop-meta{font-size:11px;color:var(--text2);}
+.status-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:100px;font-size:10px;font-weight:700;border:1px solid;white-space:nowrap;}
+.pill-open{background:rgba(52,211,153,.1);border-color:var(--green);color:var(--green);}
+.pill-closed{background:rgba(248,113,113,.08);border-color:var(--red);color:var(--red);}
+.s-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+.pill-open .s-dot{animation:blink 1.5s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.queue-bar-track{height:3px;background:rgba(255,255,255,.05);border-radius:100px;overflow:hidden;margin:8px 0;}
+.queue-bar-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--green),var(--gold));}
+.queue-bar-fill.mid{background:linear-gradient(90deg,var(--gold),#FBBF24);}
+.queue-bar-fill.high{background:linear-gradient(90deg,#FBBF24,var(--red));}
+.card-stats{display:flex;gap:8px;flex-wrap:wrap;}
+.c-stat{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:6px 10px;text-align:center;}
+.c-stat-val{font-size:15px;font-weight:700;color:var(--gold2);}
+.c-stat-lbl{font-size:9px;color:var(--text3);margin-top:2px;}
+.sug{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:600;margin-top:8px;}
+.sug-go{background:rgba(52,211,153,.08);color:var(--green);border:1px solid rgba(52,211,153,.2);}
+.sug-wait{background:rgba(251,191,36,.08);color:#FBBF24;border:1px solid rgba(251,191,36,.2);}
+.sug-alt{background:rgba(56,189,248,.08);color:var(--cyan);border:1px solid rgba(56,189,248,.2);}
+.loading{text-align:center;padding:60px 20px;color:var(--text2);}
+.spinner{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:48px 20px;color:var(--text2);}
+.other-areas{padding:32px 0 16px;}
+.other-h{font-size:13px;font-weight:700;color:var(--text2);margin-bottom:12px;letter-spacing:.04em;text-transform:uppercase;}
+.area-links{display:flex;gap:8px;flex-wrap:wrap;}
+.area-link{padding:6px 14px;border:1px solid var(--border);border-radius:100px;font-size:12px;color:var(--text2);text-decoration:none;transition:all .2s;}
+.area-link:hover{border-color:var(--gold);color:var(--gold);}
+.cta-footer{background:rgba(232,184,75,.05);border:1px solid rgba(232,184,75,.15);border-radius:16px;padding:20px;text-align:center;margin-top:24px;}
+.cta-footer h3{font-size:16px;font-weight:700;margin-bottom:6px;}
+.cta-footer p{font-size:12px;color:var(--text2);margin-bottom:14px;}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="nav-brand"><div class="nav-logo">🏪</div><span class="nav-name">WaitMate</span></a>
+  <div class="nav-right">
+    <a href="/customer.html" class="btn-sm btn-outline">All Shops</a>
+    <a href="/register.html" class="btn-sm btn-gold">Register Free →</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="breadcrumb">
+    <a href="/">WaitMate</a> › <span id="breadcrumb-area">Shops</span>
+  </div>
+  <h1 class="page-h1" id="page-h1">Shops Near You</h1>
+  <p class="page-sub" id="page-sub">Skip the wait — join the queue on your phone and come when it's your turn.</p>
+  <div class="cat-tabs" id="cat-tabs">
+    <a class="cat-tab active" href="?">All</a>
+    <a class="cat-tab" href="?cat=barber">✂️ Barbers</a>
+    <a class="cat-tab" href="?cat=clinic">🏥 Clinics</a>
+    <a class="cat-tab" href="?cat=pharmacy">💊 Pharmacies</a>
+    <a class="cat-tab" href="?cat=bank">🏦 Banks</a>
+    <a class="cat-tab" href="?cat=govt">🏛️ Govt</a>
+  </div>
+</div>
+
+<div class="container">
+  <div id="loading" class="loading"><div class="spinner"></div><div>Loading shops...</div></div>
+  <div id="shops-grid" class="shops-grid" style="display:none"></div>
+  <div id="empty" class="empty" style="display:none">
+    <div style="font-size:40px;margin-bottom:12px">🔍</div>
+    <div>No shops found in this area yet.</div>
+    <a href="/register.html" style="display:inline-block;margin-top:14px;padding:10px 20px;border:1px solid var(--gold);border-radius:100px;color:var(--gold);text-decoration:none;font-size:13px;font-weight:600">Be the first → Register Free</a>
+  </div>
+
+  <div class="other-areas" id="other-areas" style="display:none">
+    <div class="other-h">Other areas on WaitMate</div>
+    <div class="area-links" id="area-links"></div>
+  </div>
+
+  <div class="cta-footer">
+    <h3>Is your shop not listed?</h3>
+    <p>Register on WaitMate for free. Start managing your queue digitally today.</p>
+    <a href="/register.html" class="btn-sm btn-gold" style="display:inline-block;padding:10px 22px;">Register Your Shop — Free →</a>
+  </div>
+</div>
+
+<script>
+const WORKER = 'https://saf-queue-worker.byker-software.workers.dev';
+const p      = new URLSearchParams(window.location.search);
+const AREA   = p.get('area') || '';
+const CITY   = p.get('city') || '';
+const CAT    = p.get('cat')  || '';
+
+// Set page meta
+const areaLabel = AREA || CITY || 'Pakistan';
+const catLabels = {barber:'Barbers',clinic:'Clinics',pharmacy:'Pharmacies',bank:'Banks',govt:'Govt Offices',tailor:'Tailors'};
+const catLabel  = catLabels[CAT] || 'Shops';
+const title     = `${catLabel} in ${areaLabel} — WaitMate`;
+
+document.getElementById('page-title').textContent    = title;
+document.getElementById('og-title').content          = title;
+document.getElementById('page-desc').content         = `Find ${catLabel.toLowerCase()} in ${areaLabel} using WaitMate. Skip the wait — get your token on your phone.`;
+document.getElementById('page-h1').textContent       = `${catLabel} in ${areaLabel}`;
+document.getElementById('page-sub').textContent      = `Skip the wait at ${catLabel.toLowerCase()} in ${areaLabel}. Join the queue on your phone and come when it's your turn.`;
+document.getElementById('breadcrumb-area').textContent = areaLabel;
+
+// Activate cat tab
+document.querySelectorAll('.cat-tab').forEach(t => {
+  const tCat = new URLSearchParams(t.search || t.href.split('?')[1] || '').get('cat') || '';
+  t.classList.toggle('active', tCat === CAT);
+  // Preserve area in tab links
+  if (AREA || CITY) {
+    const u = new URL(t.href, location.href);
+    if (AREA) u.searchParams.set('area', AREA);
+    if (CITY) u.searchParams.set('city', CITY);
+    t.href = u.toString();
+  }
+});
+
+async function load() {
+  const qp = [];
+  if (AREA) qp.push(`area=${encodeURIComponent(AREA)}`);
+  if (CITY) qp.push(`area=${encodeURIComponent(CITY)}`);
+  if (CAT)  qp.push(`category=${CAT}`);
+  const url = `${WORKER}/public/shops${qp.length ? '?' + qp.join('&') : ''}`;
+
+  try {
+    const res  = await fetch(url);
+    const {data} = await res.json();
+    const shops = data?.shops || [];
+    const areas = data?.areas || [];
+
+    document.getElementById('loading').style.display = 'none';
+
+    if (!shops.length) {
+      document.getElementById('empty').style.display = 'block';
+    } else {
+      const grid = document.getElementById('shops-grid');
+      grid.style.display = 'flex';
+      grid.innerHTML = shops.map(buildCard).join('');
+    }
+
+    // Other areas
+    const otherAreas = areas.filter(a => a && a.toLowerCase() !== (AREA||CITY).toLowerCase()).slice(0,8);
+    if (otherAreas.length) {
+      const linksEl = document.getElementById('area-links');
+      linksEl.innerHTML = otherAreas.map(a =>
+        `<a class="area-link" href="/area.html?area=${encodeURIComponent(a)}">${a}</a>`
+      ).join('');
+      document.getElementById('other-areas').style.display = 'block';
+    }
+  } catch(e) {
+    document.getElementById('loading').innerHTML = `<div style="color:var(--red)">Failed to load. <a href="javascript:load()" style="color:var(--gold)">Retry</a></div>`;
+  }
+}
+
+function buildCard(s) {
+  const isOpen  = s.is_open;
+  const q       = s.queue_length || 0;
+  const pct     = Math.min((q / 20) * 100, 100);
+  const fillCls = pct > 75 ? 'high' : pct > 40 ? 'mid' : '';
+  const icons   = {barber:'✂️',clinic:'🏥',pharmacy:'💊',bank:'🏦',govt:'🏛️',tailor:'🧵'};
+  const icon    = icons[s.category] || '🏪';
+  const cats    = {barber:'Barber',clinic:'Clinic',pharmacy:'Pharmacy',bank:'Bank',govt:'Govt',tailor:'Tailor'};
+  const catName = cats[s.category] || s.category || '';
+
+  let sug = '';
+  if (isOpen && !s.is_busy) sug = `<span class="sug sug-go">✅ Good time to visit</span>`;
+  else if (isOpen && s.is_busy) sug = `<span class="sug sug-wait">⚠️ Busy — expect a wait</span>`;
+  else sug = `<span class="sug sug-alt">⏰ Opens ${s.opening_time || 'later'}</span>`;
+
+  const click = isOpen ? `onclick="window.location='/customer.html?shop=${s.id}'"` : '';
+
+  return `<div class="shop-card ${isOpen?'':'closed'}" ${click}>
+    <div class="card-top">
+      <div class="shop-icon">${icon}</div>
+      <div class="shop-info">
+        <div class="shop-name">${esc(s.name)}</div>
+        <div class="shop-meta">📍 ${esc(s.area||'—')} · ${catName}</div>
+      </div>
+      <span class="status-pill ${isOpen?'pill-open':'pill-closed'}">
+        <span class="s-dot"></span>${isOpen?'Open':'Closed'}
+      </span>
+    </div>
+    ${isOpen ? `
+    <div class="queue-bar-track"><div class="queue-bar-fill ${fillCls}" style="width:${pct}%"></div></div>
+    <div class="card-stats">
+      <div class="c-stat"><div class="c-stat-val">${s.current_serving??'—'}</div><div class="c-stat-lbl">Now</div></div>
+      <div class="c-stat"><div class="c-stat-val">${q}</div><div class="c-stat-lbl">In Queue</div></div>
+      <div class="c-stat"><div class="c-stat-val">${s.estimated_wait||0}m</div><div class="c-stat-lbl">Wait</div></div>
+    </div>` : ''}
+    ${sug}
+  </div>`;
+}
+
+function esc(s) { return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+load();
+</script>
+</body>
+</html>

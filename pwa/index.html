@@ -1412,67 +1412,42 @@ function loadStats() {
 window.loadStats = loadStats;
 
 async function shareShopLink() {
-  // Fetch slug-based share data from worker
-  let link = `${location.origin}/customer.html?shop=${state.shopId}`;
-  let waUrl = null;
-  let qrUrl = null;
-  try {
-    const [shareRes, qrRes] = await Promise.all([
-      fetch(`${WORKER}/shops/${state.shopId}/share-link`, { headers: { 'x-session-token': state.sessionToken } }),
-      fetch(`${WORKER}/shops/${state.shopId}/qr`,         { headers: { 'x-session-token': state.sessionToken } }),
-    ]);
-    const shareData = await shareRes.json();
-    const qrData    = await qrRes.json();
-    if (shareData.data?.link)         link  = shareData.data.link;
-    if (shareData.data?.whatsapp_url) waUrl = shareData.data.whatsapp_url;
-    if (qrData.data?.qr_url)          qrUrl = qrData.data.qr_url;
-  } catch(e) {}
+  const shopUrl   = `${location.origin}/customer.html?shop=${state.shopId}`;
+  const waMessage = encodeURIComponent(
+    `🏪 *${state.shopName}* is now on WaitMate!\n\n` +
+    `Skip the wait — get your token on your phone:\n${shopUrl}\n\n` +
+    `_Powered by WaitMate · Pakistan's Smart Queue Partner_`
+  );
+  const waUrl = `https://wa.me/?text=${waMessage}`;
 
-  // Build share modal
-  let modal = document.getElementById('share-modal');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'share-modal';
-    Object.assign(modal.style, {
-      position:'fixed', inset:'0', background:'rgba(0,0,0,.85)',
-      zIndex:'999', display:'flex', alignItems:'flex-end', justifyContent:'center',
-      backdropFilter:'blur(8px)'
-    });
-    document.body.appendChild(modal);
-  }
-  modal.innerHTML = `
-    <div style="background:var(--surface,#1a2332);border-radius:24px 24px 0 0;padding:28px 24px 40px;width:100%;max-width:500px;border:1px solid rgba(212,175,55,.2)">
-      <div style="text-align:center;margin-bottom:20px">
-        <div style="font-size:18px;font-weight:700;color:var(--gold,#e8b84b)">📤 Share Shop</div>
-        <div style="font-size:12px;color:#94a3b8;margin-top:4px">${state.shopName}</div>
-      </div>
-      ${qrUrl ? `
-      <div style="text-align:center;margin-bottom:16px">
-        <img src="${qrUrl}" style="width:180px;height:180px;border-radius:12px;border:2px solid rgba(212,175,55,.3)" alt="QR Code"/>
-        <div style="font-size:11px;color:#94a3b8;margin-top:6px">QR Code — Print ya poster pe lagaein</div>
-        <a href="${qrUrl}" download="qr-${state.shopName}.png" target="_blank"
-           style="display:inline-block;margin-top:8px;padding:6px 16px;border:1px solid rgba(212,175,55,.4);border-radius:20px;color:var(--gold,#e8b84b);font-size:12px;text-decoration:none">
-          ⬇ Download QR
+  const sheet = document.createElement('div');
+  sheet.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);z-index:500;display:flex;align-items:flex-end;justify-content:center;';
+  sheet.innerHTML = `
+    <div style="background:#111827;border:1px solid rgba(255,255,255,.08);border-radius:20px 20px 0 0;padding:24px 20px 40px;width:100%;max-width:440px">
+      <div style="width:36px;height:4px;background:rgba(255,255,255,.1);border-radius:100px;margin:0 auto 18px"></div>
+      <div style="font-size:15px;font-weight:700;margin-bottom:4px;color:#F1F5F9">Share Your Shop</div>
+      <div style="font-size:11px;color:#475569;margin-bottom:18px;word-break:break-all;direction:ltr">${shopUrl}</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <a href="${waUrl}" target="_blank" rel="noopener"
+          style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);border-radius:12px;text-decoration:none;color:#25D166;font-weight:700;font-size:14px;font-family:'Sora',sans-serif">
+          <span style="font-size:20px">💬</span> Share on WhatsApp
         </a>
-      </div>` : ''}
-      <div style="background:rgba(255,255,255,.04);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#94a3b8;word-break:break-all;direction:ltr">${link}</div>
-      <div style="display:flex;flex-direction:column;gap:10px">
-        <button onclick="navigator.clipboard.writeText('${link}').then(()=>showToast('Link copied!','success'))"
-          style="padding:13px;border:1px solid rgba(212,175,55,.3);border-radius:12px;background:transparent;color:var(--gold,#e8b84b);font-size:14px;font-weight:600;cursor:pointer">
-          🔗 Copy Link
+        <button id="copy-link-btn" onclick="
+          navigator.clipboard.writeText('${shopUrl}')
+            .then(()=>{document.getElementById('copy-link-btn').textContent='✅ Copied!'})
+            .catch(()=>prompt('Copy this link:','${shopUrl}'))"
+          style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(232,184,75,.08);border:1px solid rgba(232,184,75,.25);border-radius:12px;color:#E8B84B;font-weight:700;font-size:14px;font-family:'Sora',sans-serif;cursor:pointer;width:100%">
+          <span style="font-size:20px">🔗</span> Copy Link
         </button>
-        ${waUrl ? `<button onclick="window.open('${waUrl}','_blank')"
-          style="padding:13px;border:none;border-radius:12px;background:#25d366;color:#fff;font-size:14px;font-weight:700;cursor:pointer">
-          💬 Share on WhatsApp
-        </button>` : ''}
+        <button onclick="document.body.removeChild(document.getElementById('share-sheet'))"
+          style="padding:12px;border:1px solid rgba(255,255,255,.07);border-radius:12px;background:transparent;color:#64748B;font-size:13px;cursor:pointer;font-family:'Sora',sans-serif">
+          Cancel
+        </button>
       </div>
-      <button onclick="document.getElementById('share-modal').style.display='none'"
-        style="width:100%;margin-top:14px;padding:12px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:transparent;color:#64748b;font-size:13px;cursor:pointer">
-        بند کریں
-      </button>
     </div>`;
-  modal.style.display = 'flex';
-  modal.onclick = e => { if (e.target === modal) modal.style.display='none'; };
+  sheet.id = 'share-sheet';
+  sheet.addEventListener('click', e => { if(e.target === sheet) document.body.removeChild(sheet); });
+  document.body.appendChild(sheet);
 }
 window.shareShopLink = shareShopLink;
 
