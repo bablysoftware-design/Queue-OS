@@ -1529,24 +1529,49 @@ function updateMuteUI() {
 }
 
 // ── VOICE ANNOUNCEMENT ─────────────────────────────────────
+// Pre-load voices once
+let _voiceList = [];
+if ('speechSynthesis' in window) {
+  const loadVoices = () => { _voiceList = window.speechSynthesis.getVoices(); };
+  loadVoices();
+  window.speechSynthesis.onvoiceschanged = loadVoices;
+}
+
+function _pickVoice() {
+  // Priority: natural-sounding English voices (Roman Urdu reads well with en voice)
+  // Avoid 'Google' ur-PK which sounds robotic
+  const preferred = [
+    v => v.name.includes('Samantha'),      // iOS — very natural
+    v => v.name.includes('Karen'),         // iOS/macOS AU
+    v => v.name.includes('Daniel'),        // UK English — clear
+    v => v.name.includes('Google UK'),     // Android
+    v => v.lang === 'en-US' && v.localService,
+    v => v.lang === 'en-GB' && v.localService,
+    v => v.lang.startsWith('en') && v.localService,
+    v => v.lang.startsWith('en'),
+  ];
+  for (const test of preferred) {
+    const v = _voiceList.find(test);
+    if (v) return v;
+  }
+  return null;
+}
+
 function playVoice(text) {
   if (isMuted()) return;
   if (!('speechSynthesis' in window)) return;
-  // Only play if page is visible
   if (document.hidden) return;
   try {
-    window.speechSynthesis.cancel(); // clear queue
-    const utt  = new SpeechSynthesisUtterance(text);
-    utt.lang   = 'ur-PK';
-    utt.rate   = 0.9;
-    utt.pitch  = 1.0;
+    window.speechSynthesis.cancel();
+    const utt    = new SpeechSynthesisUtterance(text);
+    const voice  = _pickVoice();
+    if (voice) utt.voice = voice;
+    utt.lang   = voice?.lang || 'en-US';
+    utt.rate   = 0.88;   // slightly slower = clearer
+    utt.pitch  = 1.05;
     utt.volume = 1.0;
-    // fallback to en-US if ur-PK not available
-    const voices = window.speechSynthesis.getVoices();
-    const urdu   = voices.find(v => v.lang.startsWith('ur'));
-    if (urdu) utt.voice = urdu;
     window.speechSynthesis.speak(utt);
-  } catch(e) { /* silent fallback — WhatsApp handles it */ }
+  } catch(e) { /* silent fallback */ }
 }
 
 // ── SOUND BEEP ─────────────────────────────────────────────
@@ -1577,10 +1602,10 @@ function triggerAlert(stage) {
   ALERT_STAGES.add(stage);
 
   const messages = {
-    5:      '5 log baqi hain aap ki bari ke liye',
-    3:      '3 log baqi hain aap ki bari ke liye',
-    1:      '1 shakhs baqi hai',
-    0:      'Aap ki bari aa gai hay',
+    5:      '5 people remaining before your turn',
+    3:      '3 people remaining. Please get ready',
+    1:      'Only 1 person remaining. Your turn is very soon',
+    0:      'Your turn has arrived. Please proceed now',
   };
 
   const beeps = {

@@ -103,12 +103,21 @@ export async function approvePaymentRequest(request, env) {
     // Create token
     const result = await createToken(db, pr.shop_id, pr.customer_phone, pr.customer_name, env);
 
-    // Update payment request
-    await db.update('payment_requests', `id=eq.${id}`, {
-      status:      'approved',
-      token_id:    result.token.id,
-      reviewed_at: new Date().toISOString(),
-    });
+    // Update payment request — split into two updates so status change succeeds
+    // even if token_id column doesn't exist in older DB schemas
+    try {
+      await db.update('payment_requests', `id=eq.${id}`, {
+        status:      'approved',
+        token_id:    result.token.id,
+        reviewed_at: new Date().toISOString(),
+      });
+    } catch(e) {
+      // token_id column may not exist — update just status
+      await db.update('payment_requests', `id=eq.${id}`, {
+        status:      'approved',
+        reviewed_at: new Date().toISOString(),
+      });
+    }
 
     return ok({
       message:      'Payment approve ho gayi. Token issue ho gaya.',
