@@ -1730,6 +1730,172 @@ function updateMuteUI() {
 }
 
 // ── VOICE ANNOUNCEMENT ─────────────────────────────────────
+// Uses Azure Neural TTS (ur-PK-UzmaNeural) via Worker proxy.
+// Falls back to Web Speech API if Azure key not configured.
+// Falls back to silence if neither works.
+
+let _webVoices    = [];
+let _wsLoaded     = false;
+let _azureWorks   = null; // null=unknown, true=works, false=unavailable
+let _audioCache   = {};   // cache audio blobs by text
+
+// Pre-load Web Speech voices
+if ('speechSynthesis' in window) {
+  const load = () => { _webVoices = window.speechSynthesis.getVoices(); _wsLoaded = true; };
+  load();
+  window.speechSynthesis.onvoiceschanged = load;
+}
+
+function isMuted() { return localStorage.getItem('sq_muted') === '1'; }
+function toggleMute() {
+  const m = localStorage.getItem('sq_muted') === '1';
+  localStorage.setItem('sq_muted', m ? '0' : '1');
+  const btn = document.getElementById('mute-btn');
+  if (btn) btn.textContent = m ? '🔔' : '🔕';
+}
+
+async function playVoice(textEn, textUr) {
+  if (isMuted()) return;
+  if (document.hidden) return;
+
+  const lang  = localStorage.getItem('sq_lang') || 'en';
+  const isUr  = lang === 'ur';
+  const text  = isUr ? textUr : textEn;
+  const langCode = isUr ? 'ur' : 'en';
+
+  // Try Azure TTS first
+  if (_azureWorks !== false) {
+    const played = await playAzureTTS(text, langCode);
+    if (played) return;
+  }
+
+  // Fallback: Web Speech API
+  playWebSpeech(text, isUr);
+}
+
+async function playAzureTTS(text, lang) {
+  try {
+    // Check cache first
+    const cacheKey = `${lang}:${text}`;
+    let audioUrl   = _audioCache[cacheKey];
+
+    if (!audioUrl) {
+      const res = await fetch(
+        `${WORKER}/tts?text=${encodeURIComponent(text)}&lang=${lang}`,
+        { cache: 'no-store' }
+      );
+
+      // 204 = Azure not configured
+      if (res.status === 204) { _azureWorks = false; return false; }
+      if (!res.ok)             { _azureWorks = false; return false; }
+
+      _azureWorks = true;
+      const blob  = await res.blob();
+      audioUrl    = URL.createObjectURL(blob);
+      _audioCache[cacheKey] = audioUrl;
+    }
+
+    const audio = new Audio(audioUrl);
+    audio.volume = 1.0;
+    await audio.play();
+    return true;
+  } catch(e) {
+    _azureWorks = false;
+    return false;
+  }
+}
+
+function playWebSpeech(text, isUr) {
+  if (!('speechSynthesis' in window)) return;
+  try {
+    window.speechSynthesis.cancel();
+    const utt  = new SpeechSynthesisUtterance(text);
+
+    if (isUr) {
+      // Find any Urdu or Hindi voice (Hindi sounds close to Urdu)
+      const urVoice = _webVoices.find(v => v.lang === 'ur-PK')
+                   || _webVoices.find(v => v.lang === 'ur')
+                   || _webVoices.find(v => v.lang.startsWith('hi')); // Hindi fallback
+      if (urVoice) utt.voice = urVoice;
+      utt.lang  = 'ur-PK';
+      utt.rate  = 0.82;
+      utt.pitch = 1.0;
+    } else {
+      const enVoice = _webVoices.find(v => v.name.includes('Samantha'))
+                   || _webVoices.find(v => v.name.includes('Karen'))
+                   || _webVoices.find(v => v.lang === 'en-US' && v.localService)
+                   || _webVoices.find(v => v.lang.startsWith('en'));
+      if (enVoice) utt.voice = enVoice;
+      utt.lang  = 'en-US';
+      utt.rate  = 0.88;
+      utt.pitch = 1.05;
+    }
+    utt.volume = 1.0;
+    window.speechSynthesis.speak(utt);
+  } catch(e) {}
+}
+
+// ── RATING ───────────────────────────────────────────────────
+function showRatingPrompt() {
+  const prompt = document.getElementById('rating-prompt');
+  const shopNameEl = document.getElementById('rating-shop-name');
+  if (prompt && selectedShop) {
+    if (shopNameEl) shopNameEl.textContent = selectedShop.name;
+    prompt.style.display = 'block';
+  }
+}
+
+async function submitRating(stars) {
+  // Highlight selected stars
+  document.querySelectorAll('.star-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', i < stars);
+  });
+  // Store locally (backend endpoint can be added later)
+  try {
+    const key = `rating_${selectedShop?.id}_${new Date().toISOString().split('T')[0]}`;
+    localStorage.setItem(key, stars);
+  } catch(e) {}
+  document.getElementById('stars-row').style.display = 'none';
+  document.getElementById('rating-done').style.display = 'block';
+}
+
+// ── LIVE TRACKER ───────────────────────────────────────────
+// ── ALERT STATE ────────────────────────────────────────────
+// Stages: 5 ahead, 3 ahead, 1 ahead, 0 (called)
+const ALERT_STAGES = new Set(); // tracks which stages already fired this session
+
+let _calledAlarmFired = false;
+
+function resetAlertStages() {
+  ALERT_STAGES.clear();
+  _calledAlarmFired = false;
+}
+
+// ── MUTE SYSTEM ────────────────────────────────────────────
+function isMuted() {
+  return localStorage.getItem('queue_mute') === 'true';
+}
+
+function toggleMute() {
+  const muted = !isMuted();
+  localStorage.setItem('queue_mute', muted ? 'true' : 'false');
+  updateMuteUI();
+  if (!muted) playBeep(660, 0.15); // confirmation beep on unmute
+}
+
+function updateMuteUI() {
+  const muted   = isMuted();
+  const icon    = document.getElementById('mute-icon');
+  const label   = document.getElementById('mute-label');
+  const btn     = document.getElementById('mute-btn');
+  if (!icon) return;
+  icon.textContent  = muted ? '🔇' : '🔊';
+  if (label) label.textContent = muted ? 'Muted' : 'Alerts On';
+  if (label) label.style.color = muted ? 'var(--muted)' : 'var(--gold)';
+  if (btn)   btn.style.opacity = muted ? '0.6' : '1';
+}
+
+// ── VOICE ANNOUNCEMENT ─────────────────────────────────────
 let _voiceList = [];
 let _urduVoice = null;
 let _engVoice  = null;
