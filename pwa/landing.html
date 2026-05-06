@@ -251,7 +251,7 @@ footer{border-top:1px solid var(--border);padding:28px 24px;
     <a href="#how-it-works" class="btn-nav-ghost">How it works</a>
     <a href="#pricing" class="btn-nav-ghost">Pricing</a>
     <a href="/customer.html" class="btn-nav-ghost">Browse Shops</a>
-    <button onclick="openLoginModal()" class="btn-nav-ghost btn-login-always" style="border-color:rgba(232,184,75,.3);color:var(--gold);cursor:pointer;font-family:inherit">Login</button>
+    <a href="/" class="btn-nav-ghost btn-login-always" style="border-color:rgba(232,184,75,.3);color:var(--gold)">Shop Login</a>
     <a href="/register.html" class="btn-nav-cta">Register Free →</a>
   </div>
 </nav>
@@ -483,7 +483,7 @@ footer{border-top:1px solid var(--border);padding:28px 24px;
   <div class="footer-links">
     <a href="/customer.html">Browse Shops</a>
     <a href="/register.html">Register Shop</a>
-    <a href="javascript:void(0)" onclick="openLoginModal()">Shop Login</a>
+    <a href="/">Shop Login</a>
     <a href="/admin.html">Admin</a>
   </div>
   <div class="footer-copy">© 2026 WaitMate · Pakistan's Smart Queue Partner</div>
@@ -516,93 +516,7 @@ async function loadLiveStats() {
 loadLiveStats();
 </script>
 
-<!-- ── LOGIN MODAL ── -->
-<div id="login-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(12px);z-index:999;padding:20px">
-  <div style="background:#0d1422;border:1px solid rgba(232,184,75,.25);border-radius:20px;padding:32px 24px;width:100%;max-width:380px;position:relative">
-    <!-- Gold top line -->
-    <div style="position:absolute;top:0;left:20%;right:20%;height:1px;background:linear-gradient(90deg,transparent,#E8B84B,transparent)"></div>
-    <!-- Close -->
-    <button onclick="closeLoginModal()" style="position:absolute;top:14px;right:14px;background:none;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#64748B;width:28px;height:28px;cursor:pointer;font-size:14px">✕</button>
 
-    <!-- Logo -->
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px">
-      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#E8B84B,#F5CC6A);display:flex;align-items:center;justify-content:center;font-size:16px">🏪</div>
-      <div>
-        <div style="font-size:15px;font-weight:800;color:#E8B84B">WaitMate</div>
-        <div style="font-size:11px;color:#64748B">Shopkeeper Login</div>
-      </div>
-    </div>
-
-    <!-- Fields -->
-    <div style="margin-bottom:14px">
-      <label style="display:block;font-size:11px;font-weight:600;color:#94A3B8;letter-spacing:.06em;text-transform:uppercase;margin-bottom:7px">WhatsApp Number</label>
-      <input id="lm-phone" type="tel" placeholder="923001234567" autocomplete="tel"
-        style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px 14px;color:#F1F5F9;font-family:'Sora',sans-serif;font-size:14px;outline:none;direction:ltr"
-        onfocus="this.style.borderColor='#E8B84B'" onblur="this.style.borderColor='rgba(255,255,255,.07)'"
-        onkeydown="if(event.key==='Enter')document.getElementById('lm-pin').focus()"/>
-    </div>
-    <div style="margin-bottom:18px">
-      <label style="display:block;font-size:11px;font-weight:600;color:#94A3B8;letter-spacing:.06em;text-transform:uppercase;margin-bottom:7px">4-Digit PIN</label>
-      <input id="lm-pin" type="password" maxlength="4" placeholder="••••" autocomplete="current-password"
-        style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px 14px;color:#F1F5F9;font-family:'Sora',sans-serif;font-size:18px;letter-spacing:6px;outline:none;text-align:center"
-        onfocus="this.style.borderColor='#E8B84B'" onblur="this.style.borderColor='rgba(255,255,255,.07)'"
-        onkeydown="if(event.key==='Enter')submitModalLogin()"/>
-    </div>
-
-    <button onclick="submitModalLogin()" id="lm-btn"
-      style="width:100%;padding:13px;border:none;border-radius:10px;background:linear-gradient(135deg,#E8B84B,#F5CC6A);color:#080c14;font-family:'Sora',sans-serif;font-size:15px;font-weight:800;cursor:pointer;transition:all .2s">
-      Sign In
-    </button>
-    <div id="lm-err" style="color:#F87171;font-size:12px;text-align:center;margin-top:10px;min-height:18px"></div>
-
-    <div style="text-align:center;margin-top:16px;font-size:12px;color:#475569">
-      Don't have a shop yet?
-      <a href="/register.html" style="color:#E8B84B;text-decoration:none;font-weight:600">Register free →</a>
-    </div>
-  </div>
-</div>
-
-<script>
-function openLoginModal() {
-  const m = document.getElementById('login-modal');
-  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(12px);z-index:999;padding:20px;align-items:center;justify-content:center';
-  setTimeout(() => document.getElementById('lm-phone').focus(), 200);
-}
-function closeLoginModal() {
-  document.getElementById('login-modal').style.display = 'none';
-}
-document.getElementById('login-modal').addEventListener('click', e => {
-  if (e.target === document.getElementById('login-modal')) closeLoginModal();
-});
-async function submitModalLogin() {
-  const phone = document.getElementById('lm-phone').value.trim();
-  const pin   = document.getElementById('lm-pin').value.trim();
-  const errEl = document.getElementById('lm-err');
-  const btn   = document.getElementById('lm-btn');
-  errEl.textContent = '';
-  if (!phone || !pin) { errEl.textContent = 'Enter phone and PIN'; return; }
-  btn.disabled = true; btn.textContent = 'Signing in...';
-  try {
-    const WK   = 'https://saf-queue-worker.byker-software.workers.dev';
-    const res  = await fetch(WK + '/shops/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ owner_phone: phone, pin })
-    });
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error || 'Login failed');
-    localStorage.setItem('saf_shop_id',       data.data.shop_id);
-    localStorage.setItem('saf_shop_name',     data.data.shop_name);
-    localStorage.setItem('saf_is_open',       data.data.is_open ? '1' : '0');
-    localStorage.setItem('saf_session_token', data.data.session_token);
-    window.location.href = '/index.html';
-  } catch(e) {
-    errEl.textContent = e.message || 'Login failed';
-    btn.disabled = false; btn.textContent = 'Sign In';
-  }
-}
-if (window.location.search.includes('login')) openLoginModal();
-</script>
 
 </body>
 </html>
