@@ -156,10 +156,15 @@ export async function checkPaymentStatus(request, env) {
 
     let token_number = null;
     if (pr.status === 'approved' && pr.token_id) {
-      const trows = await db.select('tokens', `select=token_number&id=eq.${pr.token_id}&limit=1`);
-      if (trows?.length) token_number = trows[0].token_number;
+      try {
+        const trows = await db.select('tokens', `select=token_number&id=eq.${pr.token_id}&limit=1`);
+        if (trows?.length) token_number = trows[0].token_number;
+      } catch(e) { /* token lookup failed — use fallback */ }
+      // Fallback: if token lookup failed, use a placeholder so UI still switches
+      if (!token_number) token_number = 0;
     }
 
+    // Always return status so client can react even if token_number is 0
     return ok({ status: pr.status, token_id: pr.token_id || null, token_number, shop_id: pr.shop_id || null });
   } catch(err) { return serverError(err.message); }
 }

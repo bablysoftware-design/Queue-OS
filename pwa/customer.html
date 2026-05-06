@@ -1173,7 +1173,7 @@ function startPaymentPolling(requestId, customerName, customerPhone) {
       const json = await res.json();
       if (!json.success) return;
 
-      if (json.data.status === 'approved' && json.data.token_number) {
+      if (json.data.status === 'approved') { // approved — switch to token card regardless of token_number
         clearInterval(_payPollTimer);
         localStorage.removeItem('saf_pending_payment');
         // Token issued — set state
@@ -1189,7 +1189,7 @@ function startPaymentPolling(requestId, customerName, customerPhone) {
         document.getElementById('token-modal').classList.add('show');
         document.getElementById('join-form-wrap').style.display = 'none';
         document.getElementById('result-wrap').style.display    = 'block';
-        document.getElementById('r-num').textContent            = myTokenNum;
+        document.getElementById('r-num').textContent            = myTokenNum || '✓';
         document.getElementById('r-greeting').textContent       = `🎉 منظور! ${selectedShop?.name} — آپ قطار میں ہیں`;
 
         playAlarm('ready');
