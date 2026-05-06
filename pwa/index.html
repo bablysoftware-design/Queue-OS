@@ -705,6 +705,7 @@ body::after {
   text-align: center;
   white-space: normal;
 }
+#toast.clickable { cursor: pointer; text-decoration: underline dotted; }
 #toast.show { transform: translateX(-50%) translateY(0); }
 #toast.success { color: var(--green); border-color: rgba(52,211,153,0.3); }
 #toast.error   { color: var(--red);   border-color: rgba(248,113,113,0.3); }
@@ -1639,7 +1640,7 @@ async function checkNewPaymentRequests() {
     if (count > _lastPaymentCount) {
       // New request arrived — alert business
       playAlertSound();
-      showToast(`🔔 نئی ادائیگی کی درخواست! (${count})`, 'success');
+      showToast(`🔔 نئی ادائیگی کی درخواست! (${count}) — دیکھیں`, 'success', () => { togglePaymentPanel(); });
       // Show notification if permission granted
       if (Notification.permission === 'granted') {
         new Notification('WaitMate — نئی ادائیگی درخواست', {
@@ -1859,11 +1860,18 @@ function maskPhone(p) { if (!p) return '—'; const s = String(p); return s.leng
 function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
 let toastT;
-function showToast(msg, type = '') {
+let _toastClickFn = null;
+function showToast(msg, type = '', onClick = null) {
   const el = document.getElementById('toast');
-  el.textContent = msg; el.className = `show ${type}`;
-  clearTimeout(toastT); toastT = setTimeout(() => el.className = '', 3500);
+  el.textContent = msg;
+  el.className = `show ${type}${onClick ? ' clickable' : ''}`;
+  _toastClickFn = onClick;
+  clearTimeout(toastT);
+  toastT = setTimeout(() => { el.className = ''; _toastClickFn = null; }, onClick ? 5000 : 3500);
 }
+document.getElementById('toast').addEventListener('click', () => {
+  if (_toastClickFn) { _toastClickFn(); _toastClickFn = null; document.getElementById('toast').className = ''; }
+});
 
 // ── Shop Directory ────────────────────────────────────────────
 function showDirectory() {
