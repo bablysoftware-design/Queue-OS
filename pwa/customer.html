@@ -1529,49 +1529,56 @@ function updateMuteUI() {
 }
 
 // ── VOICE ANNOUNCEMENT ─────────────────────────────────────
-// Pre-load voices once
 let _voiceList = [];
+let _urduVoice = null;
+let _engVoice  = null;
+
+function _loadVoices() {
+  _voiceList  = window.speechSynthesis.getVoices();
+  // Find best Urdu voice
+  _urduVoice  = _voiceList.find(v => v.lang === 'ur-PK')
+             || _voiceList.find(v => v.lang === 'ur');
+  // Find best English voice (natural, not robotic)
+  _engVoice   = _voiceList.find(v => v.name.includes('Samantha'))
+             || _voiceList.find(v => v.name.includes('Karen'))
+             || _voiceList.find(v => v.name.includes('Daniel'))
+             || _voiceList.find(v => v.lang === 'en-US' && v.localService)
+             || _voiceList.find(v => v.lang.startsWith('en') && v.localService)
+             || _voiceList.find(v => v.lang.startsWith('en'));
+}
+
 if ('speechSynthesis' in window) {
-  const loadVoices = () => { _voiceList = window.speechSynthesis.getVoices(); };
-  loadVoices();
-  window.speechSynthesis.onvoiceschanged = loadVoices;
+  _loadVoices();
+  window.speechSynthesis.onvoiceschanged = _loadVoices;
 }
 
-function _pickVoice() {
-  // Priority: natural-sounding English voices (Roman Urdu reads well with en voice)
-  // Avoid 'Google' ur-PK which sounds robotic
-  const preferred = [
-    v => v.name.includes('Samantha'),      // iOS — very natural
-    v => v.name.includes('Karen'),         // iOS/macOS AU
-    v => v.name.includes('Daniel'),        // UK English — clear
-    v => v.name.includes('Google UK'),     // Android
-    v => v.lang === 'en-US' && v.localService,
-    v => v.lang === 'en-GB' && v.localService,
-    v => v.lang.startsWith('en') && v.localService,
-    v => v.lang.startsWith('en'),
-  ];
-  for (const test of preferred) {
-    const v = _voiceList.find(test);
-    if (v) return v;
-  }
-  return null;
-}
-
-function playVoice(text) {
+function playVoice(textEn, textUr) {
   if (isMuted()) return;
   if (!('speechSynthesis' in window)) return;
   if (document.hidden) return;
+  const useUrdu = (localStorage.getItem('sq_lang') || 'en') === 'ur';
   try {
     window.speechSynthesis.cancel();
-    const utt    = new SpeechSynthesisUtterance(text);
-    const voice  = _pickVoice();
-    if (voice) utt.voice = voice;
-    utt.lang   = voice?.lang || 'en-US';
-    utt.rate   = 0.88;   // slightly slower = clearer
-    utt.pitch  = 1.05;
-    utt.volume = 1.0;
-    window.speechSynthesis.speak(utt);
-  } catch(e) { /* silent fallback */ }
+    if (useUrdu && _urduVoice && textUr) {
+      // Urdu voice with Urdu text
+      const utt   = new SpeechSynthesisUtterance(textUr);
+      utt.voice   = _urduVoice;
+      utt.lang    = 'ur-PK';
+      utt.rate    = 0.82;   // slower = clearer for Urdu
+      utt.pitch   = 1.0;
+      utt.volume  = 1.0;
+      window.speechSynthesis.speak(utt);
+    } else {
+      // English voice with English text
+      const utt   = new SpeechSynthesisUtterance(textEn);
+      if (_engVoice) utt.voice = _engVoice;
+      utt.lang    = _engVoice?.lang || 'en-US';
+      utt.rate    = 0.88;
+      utt.pitch   = 1.05;
+      utt.volume  = 1.0;
+      window.speechSynthesis.speak(utt);
+    }
+  } catch(e) {}
 }
 
 // ── SOUND BEEP ─────────────────────────────────────────────
@@ -1601,11 +1608,16 @@ function triggerAlert(stage) {
   if (ALERT_STAGES.has(stage)) return; // already fired
   ALERT_STAGES.add(stage);
 
+  // Each entry: [English, Urdu]
   const messages = {
-    5:      '5 people remaining before your turn',
-    3:      '3 people remaining. Please get ready',
-    1:      'Only 1 person remaining. Your turn is very soon',
-    0:      'Your turn has arrived. Please proceed now',
+    5: ['5 people ahead of you. Please be ready soon.',
+        'آپ سے پہلے 5 لوگ ہیں۔ تیار رہیں۔'],
+    3: ['3 people remaining. Please start making your way.',
+        'صرف 3 لوگ باقی ہیں۔ آنا شروع کریں۔'],
+    1: ['Only 1 person left. Your turn is coming right now.',
+        'صرف ایک شخص باقی ہے۔ آپ کی باری آنے والی ہے۔'],
+    0: ['It is your turn now. Please come to the counter immediately.',
+        'آپ کی باری آ گئی۔ ابھی کاؤنٹر پر آئیں۔'],
   };
 
   const beeps = {
@@ -1618,13 +1630,13 @@ function triggerAlert(stage) {
   if (stage === 0) {
     // Final call — use existing loud alarm
     playAlarm('called');
-    playVoice(messages[0]);
+    playVoice(messages[0][0], messages[0][1]);
     if (navigator.vibrate) navigator.vibrate([400, 150, 400, 150, 600]);
   } else {
     const [freq, dur, vol] = beeps[stage];
     playBeep(freq, dur, vol);
     // Small delay so beep finishes before voice
-    setTimeout(() => playVoice(messages[stage]), 600);
+    setTimeout(() => playVoice(messages[stage][0], messages[stage][1]), 600);
     if (navigator.vibrate) navigator.vibrate([stage === 1 ? 300 : 150]);
   }
 }
