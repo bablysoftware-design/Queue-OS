@@ -528,6 +528,13 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
   </div>
 
 
+  <!-- First-time visitor welcome bar -->
+  <div id="first-visit-bar" style="display:none;background:linear-gradient(135deg,rgba(232,184,75,.1),rgba(232,184,75,.05));border-bottom:1px solid rgba(232,184,75,.2);padding:10px 16px;text-align:center">
+    <span style="font-size:12px;color:#94A3B8">New to WaitMate? </span>
+    <span style="font-size:12px;color:#E8B84B;font-weight:600">Get tokens at any shop — no waiting in line.</span>
+    <a href="/home" style="font-size:11px;color:#E8B84B;margin-left:8px;text-decoration:none;font-weight:700">Learn more →</a>
+  </div>
+
   <!-- ── FEATURED SHOP SECTION (when ?shop= param present) ── -->
   <div id="featured-section">
     <!-- Hero card -->
@@ -729,6 +736,12 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
           <button class="star-btn" onclick="submitRating(5)">⭐</button>
         </div>
         <div class="rating-done" id="rating-done">✅ Thanks for your feedback!</div>
+      </div>
+
+      <!-- Business recruitment nudge (shown after token) -->
+      <div style="background:rgba(232,184,75,.05);border:1px dashed rgba(232,184,75,.25);border-radius:10px;padding:12px 14px;margin-top:8px;text-align:center">
+        <div style="font-size:12px;color:#94A3B8;margin-bottom:5px">Do you own a business with queues?</div>
+        <a href="/register.html" style="font-size:13px;font-weight:700;color:#E8B84B;text-decoration:none">Register on WaitMate — Free →</a>
       </div>
 
       <button id="cancel-token-btn" onclick="cancelMyToken()" style="width:100%;margin-top:10px;padding:12px;border:1px solid rgba(248,113,113,0.3);border-radius:12px;background:rgba(248,113,113,0.06);color:var(--red);font-family:'Sora',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s">
@@ -1434,17 +1447,24 @@ async function submitJoin() {
 
 // Save shop link
 function shareShopSaveLink() {
-  const url = `${location.origin}/customer.html?shop=${selectedShop?.id}`;
+  const shopName = selectedShop?.name || 'this shop';
+  const url      = `${location.origin}/customer.html?shop=${selectedShop?.id}`;
+  const waMsg    = encodeURIComponent(
+    `🏪 I just used WaitMate at *${shopName}*!\n\n` +
+    `No more standing in line — get your token on your phone and come only when it's your turn.\n\n` +
+    `📱 Try it here:\n${url}\n\n` +
+    `_WaitMate — آپ کی باری، آپ کے وقت پر_`
+  );
+  const waUrl = `https://wa.me/?text=${waMsg}`;
+
   if (navigator.share) {
-    navigator.share({ title: selectedShop?.name || 'WaitMate', url })
-      .catch(() => {});
+    navigator.share({
+      title: `Skip the queue at ${shopName}`,
+      text:  `Get your token at ${shopName} on WaitMate — no waiting in line.`,
+      url
+    }).catch(() => window.open(waUrl, '_blank'));
   } else {
-    navigator.clipboard?.writeText(url)
-      .then(() => {
-        document.getElementById('save-link-btn').textContent = '✅ Copied';
-        document.getElementById('save-link-btn').style.color = 'var(--green)';
-      })
-      .catch(() => prompt('Copy and save this link:', url));
+    window.open(waUrl, '_blank');
   }
 }
 
@@ -2183,7 +2203,13 @@ await loadShops();
   // Refresh every 60s in background
   setInterval(async () => {
     if (!myTokenId) {
-      await loadShops();
+      // Show first-visit bar if arriving via shared link and haven't seen it before
+  if (HIGHLIGHT_SHOP && !localStorage.getItem('wm_visited')) {
+    document.getElementById('first-visit-bar').style.display = 'block';
+    localStorage.setItem('wm_visited', '1');
+  }
+
+  await loadShops();
       if (effectiveShop) await loadFeaturedShop(effectiveShop);
     }
   }, 60000);

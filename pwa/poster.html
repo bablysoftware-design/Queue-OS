@@ -218,7 +218,7 @@ body{font-family:'Sora',sans-serif;background:#111827;color:var(--text);min-heig
   </div>
   <div class="ctrl-field">
     <label>Business Link (from dashboard → Share)</label>
-    <input id="cfg-url" type="text" placeholder="https://queue-os.pages.dev/customer.html?shop=..."/>
+    <input id="cfg-url" type="text" placeholder="https://waitmate.pk/customer.html?shop=..."/>
   </div>
   <div class="btn-row">
     <button class="btn-gen" onclick="generatePoster()">✓ Generate Poster</button>
@@ -304,7 +304,7 @@ body{font-family:'Sora',sans-serif;background:#111827;color:var(--text);min-heig
     <!-- URL -->
     <div style="width:100%">
       <div class="url-label">Or open directly on your browser</div>
-      <div class="url-bar" id="p-url">queue-os.pages.dev/customer.html?shop=...</div>
+      <div class="url-bar" id="p-url">waitmate.pk/customer.html?shop=...</div>
     </div>
 
   </div>
@@ -345,7 +345,7 @@ if (shopId) {
     .catch(() => { generatePoster(); });
 } else {
   // Generate placeholder QR
-  generateQR('https://queue-os.pages.dev');
+  generateQR(window.location.origin);
 }
 
 function generatePoster() {

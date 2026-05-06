@@ -1436,8 +1436,12 @@ async function shareShopLink() {
   const shopUrl   = `${location.origin}/customer.html?shop=${state.shopId}`;
   const waMessage = encodeURIComponent(
     `🏪 *${state.shopName}* is now on WaitMate!\n\n` +
-    `Skip the wait — get your token on your phone:\n${shopUrl}\n\n` +
-    `_Powered by WaitMate · Pakistan's Smart Queue Partner_`
+    `✅ No more standing in line\n` +
+    `✅ Get your token on your phone\n` +
+    `✅ Come only when it's your turn\n\n` +
+    `📱 Join the queue:\n${shopUrl}\n\n` +
+    `Save this link — use it every visit, no scanning needed.\n\n` +
+    `_آپ کی باری، آپ کے وقت پر — WaitMate_`
   );
   const waUrl = `https://wa.me/?text=${waMessage}`;
 

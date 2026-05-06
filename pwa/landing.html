@@ -7,8 +7,8 @@
 <meta name="description" content="WaitMate — Pakistan's smartest queue system. No app needed. Customers get tokens on their phone. Shopkeepers manage queues digitally. Free forever for small shops."/>
 <meta property="og:title" content="WaitMate — آپ کی باری، آپ کے وقت پر"/>
 <meta property="og:description" content="No more crowded waiting rooms. Customers join the queue on their phone — from anywhere."/>
-<meta property="og:image" content="https://queue-os.pages.dev/icons/icon-512.png"/>
-<meta property="og:url" content="https://queue-os.pages.dev"/>
+<meta property="og:image" content="/icons/icon-512.png"/>
+<meta property="og:url" id="og-url" content=""/>
 <title>WaitMate — Smart Queue Management Pakistan</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800;900&family=Noto+Nastaliq+Urdu:wght@400;600;700&display=swap" rel="stylesheet"/>
@@ -238,6 +238,7 @@ footer{border-top:1px solid var(--border);padding:28px 24px;
   .btn-hero-primary,.btn-hero-sec{width:100%;text-align:center;}
 }
 </style>
+<script>document.addEventListener("DOMContentLoaded",()=>{const el=document.getElementById("og-url");if(el)el.content=window.location.origin;})</script>
 </head>
 <body>
 
@@ -497,7 +498,7 @@ footer{border-top:1px solid var(--border);padding:28px 24px;
         id="copy-landing-btn">
         🔗 Copy Link
       </button>
-      <a href="https://twitter.com/intent/tweet?text=WaitMate+%E2%80%94+Pakistan%27s+smart+queue+system.+No+more+waiting+in+line+%F0%9F%87%B5%F0%9F%87%B0&url=https%3A%2F%2Fqueue-os.pages.dev%2Fhome"
+      <a href="#" onclick="shareTwitter(); return false;"
         target="_blank" rel="noopener"
         style="display:inline-flex;align-items:center;gap:8px;padding:12px 22px;background:rgba(29,161,242,.08);border:1px solid rgba(29,161,242,.25);border-radius:100px;text-decoration:none;color:#1DA1F2;font-weight:700;font-size:14px;font-family:'Sora',sans-serif;transition:all .2s"
         onmouseover="this.style.background='rgba(29,161,242,.15)'" onmouseout="this.style.background='rgba(29,161,242,.08)'">
@@ -548,13 +549,19 @@ loadLiveStats();
 const WA_MSG = encodeURIComponent(
   '🏪 WaitMate — Pakistan\'s smart queue system!\n\n' +
   'No more crowded waiting rooms. Customers get tokens on their phone and come only when it\'s their turn.\n\n' +
-  'Try it free: https://queue-os.pages.dev/home\n\n' +
+  'Try it free: ' + window.location.origin + '/home\n\n' +
   'آپ کی باری، آپ کے وقت پر 🇵🇰'
 );
 document.getElementById('share-wa').href = `https://wa.me/?text=${WA_MSG}`;
 
+function shareTwitter() {
+  const url  = encodeURIComponent(window.location.origin + '/home');
+  const text = encodeURIComponent("WaitMate — Pakistan's smart queue system. No more waiting in line 🇵🇰");
+  window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+}
+
 function copyLandingLink() {
-  const url = 'https://queue-os.pages.dev/home';
+  const url = window.location.origin + '/home';
   navigator.clipboard?.writeText(url)
     .then(() => {
       const btn = document.getElementById('copy-landing-btn');
