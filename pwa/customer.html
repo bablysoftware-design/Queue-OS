@@ -947,7 +947,8 @@ function renderShops() {
 
   // Label
   const label = activeCategory ? catLabel(activeCategory) : activeArea ? activeArea : 'تمام دکانیں';
-  document.getElementById('shops-label').textContent = label;
+  const labelEl = document.getElementById('shops-section-label') || document.getElementById('shops-label');
+  if (labelEl) labelEl.textContent = label;
 
   // Sort: open first, then by queue length ascending
   // Exclude the featured shop from main list (it's already shown at top)
