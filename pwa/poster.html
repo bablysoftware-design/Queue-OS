@@ -37,7 +37,7 @@ body{font-family:'Sora',sans-serif;background:#111827;color:var(--text);min-heig
 #poster-wrap{display:flex;justify-content:center;}
 
 .poster{
-  width:600px;
+  width:794px;
   background:#ffffff;
   position:relative;
   font-family:'Sora',sans-serif;
@@ -97,11 +97,11 @@ body{font-family:'Sora',sans-serif;background:#111827;color:var(--text);min-heig
   background:#ffffff;
   border:3px solid #E8B84B;
   border-radius:16px;
-  padding:14px;
+  padding:16px;
   box-shadow:0 4px 24px rgba(232,184,75,.25);
 }
-#qr-code{width:200px;height:200px;}
-#qr-code img,#qr-code canvas{width:200px!important;height:200px!important;}
+#qr-code{width:220px;height:220px;}
+#qr-code img,#qr-code canvas{width:220px!important;height:220px!important;}
 
 .scan-prompt{font-size:15px;font-weight:700;color:#1e293b;letter-spacing:-.01em;}
 .scan-sub{font-size:12px;color:#64748B;}
@@ -159,11 +159,45 @@ body{font-family:'Sora',sans-serif;background:#111827;color:var(--text);min-heig
 .footer-brand{font-size:11px;font-weight:700;color:#E8B84B;letter-spacing:.04em;}
 
 /* ── PRINT STYLES ── */
+@page {
+  size: A4 portrait;
+  margin: 0;
+}
 @media print {
-  body{background:white;padding:0;gap:0;}
-  .controls,.no-print{display:none!important;}
-  #poster-wrap{margin:0;}
-  .poster{width:100%;box-shadow:none;}
+  html, body {
+    width: 210mm;
+    height: 297mm;
+    margin: 0;
+    padding: 0;
+    background: white;
+  }
+  body { display: block; }
+  .controls, .no-print { display: none !important; }
+  #poster-wrap {
+    width: 210mm;
+    height: 297mm;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .poster {
+    width: 210mm;
+    height: 297mm;
+    box-shadow: none;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+    page-break-inside: avoid;
+  }
+  .poster-body {
+    flex: 1;
+    justify-content: space-evenly;
+  }
+  .poster-header { padding: 24px 32px 20px; }
+  .poster-body   { padding: 20px 32px; gap: 18px; }
+  .poster-footer { padding: 12px 32px; }
 }
 </style>
 </head>
@@ -334,8 +368,8 @@ function generateQR(url) {
   el.innerHTML = '';
   new QRCode(el, {
     text:         url,
-    width:        200,
-    height:       200,
+    width:        220,
+    height:       220,
     colorDark:    '#1e293b',
     colorLight:   '#ffffff',
     correctLevel: QRCode.CorrectLevel.H,
