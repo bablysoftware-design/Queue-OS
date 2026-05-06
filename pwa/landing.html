@@ -643,5 +643,121 @@ document.addEventListener('click', e => {
 })();
 </script>
 
+
+<!-- ── PWA INSTALL PROMPT (persistent) ── -->
+<div id="pwa-install-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:10000;background:linear-gradient(135deg,#0d1422,#111827);border-top:2px solid #E8B84B;padding:14px 16px;box-shadow:0 -8px 32px rgba(0,0,0,.6)">
+  <div style="max-width:480px;margin:0 auto;display:flex;align-items:center;gap:12px">
+    <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#E8B84B,#F5CC6A);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🏪</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:13px;font-weight:700;color:#F1F5F9;margin-bottom:2px">Install WaitMate App</div>
+      <div style="font-size:11px;color:#94A3B8">Works offline · Instant access · No app store needed</div>
+    </div>
+    <div style="display:flex;gap:6px;flex-shrink:0">
+      <button id="pwa-install-btn" onclick="triggerInstall()"
+        style="padding:9px 16px;border:none;border-radius:9px;background:linear-gradient(135deg,#E8B84B,#F5CC6A);color:#080c14;font-family:'Sora',sans-serif;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap">
+        Install
+      </button>
+      <button onclick="dismissInstall()"
+        style="padding:9px 10px;border:1px solid rgba(255,255,255,.1);border-radius:9px;background:transparent;color:#64748B;font-family:'Sora',sans-serif;font-size:12px;cursor:pointer">
+        ✕
+      </button>
+    </div>
+  </div>
+  <!-- iOS manual instruction (shown on iOS) -->
+  <div id="ios-install-hint" style="display:none;margin-top:10px;background:rgba(232,184,75,.08);border:1px solid rgba(232,184,75,.2);border-radius:8px;padding:9px 12px;font-size:11px;color:#94A3B8;text-align:center">
+    📱 On iPhone: tap <strong style="color:#E8B84B">Share ↑</strong> then <strong style="color:#E8B84B">"Add to Home Screen"</strong>
+  </div>
+</div>
+
+<script>
+(function initPWAPrompt() {
+  let _deferredPrompt = null;
+  const DISMISS_KEY   = 'pwa_dismissed_until';
+  const INSTALL_KEY   = 'pwa_installed';
+
+  // Don't show if already installed
+  if (window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true) {
+    localStorage.setItem('pwa_installed', '1');
+    return;
+  }
+  if (localStorage.getItem(INSTALL_KEY)) return;
+
+  function showBanner() {
+    const banner = document.getElementById('pwa-install-banner');
+    if (banner) banner.style.display = 'block';
+    // Push page content up so banner doesn't cover content
+    document.body.style.paddingBottom = '90px';
+  }
+
+  function isIOS() {
+    return /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+  }
+
+  // Capture install prompt (Android/Chrome)
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    _deferredPrompt = e;
+    // Check if dismissed recently (max 1 hour snooze)
+    const until = parseInt(localStorage.getItem(DISMISS_KEY) || '0');
+    if (Date.now() > until) showBanner();
+  });
+
+  // iOS — show manual instructions after 3 seconds
+  if (isIOS()) {
+    const until = parseInt(localStorage.getItem(DISMISS_KEY) || '0');
+    if (Date.now() > until) {
+      setTimeout(() => {
+        showBanner();
+        const hint = document.getElementById('ios-install-hint');
+        if (hint) hint.style.display = 'block';
+      }, 3000);
+    }
+  }
+
+  // App installed event
+  window.addEventListener('appinstalled', () => {
+    localStorage.setItem(INSTALL_KEY, '1');
+    const b = document.getElementById('pwa-install-banner');
+    if (b) b.style.display = 'none';
+    document.body.style.paddingBottom = '';
+  });
+
+  window.triggerInstall = async function() {
+    if (_deferredPrompt) {
+      _deferredPrompt.prompt();
+      const { outcome } = await _deferredPrompt.userChoice;
+      _deferredPrompt = null;
+      if (outcome === 'accepted') {
+        localStorage.setItem(INSTALL_KEY, '1');
+        document.getElementById('pwa-install-banner').style.display = 'none';
+        document.body.style.paddingBottom = '';
+      } else {
+        // Dismissed — snooze for 30 minutes then show again
+        localStorage.setItem(DISMISS_KEY, Date.now() + 30 * 60 * 1000);
+      }
+    } else if (isIOS()) {
+      // iOS — show instructions
+      const hint = document.getElementById('ios-install-hint');
+      if (hint) hint.style.display = hint.style.display === 'none' ? 'block' : 'none';
+    }
+  };
+
+  window.dismissInstall = function() {
+    // Only snooze 1 hour — not permanent
+    localStorage.setItem(DISMISS_KEY, Date.now() + 60 * 60 * 1000);
+    document.getElementById('pwa-install-banner').style.display = 'none';
+    document.body.style.paddingBottom = '';
+  };
+
+  // Re-show after snooze expires (check every 5 min)
+  setInterval(() => {
+    if (localStorage.getItem(INSTALL_KEY)) return;
+    const until = parseInt(localStorage.getItem(DISMISS_KEY) || '0');
+    if (Date.now() > until && _deferredPrompt) showBanner();
+  }, 5 * 60 * 1000);
+})();
+</script>
+
 </body>
 </html>

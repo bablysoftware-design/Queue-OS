@@ -223,6 +223,9 @@ body{font-family:'Sora',sans-serif;background:#111827;color:var(--text);min-heig
   <div class="btn-row">
     <button class="btn-gen" onclick="generatePoster()">✓ Generate Poster</button>
     <button class="btn-dl" onclick="downloadPNG()">⬇ PNG</button>
+  </div>
+  <div class="btn-row" style="margin-top:-4px">
+    <button class="btn-dl" onclick="shareToWhatsApp()" style="background:rgba(37,211,102,.1);border-color:rgba(37,211,102,.4);color:#25D166;flex:2">💬 Share via WhatsApp</button>
     <button class="btn-print" onclick="window.print()">🖨 Print</button>
   </div>
   <div class="status-msg" id="status-msg">Enter your business details and click Generate</div>
@@ -374,6 +377,19 @@ function generateQR(url) {
     colorLight:   '#ffffff',
     correctLevel: QRCode.CorrectLevel.H,
   });
+}
+
+function shareToWhatsApp() {
+  const name = document.getElementById('cfg-name').value.trim() || 'our business';
+  const url  = document.getElementById('cfg-url').value.trim();
+  if (!url) { alert('Please generate the poster first'); return; }
+  const msg = encodeURIComponent(
+    `🏪 *${name}* is now on WaitMate!\n\n` +
+    `Skip the wait — get your token on your phone and come only when it's your turn.\n\n` +
+    `📱 Join the queue here:\n${url}\n\n` +
+    `_آپ کی باری، آپ کے وقت پر — WaitMate_`
+  );
+  window.open(`https://wa.me/?text=${msg}`, '_blank');
 }
 
 async function downloadPNG() {
