@@ -216,3 +216,23 @@ export async function activateShopHandler(request, env) {
     return ok({ is_active });
   } catch (err) { return serverError(err.message); }
 }
+
+/** POST /admin/shops/:id/reset-pin — Admin resets a business PIN */
+export async function adminResetPinHandler(request, env) {
+  const authErr = requireAdmin(request, env);
+  if (authErr) return authErr;
+  try {
+    const shopId  = new URL(request.url).pathname.split('/')[3];
+    if (!isValidUUID(shopId)) return badRequest('Invalid shop_id');
+    const { new_pin } = await request.json();
+    if (!isValidPin(new_pin)) return badRequest('PIN must be 4 digits');
+
+    const db      = createClient(env);
+    const newHash = await hashPin(String(new_pin));
+    await db.update('shopkeepers', `shop_id=eq.${shopId}`, {
+      pin:      String(new_pin),
+      pin_hash: newHash,
+    });
+    return ok({ message: 'PIN reset successfully' });
+  } catch (err) { return serverError(err.message); }
+}

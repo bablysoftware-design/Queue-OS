@@ -99,3 +99,20 @@ ALTER TABLE shops ADD COLUMN IF NOT EXISTS token_price INT  NOT NULL DEFAULT 0;
 -- Add screenshot_url column to payment_requests if missing
 ALTER TABLE payment_requests ADD COLUMN IF NOT EXISTS screenshot_url TEXT;
 ALTER TABLE payment_requests ADD COLUMN IF NOT EXISTS token_id UUID;
+
+-- ── App settings table (contact support etc) ──────────────
+CREATE TABLE IF NOT EXISTS app_settings (
+  key         TEXT PRIMARY KEY,
+  value       TEXT,
+  updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Seed default values
+INSERT INTO app_settings (key, value)
+VALUES
+  ('support_whatsapp', ''),
+  ('support_email',    ''),
+  ('support_message',  'Need help? Contact us!')
+ON CONFLICT (key) DO NOTHING;
+
+SELECT 'Settings table ready ✅' AS result;

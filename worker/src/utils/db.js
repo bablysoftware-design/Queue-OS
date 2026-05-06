@@ -58,5 +58,15 @@ export function createClient(env) {
     return res.json();
   }
 
-  return { select, insert, update, delete: del, rpc };
+  async function upsert(table, data, onConflict = 'id') {
+    const res = await fetch(`${base}/${table}?on_conflict=${onConflict}`, {
+      method:  'POST',
+      headers: { ...baseHeaders, 'Content-Type': 'application/json', 'Prefer': 'return=representation,resolution=merge-duplicates' },
+      body:    JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error(`DB upsert error [${res.status}]: ${await res.text()}`);
+    return res.json();
+  }
+
+  return { select, insert, update, delete: del, rpc, upsert };
 }

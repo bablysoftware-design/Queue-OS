@@ -27,6 +27,8 @@ import { searchLocations, searchCategories }          from './routes/search.js';
 import { submitPaymentRequest, listPaymentRequests,
          approvePaymentRequest, rejectPaymentRequest,
          checkPaymentStatus } from './routes/payments_manual.js';
+import { getPublicSettings, updateSettings } from './routes/settings.js';
+import { adminResetPinHandler }              from './routes/shops.js';
 import { expireStaleSubscriptions }                   from './services/subscriptionService.js';
 import { resetDailyTokens }                           from './services/tokenService.js';
 import { createClient }                               from './utils/db.js';
@@ -53,6 +55,9 @@ const ROUTES = [
   { method: 'DELETE', path: '/push/unsubscribe',                 handler: unsubscribePush },
   { method: 'POST',   path: '/push/delay',                       handler: requestDelay },
   { method: 'POST',   path: '/public/cancel',                   handler: publicCancelToken },
+  { method: 'GET',    path: '/public/settings',                  handler: getPublicSettings },
+  { method: 'PATCH',  path: '/admin/settings',                    handler: updateSettings },
+  { method: 'POST',   path: '/admin/shops/:id/reset-pin',          handler: adminResetPinHandler },
   { method: 'GET',    path: '/public/stats',                     handler: getGlobalStats },
 
   // Autocomplete search (no auth)

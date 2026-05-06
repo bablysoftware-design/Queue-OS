@@ -1973,5 +1973,62 @@ window.toggleLang = toggleLang;
   document.getElementById('login-pin').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
 })();
 </script>
+
+<!-- ── SUPPORT WIDGET (floating) ── -->
+<div id="support-widget" style="display:none;position:fixed;bottom:80px;right:16px;z-index:200">
+  <div id="support-popup" style="display:none;position:absolute;bottom:56px;right:0;background:#111827;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:16px;width:220px;box-shadow:0 8px 32px rgba(0,0,0,.4)">
+    <div style="font-size:12px;font-weight:700;color:#F1F5F9;margin-bottom:4px" id="sw-message">Need help?</div>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px">
+      <a id="sw-wa" href="#" target="_blank" rel="noopener" style="display:none;align-items:center;gap:8px;padding:9px 12px;background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);border-radius:8px;text-decoration:none;color:#25D166;font-size:12px;font-weight:600">
+        💬 WhatsApp Support
+      </a>
+      <a id="sw-email" href="#" style="display:none;align-items:center;gap:8px;padding:9px 12px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.2);border-radius:8px;text-decoration:none;color:#38BDF8;font-size:12px;font-weight:600">
+        ✉️ Email Support
+      </a>
+    </div>
+  </div>
+  <button onclick="toggleSupportPopup()" title="Contact Support"
+    style="width:48px;height:48px;border-radius:50%;border:none;background:linear-gradient(135deg,#E8B84B,#F5CC6A);color:#080c14;font-size:20px;cursor:pointer;box-shadow:0 4px 16px rgba(232,184,75,.35);transition:transform .2s"
+    onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+    💬
+  </button>
+</div>
+<script>
+function toggleSupportPopup() {
+  const p = document.getElementById('support-popup');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', e => {
+  if (!document.getElementById('support-widget')?.contains(e.target)) {
+    const p = document.getElementById('support-popup');
+    if (p) p.style.display = 'none';
+  }
+});
+(async function loadSupport() {
+  try {
+    const WK  = 'https://saf-queue-worker.byker-software.workers.dev';
+    const res  = await fetch(`${WK}/public/settings`);
+    const {data} = await res.json();
+    if (!data) return;
+    const widget = document.getElementById('support-widget');
+    const hasWa  = data.support_whatsapp?.trim();
+    const hasEm  = data.support_email?.trim();
+    if (!hasWa && !hasEm) return; // hide if not configured
+    widget.style.display = 'block';
+    if (data.support_message) document.getElementById('sw-message').textContent = data.support_message;
+    if (hasWa) {
+      const waEl = document.getElementById('sw-wa');
+      waEl.href = `https://wa.me/${data.support_whatsapp.replace(/\D/g,'')}`;
+      waEl.style.display = 'flex';
+    }
+    if (hasEm) {
+      const emEl = document.getElementById('sw-email');
+      emEl.href = `mailto:${data.support_email}`;
+      emEl.style.display = 'flex';
+    }
+  } catch(e) {}
+})();
+</script>
+
 </body>
 </html>

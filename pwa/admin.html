@@ -271,7 +271,8 @@ function doLogout() {
   document.getElementById('dash').style.display         = 'none';
 }
 
-function loadAll() { loadShops(); loadRegistrations(); }
+function loadAll() { loadShops();
+loadSupportSettings(); loadRegistrations(); }
 
 async function loadShops() {
   document.getElementById('shop-list').innerHTML = '<div class="loading-row">Loading...</div>';
@@ -325,6 +326,7 @@ function renderShops() {
         <button class="btn-xs link" onclick="copyLink('${s.id}','${esc(s.name)}')">🔗 Link</button>
         <button class="btn-xs link" onclick="shareWhatsApp('${s.id}')" style="background:rgba(37,211,102,0.15);border-color:rgba(37,211,102,0.4);color:#25d366">💬 WA</button>
         <button class="btn-xs link" onclick="downloadQR('${s.id}','${esc(s.name)}')" style="background:rgba(212,175,55,0.1);border-color:rgba(212,175,55,0.3)">📱 QR</button>
+        <button class="btn-xs" onclick="resetPin('${s.id}','${esc(s.name)}')" style="background:rgba(251,191,36,0.1);border-color:rgba(251,191,36,0.3);color:#FBBF24">🔑 PIN</button>
         <button class="btn-xs del" onclick="deleteShop('${s.id}','${esc(s.name)}')">Delete</button>
       </div>
     </div>`;
@@ -399,6 +401,51 @@ async function downloadQR(id, name) {
     window.open(data.qr_url, '_blank');
     showToast(`QR code opened for ${name}`, 'success');
   } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ── Reset PIN ──────────────────────────────────────────────
+async function resetPin(shopId, shopName) {
+  const newPin = prompt(`Reset PIN for "${shopName}"\nEnter new 4-digit PIN:`);
+  if (!newPin) return;
+  if (!/^\d{4}$/.test(newPin)) { showToast('PIN must be 4 digits', 'error'); return; }
+  try {
+    const res  = await fetch(`${WORKER}/admin/shops/${shopId}/reset-pin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
+      body: JSON.stringify({ new_pin: newPin })
+    });
+    const data = await res.json();
+    if (data.success) showToast(`✅ PIN reset for ${shopName}`, 'success');
+    else showToast(data.error || 'Failed', 'error');
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+// ── Support Settings ────────────────────────────────────────
+async function loadSupportSettings() {
+  try {
+    const res  = await fetch(`${WORKER}/public/settings`);
+    const {data} = await res.json();
+    if (!data) return;
+    document.getElementById('s-wa').value  = data.support_whatsapp || '';
+    document.getElementById('s-email').value = data.support_email || '';
+    document.getElementById('s-msg').value = data.support_message || '';
+  } catch(e) {}
+}
+
+async function saveSupportSettings() {
+  const wa  = document.getElementById('s-wa').value.trim();
+  const em  = document.getElementById('s-email').value.trim();
+  const msg = document.getElementById('s-msg').value.trim();
+  try {
+    const res = await fetch(`${WORKER}/admin/settings`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
+      body: JSON.stringify({ support_whatsapp: wa, support_email: em, support_message: msg })
+    });
+    const data = await res.json();
+    if (data.success) showToast('✅ Support settings saved', 'success');
+    else showToast(data.error || 'Failed', 'error');
+  } catch(e) { showToast('Error', 'error'); }
 }
 
 async function deleteShop(id, name) {
