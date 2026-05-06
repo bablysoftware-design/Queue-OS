@@ -517,7 +517,7 @@ loadLiveStats();
 </script>
 
 <!-- ── LOGIN MODAL ── -->
-<div id="login-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(12px);z-index:999;align-items:center;justify-content:center;padding:20px">
+<div id="login-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(12px);z-index:999;padding:20px">
   <div style="background:#0d1422;border:1px solid rgba(232,184,75,.25);border-radius:20px;padding:32px 24px;width:100%;max-width:380px;position:relative">
     <!-- Gold top line -->
     <div style="position:absolute;top:0;left:20%;right:20%;height:1px;background:linear-gradient(90deg,transparent,#E8B84B,transparent)"></div>
@@ -563,11 +563,9 @@ loadLiveStats();
 </div>
 
 <script>
-const WORKER = 'https://saf-queue-worker.byker-software.workers.dev';
-
 function openLoginModal() {
   const m = document.getElementById('login-modal');
-  m.style.display = 'flex';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(12px);z-index:999;padding:20px;align-items:center;justify-content:center';
   setTimeout(() => document.getElementById('lm-phone').focus(), 200);
 }
 function closeLoginModal() {
@@ -576,37 +574,33 @@ function closeLoginModal() {
 document.getElementById('login-modal').addEventListener('click', e => {
   if (e.target === document.getElementById('login-modal')) closeLoginModal();
 });
-
 async function submitModalLogin() {
   const phone = document.getElementById('lm-phone').value.trim();
   const pin   = document.getElementById('lm-pin').value.trim();
-  const err   = document.getElementById('lm-err');
+  const errEl = document.getElementById('lm-err');
   const btn   = document.getElementById('lm-btn');
-  err.textContent = '';
-  if (!phone || !pin) { err.textContent = 'Enter phone and PIN'; return; }
+  errEl.textContent = '';
+  if (!phone || !pin) { errEl.textContent = 'Enter phone and PIN'; return; }
   btn.disabled = true; btn.textContent = 'Signing in...';
-
   try {
-    const res  = await fetch(`${WORKER}/shops/login`, {
+    const WK   = 'https://saf-queue-worker.byker-software.workers.dev';
+    const res  = await fetch(WK + '/shops/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ owner_phone: phone, pin })
     });
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Login failed');
-
     localStorage.setItem('saf_shop_id',       data.data.shop_id);
     localStorage.setItem('saf_shop_name',     data.data.shop_name);
     localStorage.setItem('saf_is_open',       data.data.is_open ? '1' : '0');
     localStorage.setItem('saf_session_token', data.data.session_token);
     window.location.href = '/index.html';
   } catch(e) {
-    err.textContent = e.message || 'Login failed';
+    errEl.textContent = e.message || 'Login failed';
     btn.disabled = false; btn.textContent = 'Sign In';
   }
 }
-
-// Open modal if ?login in URL
 if (window.location.search.includes('login')) openLoginModal();
 </script>
 
