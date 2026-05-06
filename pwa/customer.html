@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ur" dir="rtl">
+<html lang="en" dir="ltr" id="html-root">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
@@ -15,7 +15,7 @@
   --amber:#F59E0B;--text:#EDE8D0;--muted:rgba(237,232,208,.4);--r:16px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Noto Nastaliq Urdu',serif;background:var(--void);color:var(--text);min-height:100dvh;direction:rtl;overflow-x:hidden;}
+body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-height:100dvh;overflow-x:hidden;} [lang='ur'] body,[dir='rtl'] body{font-family:'Noto Nastaliq Urdu',serif;}
 #particle-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;}
 .holo-grid{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(212,175,55,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(212,175,55,.03) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;animation:gridDrift 25s linear infinite;}
 @keyframes gridDrift{to{background-position:50px 50px;}}
@@ -481,13 +481,13 @@ body{font-family:'Noto Nastaliq Urdu',serif;background:var(--void);color:var(--t
 
     <!-- Category filter -->
     <div class="cat-row" id="cat-row">
-      <button class="cat-chip active" onclick="filterCat('')" data-cat="">سب</button>
-      <button class="cat-chip" onclick="filterCat('barber')" data-cat="barber">✂️ حجام</button>
-      <button class="cat-chip" onclick="filterCat('clinic')" data-cat="clinic">🏥 کلینک</button>
-      <button class="cat-chip" onclick="filterCat('pharmacy')" data-cat="pharmacy">💊 فارمیسی</button>
-      <button class="cat-chip" onclick="filterCat('bank')" data-cat="bank">🏦 بینک</button>
-      <button class="cat-chip" onclick="filterCat('govt')" data-cat="govt">🏛️ سرکاری</button>
-      <button class="cat-chip" onclick="filterCat('tailor')" data-cat="tailor">🧵 درزی</button>
+      <button class="cat-chip active" onclick="filterCat('')" data-cat="">All</button>
+      <button class="cat-chip" onclick="filterCat('barber')"   data-cat="barber">✂️ Barber</button>
+      <button class="cat-chip" onclick="filterCat('clinic')"   data-cat="clinic">🏥 Clinic</button>
+      <button class="cat-chip" onclick="filterCat('pharmacy')" data-cat="pharmacy">💊 Pharmacy</button>
+      <button class="cat-chip" onclick="filterCat('bank')"     data-cat="bank">🏦 Bank</button>
+      <button class="cat-chip" onclick="filterCat('govt')"     data-cat="govt">🏛️ Govt</button>
+      <button class="cat-chip" onclick="filterCat('tailor')"   data-cat="tailor">🧵 Tailor</button>
     </div>
 
     <!-- Area filter (populated dynamically) -->
@@ -540,7 +540,7 @@ body{font-family:'Noto Nastaliq Urdu',serif;background:var(--void);color:var(--t
         <div class="banner-stat"><div class="banner-val" id="b-total">0</div><div class="banner-lbl">کل دکانیں</div></div>
         <div class="banner-stat"><div class="banner-val" id="b-tokens">0</div><div class="banner-lbl">قطار میں</div></div>
       </div>
-      <div class="sec-lbl" id="shops-label">تمام دکانیں</div>
+      <div class="sec-lbl" id="shops-section-label">تمام دکانیں</div>
       <div class="shop-list" id="shop-list"></div>
     </div>
     <div class="empty-state" id="empty-state" style="display:none">
@@ -1858,7 +1858,7 @@ function renderAreaChips(areas) {
   if (!areas.length) return;
   const row = document.getElementById('area-row');
   row.style.display = 'flex';
-  row.innerHTML = `<button class="area-chip active" onclick="filterArea('')" data-area="">سب علاقے</button>` +
+  row.innerHTML = `<button class="area-chip active" onclick="filterArea('')" data-area="" id="area-all-btn">${(localStorage.getItem("sq_lang")||"en")==="ur"?"سب علاقے":"All Areas"}</button>` +
     areas.map(a => `<button class="area-chip" onclick="filterArea('${esc(a)}')" data-area="${esc(a)}">${esc(a)}</button>`).join('');
 }
 
@@ -1881,6 +1881,57 @@ function esc(s) {
 document.getElementById('c-name').addEventListener('keydown', e => { if(e.key==='Enter') submitJoin(); });
 
 // ── BOOT ───────────────────────────────────────────────────
+// ── LANGUAGE SYSTEM ──────────────────────────────────────────
+function toggleLangAndReload() {
+  const cur = localStorage.getItem('sq_lang') || 'en';
+  localStorage.setItem('sq_lang', cur === 'en' ? 'ur' : 'en');
+  window.location.reload();
+}
+
+function applyPageLanguage() {
+  const lang = localStorage.getItem('sq_lang') || 'en';
+  const isUr = lang === 'ur';
+  // Apply direction
+  document.getElementById('html-root').lang = isUr ? 'ur' : 'en';
+  document.getElementById('html-root').dir  = isUr ? 'rtl' : 'ltr';
+  // Update font
+  document.body.style.fontFamily = isUr ? "'Noto Nastaliq Urdu', serif" : "'Sora', sans-serif";
+  // Update lang button label (shows what you switch TO)
+  const label = document.getElementById('lang-label');
+  if (label) label.textContent = isUr ? 'English' : 'اردو';
+  // Update search placeholder
+  const si = document.getElementById('search-input');
+  if (si) si.placeholder = isUr ? 'دکان یا علاقہ تلاش کریں...' : 'Search shops or areas...';
+  // Update topbar sub
+  const sub = document.querySelector('.topbar-sub');
+  if (sub) sub.textContent = isUr ? 'لائن سے بچیں' : 'Skip the line';
+  // Update static chips
+  const allBtn = document.querySelector('.cat-chip[data-cat=""]');
+  if (allBtn) allBtn.textContent = isUr ? 'سب' : 'All';
+  // Update category chips
+  const catLabels = {
+    barber:   isUr ? '✂️ حجام'   : '✂️ Barber',
+    clinic:   isUr ? '🏥 کلینک'  : '🏥 Clinic',
+    pharmacy: isUr ? '💊 فارمیسی': '💊 Pharmacy',
+    bank:     isUr ? '🏦 بینک'   : '🏦 Bank',
+    govt:     isUr ? '🏛️ سرکاری' : '🏛️ Govt',
+    tailor:   isUr ? '🧵 درزی'   : '🧵 Tailor',
+  };
+  document.querySelectorAll('.cat-chip[data-cat]').forEach(btn => {
+    const cat = btn.dataset.cat;
+    if (cat && catLabels[cat]) btn.textContent = catLabels[cat];
+  });
+  // Update section label
+  const secLabel = document.getElementById('shops-section-label');
+  if (secLabel) secLabel.textContent = isUr ? 'تمام دکانیں' : 'All Shops';
+  // Update back button
+  const backBtn = document.querySelector('.back-btn');
+  if (backBtn) backBtn.textContent = isUr ? '← واپس' : '← Back';
+}
+
+// Apply immediately on load
+applyPageLanguage();
+
 (async function boot() {
   updateMuteUI(); // init mute button state from localStorage
   // Restore active token from previous session

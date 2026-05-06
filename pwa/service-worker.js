@@ -1,119 +1,113 @@
 // ============================================================
-// service-worker.js — Saf Queue PWA v6
-// Handles: caching + push notifications + notification actions
+// service-worker.js — WaitMate PWA
+// Version: v6 — aggressive cache invalidation
 // ============================================================
 
-const CACHE   = 'saf-queue-v8';
-const STATIC  = ['/', '/index.html', '/admin.html', '/customer.html', '/manifest.json', '/i18n.js', '/icons/icon-192.png', '/icons/icon-512.png'];
-const WORKER_HOST = 'saf-queue-worker.byker-software.workers.dev';
+const CACHE_VERSION = 'waitmate-v6';
+const STATIC_FILES  = [
+  '/',
+  '/index.html',
+  '/customer.html',
+  '/admin.html',
+  '/manifest.json',
+  '/i18n.js',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+  '/icons/apple-touch-icon.png',
+];
 
-self.addEventListener('install',  e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(STATIC).catch(() => {}))); self.skipWaiting(); });
-self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))); self.clients.claim(); });
+// Install: cache static files
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_VERSION)
+      .then(cache => cache.addAll(STATIC_FILES).catch(() => {}))
+      .then(() => self.skipWaiting()) // take over immediately
+  );
+});
 
-self.addEventListener('fetch', e => {
-  const url = new URL(e.request.url);
-  if (url.hostname === WORKER_HOST || url.hostname.includes('supabase') || !url.protocol.startsWith('http')) return;
-  if (e.request.method !== 'GET') return;
+// Activate: delete ALL old caches
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(
+        keys.filter(k => k !== CACHE_VERSION).map(k => {
+          console.log('[SW] Deleting old cache:', k);
+          return caches.delete(k);
+        })
+      ))
+      .then(() => self.clients.claim()) // take control of all tabs
+  );
+});
 
-  const isHTMLNav = e.request.mode === 'navigate' ||
-    (e.request.headers.get('accept') || '').includes('text/html');
+// Fetch strategy
+self.addEventListener('fetch', event => {
+  const { request } = event;
+  const url = new URL(request.url);
 
-  if (isHTMLNav) {
-    // Network-first for HTML — always fetch fresh, fall back to cache offline
-    e.respondWith(
-      fetch(e.request).then(res => {
-        if (res.ok && url.origin === self.location.origin) {
-          const toCache = res.clone();
-          caches.open(CACHE).then(c => c.put(e.request, toCache));
-        }
-        return res;
-      }).catch(() =>
-        caches.match(url.pathname).then(r => r || caches.match('/index.html'))
-      )
+  // 1. Skip non-GET and non-http requests entirely
+  if (request.method !== 'GET') return;
+  if (!url.protocol.startsWith('http')) return;
+
+  // 2. API calls (Worker + Supabase) → ALWAYS network, never cache
+  if (url.hostname.includes('workers.dev') ||
+      url.hostname.includes('supabase.co')) {
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  // 3. HTML pages → Network first, fall back to cache
+  //    This ensures users always get the latest HTML
+  if (request.headers.get('Accept')?.includes('text/html') ||
+      url.pathname === '/' ||
+      url.pathname.endsWith('.html')) {
+    event.respondWith(
+      fetch(request)
+        .then(res => {
+          if (res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE_VERSION).then(c => c.put(request, clone));
+          }
+          return res;
+        })
+        .catch(() => caches.match(request).then(c => c || caches.match('/index.html')))
     );
     return;
   }
 
-  // Cache-first for all other assets (JS, CSS, icons, fonts)
-  e.respondWith(
-    caches.match(e.request).then(cached => {
+  // 4. Static assets (JS, CSS, images) → Cache first
+  event.respondWith(
+    caches.match(request).then(cached => {
       if (cached) return cached;
-      return fetch(e.request).then(res => {
+      return fetch(request).then(res => {
         if (res.ok && url.origin === self.location.origin) {
-          const toCache = res.clone();
-          caches.open(CACHE).then(c => c.put(e.request, toCache));
+          const clone = res.clone();
+          caches.open(CACHE_VERSION).then(c => c.put(request, clone));
         }
         return res;
-      }).catch(() => new Response('', { status: 503 }));
+      }).catch(() => caches.match('/index.html'));
     })
   );
 });
 
-// ── PUSH NOTIFICATION HANDLER ─────────────────────────────────
-self.addEventListener('push', e => {
-  if (!e.data) return;
-
-  let data;
-  try { data = e.data.json(); }
-  catch { data = { title: 'Saf Queue', body: e.data.text() }; }
-
-  const options = {
-    body:               data.body,
-    icon:               data.icon  || '/icons/icon-192.png',
-    badge:              data.badge || '/icons/icon-192.png',
-    tag:                data.tag   || 'saf-queue',
-    requireInteraction: data.requireInteraction || false,
-    vibrate:            data.vibrate || [200, 100, 200],
-    data:               data.data  || {},
-    actions:            data.actions || [],
-    silent:             false,
-  };
-
-  e.waitUntil(
-    self.registration.showNotification(data.title, options)
-  );
+// Push notifications
+self.addEventListener('push', event => {
+  if (!event.data) return;
+  try {
+    const data = event.data.json();
+    event.waitUntil(
+      self.registration.showNotification(data.title || 'WaitMate', {
+        body:    data.body || '',
+        icon:    '/icons/icon-192.png',
+        badge:   '/icons/icon-192.png',
+        tag:     data.tag || 'waitmate',
+        data:    data,
+        vibrate: [200, 100, 200],
+      })
+    );
+  } catch(e) {}
 });
 
-// ── NOTIFICATION CLICK HANDLER ────────────────────────────────
-self.addEventListener('notificationclick', e => {
-  e.notification.close();
-
-  const action  = e.action;
-  const payload = e.notification.data || {};
-
-  // Handle action buttons
-  if (action === 'on_way' || action === 'arriving') {
-    // Just close — customer acknowledged
-    return;
-  }
-
-  if (action === 'delay') {
-    // Send delay request to worker
-    if (payload.tokenId && payload.shopId) {
-      fetch(`https://${WORKER_HOST}/push/delay`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ token_id: payload.tokenId, shop_id: payload.shopId }),
-      }).catch(() => {});
-    }
-    return;
-  }
-
-  // Default: open customer tracking page
-  e.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
-      const target = `/customer.html${payload.shopId ? '?shop=' + payload.shopId : ''}`;
-      for (const client of clientList) {
-        if (client.url.includes('customer.html') && 'focus' in client) {
-          return client.focus();
-        }
-      }
-      return clients.openWindow(target);
-    })
-  );
-});
-
-// ── NOTIFICATION CLOSE HANDLER ────────────────────────────────
-self.addEventListener('notificationclose', () => {
-  // Could track dismissals in analytics later
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil(clients.openWindow('/customer.html'));
 });
