@@ -2,6 +2,20 @@
 <html lang="en" dir="ltr">
 <head>
 <meta charset="UTF-8"/>
+<script>
+// Force fresh load if service worker is serving wrong content
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(r => {
+      // Unregister old cache versions
+      r.active?.scriptURL && fetch('/service-worker.js', {cache:'no-cache'})
+        .then(res => res.text())
+        .then(txt => { if (!txt.includes('wm-v7')) r.unregister(); })
+        .catch(() => {});
+    });
+  });
+}
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <meta name="theme-color" content="#080c14"/>
 <meta name="mobile-web-app-capable" content="yes"/>

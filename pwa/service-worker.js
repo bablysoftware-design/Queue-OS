@@ -1,113 +1,63 @@
-// ============================================================
-// service-worker.js — WaitMate PWA
-// Version: v6 — aggressive cache invalidation
-// ============================================================
+// service-worker.js v7 - aggressive reset
+const CACHE = 'wm-v7';
 
-const CACHE_VERSION = 'waitmate-v6';
-const STATIC_FILES  = [
-  '/',
-  '/index.html',
-  '/customer.html',
-  '/admin.html',
-  '/manifest.json',
-  '/i18n.js',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/icons/apple-touch-icon.png',
-];
-
-// Install: cache static files
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_VERSION)
-      .then(cache => cache.addAll(STATIC_FILES).catch(() => {}))
-      .then(() => self.skipWaiting()) // take over immediately
+self.addEventListener('install', e => {
+  self.skipWaiting();
+  e.waitUntil(
+    caches.open(CACHE).then(c => c.addAll([
+      '/index.html', '/customer.html', '/admin.html',
+      '/manifest.json', '/icons/icon-192.png'
+    ]).catch(() => {}))
   );
 });
 
-// Activate: delete ALL old caches
-self.addEventListener('activate', event => {
-  event.waitUntil(
+self.addEventListener('activate', e => {
+  e.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(
-        keys.filter(k => k !== CACHE_VERSION).map(k => {
-          console.log('[SW] Deleting old cache:', k);
-          return caches.delete(k);
-        })
-      ))
-      .then(() => self.clients.claim()) // take control of all tabs
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
 });
 
-// Fetch strategy
-self.addEventListener('fetch', event => {
-  const { request } = event;
-  const url = new URL(request.url);
+self.addEventListener('fetch', e => {
+  const url = new URL(e.request.url);
 
-  // 1. Skip non-GET and non-http requests entirely
-  if (request.method !== 'GET') return;
+  // Never intercept: API calls, non-GET
+  if (e.request.method !== 'GET') return;
   if (!url.protocol.startsWith('http')) return;
-
-  // 2. API calls (Worker + Supabase) → ALWAYS network, never cache
-  if (url.hostname.includes('workers.dev') ||
-      url.hostname.includes('supabase.co')) {
-    event.respondWith(fetch(request));
+  if (url.hostname.includes('workers.dev') || url.hostname.includes('supabase.co') || url.hostname.includes('googleapis.com')) {
+    e.respondWith(fetch(e.request));
     return;
   }
 
-  // 3. HTML pages → Network first, fall back to cache
-  //    This ensures users always get the latest HTML
-  if (request.headers.get('Accept')?.includes('text/html') ||
-      url.pathname === '/' ||
-      url.pathname.endsWith('.html')) {
-    event.respondWith(
-      fetch(request)
+  // HTML pages — ALWAYS network first, no cache fallback to wrong page
+  if (url.pathname === '/' || url.pathname.endsWith('.html')) {
+    e.respondWith(
+      fetch(e.request, { cache: 'no-cache' })
         .then(res => {
           if (res.ok) {
-            const clone = res.clone();
-            caches.open(CACHE_VERSION).then(c => c.put(request, clone));
+            caches.open(CACHE).then(c => c.put(e.request, res.clone()));
           }
           return res;
         })
-        .catch(() => caches.match(request).then(c => c || caches.match('/index.html')))
+        .catch(() => caches.match(e.request))
     );
     return;
   }
 
-  // 4. Static assets (JS, CSS, images) → Cache first
-  event.respondWith(
-    caches.match(request).then(cached => {
-      if (cached) return cached;
-      return fetch(request).then(res => {
-        if (res.ok && url.origin === self.location.origin) {
-          const clone = res.clone();
-          caches.open(CACHE_VERSION).then(c => c.put(request, clone));
-        }
-        return res;
-      }).catch(() => caches.match('/index.html'));
-    })
+  // Static assets — cache first
+  e.respondWith(
+    caches.match(e.request).then(cached => cached || fetch(e.request))
   );
 });
 
 // Push notifications
-self.addEventListener('push', event => {
-  if (!event.data) return;
+self.addEventListener('push', e => {
+  if (!e.data) return;
   try {
-    const data = event.data.json();
-    event.waitUntil(
-      self.registration.showNotification(data.title || 'WaitMate', {
-        body:    data.body || '',
-        icon:    '/icons/icon-192.png',
-        badge:   '/icons/icon-192.png',
-        tag:     data.tag || 'waitmate',
-        data:    data,
-        vibrate: [200, 100, 200],
-      })
-    );
-  } catch(e) {}
-});
-
-self.addEventListener('notificationclick', event => {
-  event.notification.close();
-  event.waitUntil(clients.openWindow('/customer.html'));
+    const d = e.data.json();
+    e.waitUntil(self.registration.showNotification(d.title || 'WaitMate', {
+      body: d.body || '', icon: '/icons/icon-192.png', tag: 'waitmate'
+    }));
+  } catch(err) {}
 });
