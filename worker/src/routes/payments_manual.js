@@ -70,9 +70,10 @@ export async function listPaymentRequests(request, env) {
     const shopId = auth.isAdmin
       ? sanitizeParam(url.searchParams.get('shop_id') || '')
       : auth.shop_id;
+    const statusFilter = url.searchParams.get('status');
     const filter = shopId
-      ? `shop_id=eq.${shopId}&order=created_at.desc`
-      : `order=created_at.desc`;
+      ? `shop_id=eq.${shopId}${statusFilter ? `&status=eq.${statusFilter}` : ''}&order=created_at.desc`
+      : `${statusFilter ? `status=eq.${statusFilter}&` : ''}order=created_at.desc`;
     const db = createClient(env);
     const rows = await db.select('payment_requests',
       `select=id,shop_id,customer_name,customer_phone,amount,screenshot_url,status,created_at,reviewed_at,token_id&${filter}&limit=50`

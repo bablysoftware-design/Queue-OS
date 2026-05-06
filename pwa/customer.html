@@ -1173,29 +1173,32 @@ function startPaymentPolling(requestId, customerName, customerPhone) {
       const json = await res.json();
       if (!json.success) return;
 
-      if (json.data.status === 'approved') { // approved — switch to token card regardless of token_number
+      if (json.data.status === 'approved') { // approved — switch to token card
         clearInterval(_payPollTimer);
         localStorage.removeItem('saf_pending_payment');
-        // Token issued — set state
-        myTokenId  = json.data.token_id;
-        myTokenNum = json.data.token_number;
 
-        // Save with CORRECT keys so restore-on-refresh works
-        localStorage.setItem('saf_token_id',   myTokenId);
-        localStorage.setItem('saf_token_num',  String(myTokenNum));
+        // Set state
+        myTokenId  = json.data.token_id  || null;
+        myTokenNum = json.data.token_number || null;
+
+        // Save for refresh restore
+        if (myTokenId) localStorage.setItem('saf_token_id',  myTokenId);
+        if (myTokenNum) localStorage.setItem('saf_token_num', String(myTokenNum));
         localStorage.setItem('saf_token_shop', JSON.stringify(selectedShop));
 
-        // Show result card using CORRECT element IDs
-        document.getElementById('token-modal').classList.add('show');
+        // ── Switch UI to token card ──────────────────────────────────
+        const modal = document.getElementById('token-modal');
+        if (modal) modal.classList.add('show');
         document.getElementById('join-form-wrap').style.display = 'none';
         document.getElementById('result-wrap').style.display    = 'block';
         document.getElementById('r-num').textContent            = myTokenNum || '✓';
-        document.getElementById('r-greeting').textContent       = `🎉 منظور! ${selectedShop?.name} — آپ قطار میں ہیں`;
+        document.getElementById('r-greeting').textContent       = `🎉 منظور! ${selectedShop?.name || ''} — آپ قطار میں ہیں`;
 
-        playAlarm('ready');
+        // Alert customer
+        try { playAlarm('ready'); } catch(e) {}
         startTracker();
 
-        // Show share prompt after 2s
+        // Share prompt
         setTimeout(() => {
           const sp = document.getElementById('share-after-join');
           if (sp) sp.style.display = 'block';
@@ -1835,12 +1838,20 @@ document.getElementById('c-name').addEventListener('keydown', e => { if(e.key===
       const { reqId, shopData } = JSON.parse(pendingPayment);
       if (reqId && shopData) {
         selectedShop = shopData;
-        // Re-open the modal showing "waiting for approval"
-        await openShop(shopData.id);
-        document.getElementById('join-btn').disabled = true;
-        document.getElementById('join-btn-label').textContent = '⏳ منظوری کا انتظار...';
-        document.getElementById('sheet-err').style.color = 'var(--green)';
-        document.getElementById('sheet-err').textContent = '✓ درخواست موصول! ہر 5 سیکنڈ میں چیک ہو رہا ہے...';
+        // Show modal directly in waiting state — do NOT call openShop (it resets the form)
+        const modal = document.getElementById('token-modal');
+        if (modal) modal.classList.add('show');
+        document.getElementById('join-form-wrap').style.display  = 'block';
+        document.getElementById('result-wrap').style.display     = 'none';
+        // Show paid section in waiting mode
+        const paidSec = document.getElementById('paid-token-section');
+        if (paidSec) paidSec.style.display = 'block';
+        const btn = document.getElementById('join-btn');
+        const lbl = document.getElementById('join-btn-label');
+        if (btn) btn.disabled = true;
+        if (lbl) lbl.textContent = '⏳ منظوری کا انتظار...';
+        const errEl = document.getElementById('sheet-err');
+        if (errEl) { errEl.style.color = 'var(--green)'; errEl.textContent = '✓ درخواست موصول! ہر 5 سیکنڈ میں چیک ہو رہا ہے...'; }
         startPaymentPolling(reqId, '', '');
       }
     } catch(e) { localStorage.removeItem('saf_pending_payment'); }
