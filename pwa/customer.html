@@ -597,6 +597,9 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
         <div class="sheet-stat"><div class="sheet-stat-val" id="m-wait">—</div><div class="sheet-stat-lbl">منٹ</div></div>
       </div>
 
+      <!-- Token price banner (shown for paid shops) -->
+      <div id="m-token-price-banner" style="display:none;background:rgba(212,175,55,.08);border:1px solid rgba(212,175,55,.3);border-radius:12px;padding:12px 14px;margin-bottom:14px"></div>
+
       <div class="sheet-field">
         <label>آپ کا نام *</label>
         <input id="c-name" type="text" placeholder="نام درج کریں"/>
@@ -1088,6 +1091,7 @@ function buildShopCard(s, i) {
       <div class="c-stat"><div class="c-stat-val">${s.current_serving??'—'}</div><div class="c-stat-lbl">ابھی نمبر</div></div>
       <div class="c-stat"><div class="c-stat-val">${qLen}</div><div class="c-stat-lbl">قطار میں</div></div>
       <div class="c-stat"><div class="c-stat-val">${s.estimated_wait}m</div><div class="c-stat-lbl">انتظار</div></div>
+      ${s.token_mode==='paid'&&s.token_price>0?`<div class="c-stat" style="border-color:rgba(232,184,75,.35);background:rgba(232,184,75,.07)"><div class="c-stat-val" style="color:var(--gold)">Rs ${s.token_price}</div><div class="c-stat-lbl" style="color:var(--gold);opacity:.8">Fee</div></div>`:''}
     </div>` : ''}
 
     ${suggestion}
@@ -1160,6 +1164,26 @@ async function openShop(shopId) {
   // Populate
   document.getElementById('m-shop-name').textContent = selectedShop.name;
   document.getElementById('m-shop-meta').textContent = `${catLabel(selectedShop.category)} · ${selectedShop.area||''}`;
+
+  // FIX: Show token price prominently if paid mode
+  const priceEl = document.getElementById('m-token-price-banner');
+  if (priceEl) {
+    if (selectedShop.token_mode === 'paid' && selectedShop.token_price > 0) {
+      priceEl.style.display = 'block';
+      priceEl.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:2px">Token Fee</div>
+            <div style="font-size:22px;font-weight:800;color:var(--gold)">Rs ${selectedShop.token_price}</div>
+          </div>
+          <div style="text-align:right;font-size:11px;color:var(--muted);line-height:1.5">
+            Pay via Easypaisa / JazzCash<br/>then upload screenshot below
+          </div>
+        </div>`;
+    } else {
+      priceEl.style.display = 'none';
+    }
+  }
   // FIX #19: Show address
   if (selectedShop.address) {
     document.getElementById('m-addr-txt').textContent  = selectedShop.address;
