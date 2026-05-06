@@ -1682,6 +1682,11 @@ async function cancelQueueToken(tokenId) {
 
 // ── Screenshot modal ──────────────────────────────────────────
 function viewScreenshot(url) {
+  // If it's a marker string (old format), show error message
+  if (url === 'base64_uploaded') {
+    alert('یہ پرانا ریکارڈ ہے — Screenshot دوبارہ جمع کروائیں');
+    return;
+  }
   let modal = document.getElementById('ss-modal');
   if (!modal) {
     modal = document.createElement('div');

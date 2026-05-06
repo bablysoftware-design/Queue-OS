@@ -47,7 +47,7 @@ export async function getPublicShops(request, env) {
       if (!Array.isArray(shops)) shops = [];
     } catch {
       // Fallback: direct query if RPC not yet created
-      let query = `is_active=eq.true&select=id,name,category,area,address,description,opening_time,closing_time,is_open,current_token,avg_service_time_mins&order=is_open.desc,name.asc&limit=${limit}&offset=${offset}`;
+      let query = `is_active=eq.true&select=id,name,category,area,address,description,opening_time,closing_time,is_open,current_token,avg_service_time_mins,token_mode,token_price&order=is_open.desc,name.asc&limit=${limit}&offset=${offset}`;
       if (area)     query += `&area=ilike.*${area}*`;
       if (category) query += `&category=eq.${category}`;
 
@@ -94,7 +94,7 @@ export async function getPublicShop(request, env) {
     const db     = createClient(env);
 
     const shops = await db.select('shops',
-      `id=eq.${shopId}&select=id,name,category,area,address,description,opening_time,closing_time,is_open,is_active,current_token,avg_service_time_mins`
+      `id=eq.${shopId}&select=id,name,category,area,address,description,opening_time,closing_time,is_open,is_active,current_token,avg_service_time_mins,token_mode,token_price`
     );
     if (!shops.length) return notFound('دکان نہیں ملی');
 

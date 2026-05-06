@@ -420,6 +420,20 @@ body::before {
 
 <!-- ═══════════ JOIN PAGE ═══════════ -->
 <div id="page-join" class="page">
+  <!-- Top action bar -->
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px 0;width:100%">
+    <button onclick="window.history.back()" 
+      style="padding:7px 14px;border:1px solid rgba(255,255,255,0.08);border-radius:100px;
+             background:transparent;color:#94A3B8;font-family:'Sora',sans-serif;
+             font-size:12px;cursor:pointer">← Back</button>
+    <button id="join-lang-btn" onclick="toggleJoinLang()"
+      style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;
+             border:1px solid rgba(232,184,75,0.3);border-radius:100px;
+             background:rgba(232,184,75,0.06);color:#E8B84B;
+             font-family:'Sora',sans-serif;font-size:12px;font-weight:600;cursor:pointer">
+      🌐 <span id="join-lang-label">اردو</span>
+    </button>
+  </div>
   <div class="join-header">
     <div class="shop-icon-wrap" id="j-icon">🏪</div>
     <div class="shop-name-big" id="j-name">—</div>
@@ -792,6 +806,26 @@ function catIcon(cat) {
   return { barber:'✂️', clinic:'🏥', pharmacy:'💊', bank:'🏦', govt:'🏛️', tailor:'🧵' }[cat] || '🏪';
 }
 
+// Language toggle for join page
+function toggleJoinLang() {
+  const cur = localStorage.getItem('sq_lang') || 'en';
+  const next = cur === 'en' ? 'ur' : 'en';
+  localStorage.setItem('sq_lang', next);
+  applyJoinLang();
+}
+
+function applyJoinLang() {
+  const lang = localStorage.getItem('sq_lang') || 'en';
+  const isUr = lang === 'ur';
+  const label = document.getElementById('join-lang-label');
+  if (label) label.textContent = isUr ? 'English' : 'اردو';
+  document.documentElement.lang = isUr ? 'ur' : 'en';
+  // Update voice preference shown
+  const voiceNote = document.getElementById('voice-lang-note');
+  if (voiceNote) voiceNote.textContent = isUr ? 'آواز: اردو' : 'Voice: English';
+}
+
+applyJoinLang();
 loadShop();
 </script>
 </body>

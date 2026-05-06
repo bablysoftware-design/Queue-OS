@@ -91,3 +91,11 @@ CREATE INDEX IF NOT EXISTS idx_tokens_shop_status
   ON tokens(shop_id, status) WHERE status IN ('waiting','called');
 
 SELECT 'All functions created successfully ✅' AS result;
+
+-- ── Add token_mode and token_price columns if missing ──────────
+ALTER TABLE shops ADD COLUMN IF NOT EXISTS token_mode  TEXT NOT NULL DEFAULT 'free';
+ALTER TABLE shops ADD COLUMN IF NOT EXISTS token_price INT  NOT NULL DEFAULT 0;
+
+-- Add screenshot_url column to payment_requests if missing
+ALTER TABLE payment_requests ADD COLUMN IF NOT EXISTS screenshot_url TEXT;
+ALTER TABLE payment_requests ADD COLUMN IF NOT EXISTS token_id UUID;

@@ -447,8 +447,19 @@ body{font-family:'Noto Nastaliq Urdu',serif;background:var(--void);color:var(--t
         <div class="topbar-sub" style="font-family:'Dancing Script',cursive;font-size:13px;background:linear-gradient(90deg,var(--gold),#fff8e7,var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:0.3px">Your Smart Queue Partner</div>
       </div>
     </div>
-    <button class="topbar-lang-btn" onclick="toggleLangAndReload()" style="padding:6px 12px;border:1px solid var(--border);border-radius:100px;background:transparent;color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;font-family:'Sora',sans-serif;" id="cust-lang-btn">اردو</button>
-    <button class="back-btn" onclick="window.location.href='/'">← واپس</button>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button onclick="toggleLangAndReload()" id="cust-lang-btn"
+        style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;
+               border:1px solid rgba(232,184,75,0.3);border-radius:100px;
+               background:rgba(232,184,75,0.06);color:#E8B84B;
+               font-family:'Sora',sans-serif;font-size:12px;font-weight:600;cursor:pointer">
+        🌐 <span id="lang-label">اردو</span>
+      </button>
+      <button onclick="window.location.href='/'" 
+        style="padding:7px 13px;border:1px solid rgba(255,255,255,0.08);border-radius:100px;
+               background:transparent;color:#94A3B8;font-family:'Sora',sans-serif;
+               font-size:12px;font-weight:500;cursor:pointer">← Back</button>
+    </div>
   </div>
 
   <!-- ── SEARCH + FILTERS ── -->
@@ -1053,6 +1064,15 @@ async function openShop(shopId) {
         document.getElementById('join-form-wrap').style.display = 'none';
         document.getElementById('result-wrap').style.display    = 'block';
         document.getElementById('token-modal').classList.add('show');
+  // Immediately refresh live stats when modal opens
+  fetch(`${WORKER}/public/shop/${shopId}`)
+    .then(r => r.json()).then(({data}) => {
+      if (!data) return;
+      document.getElementById('m-current').textContent = data.current_serving ?? '—';
+      document.getElementById('m-queue').textContent   = data.queue_length;
+      document.getElementById('m-wait').textContent    = `${data.estimated_wait ?? 0}m`;
+      selectedShop = { ...selectedShop, ...data };
+    }).catch(() => {});
         document.getElementById('r-num').textContent = myTokenNum || '?';
         document.getElementById('r-greeting').textContent = `${selectedShop.name} — آپ کا ٹوکن`;
         return;
@@ -1647,7 +1667,7 @@ function startTracker() {
   if (trackerTimer) clearInterval(trackerTimer);
   updateMuteUI();
   updateTracker();
-  trackerTimer = setInterval(updateTracker, 10000);
+  trackerTimer = setInterval(updateTracker, 8000);
 }
 
 async function updateTracker() {

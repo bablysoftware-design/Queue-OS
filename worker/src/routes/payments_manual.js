@@ -30,10 +30,9 @@ export async function submitPaymentRequest(request, env) {
     const shop = shopRows[0];
     if (shop.token_mode !== 'paid') return badRequest('یہ دکان فری ٹوکن موڈ پر ہے');
 
-    // Truncate base64 screenshots — store only a marker, not the full data URI
-    const screenshotStored = screenshot_url
-      ? (screenshot_url.startsWith('data:') ? 'base64_uploaded' : screenshot_url)
-      : null;
+    // Store screenshot - accept base64 data URIs directly
+    // Base64 images are stored in the DB for display in dashboard
+    const screenshotStored = screenshot_url || null;
 
     const pr = await db.insert('payment_requests', {
       shop_id,
