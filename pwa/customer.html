@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr" id="html-root">
+<html lang="ur" dir="rtl" id="html-root">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
@@ -1014,7 +1014,9 @@ function buildShopCard(s, i) {
       <div class="shop-icon">${catIcon(s.category)}</div>
       <div class="shop-info">
         <div class="shop-title">${esc(s.name)}</div>
-        <div class="shop-area">📍 ${esc(s.area||'—')} &nbsp;·&nbsp; ${catLabel(s.category)}</div>
+        <div class="shop-area">📍 ${esc(s.area||'')}${s.city ? ' · ' + esc(s.city) : ''} &nbsp;·&nbsp; ${catLabel(s.category)}</div>
+        ${s.address ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">🏠 ${esc(s.address)}</div>` : ''}
+        ${s.owner_phone ? `<div style="font-size:10px;color:var(--muted);margin-top:1px">📞 ${esc(s.owner_phone)}</div>` : ''}
       </div>
       ${statusBadge}
     </div>
@@ -1092,6 +1094,12 @@ async function openShop(shopId) {
   // Paid token mode
   const isPaid = selectedShop.token_mode === 'paid';
   document.getElementById('paid-token-section').style.display = isPaid ? 'block' : 'none';
+  if (isPaid) {
+    const amtEl = document.getElementById('paid-amount-txt');
+    if (amtEl) amtEl.innerHTML =
+      `<span style="font-size:20px;color:var(--gold);font-weight:800">Rs ${selectedShop.token_price}</span>` +
+      `<span style="font-size:11px;color:var(--muted);margin-right:6px"> — ${esc(selectedShop.name)} کو ادا کریں</span>`;
+  }
   document.getElementById('join-btn-label').textContent = isPaid
     ? `ادائیگی کی درخواست دیں — Rs ${selectedShop.token_price}`
     : 'ٹوکن لیں';
@@ -1214,6 +1222,18 @@ function startPaymentPolling(requestId, customerName, customerPhone) {
         document.getElementById('result-wrap').style.display    = 'block';
         document.getElementById('r-num').textContent            = myTokenNum || '✓';
         document.getElementById('r-greeting').textContent       = `🎉 منظور! ${selectedShop?.name || ''} — آپ قطار میں ہیں`;
+
+        // Clear all payment form data so it doesn't show if modal re-opens
+        ['c-name','c-phone','c-screenshot-data'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = '';
+        });
+        const prev = document.getElementById('screenshot-preview');
+        if (prev) prev.style.display = 'none';
+        const errEl2 = document.getElementById('sheet-err');
+        if (errEl2) { errEl2.textContent = ''; errEl2.style.color = ''; }
+        const paidSec = document.getElementById('paid-token-section');
+        if (paidSec) paidSec.style.display = 'none';
 
         // Alert customer
         try { playAlarm('ready'); } catch(e) {}
@@ -1577,7 +1597,7 @@ function playVoice(textEn, textUr) {
   if (isMuted()) return;
   if (!('speechSynthesis' in window)) return;
   if (document.hidden) return;
-  const useUrdu = (localStorage.getItem('sq_lang') || 'en') === 'ur';
+  const useUrdu = (localStorage.getItem('sq_lang') || 'ur') === 'ur';
   try {
     window.speechSynthesis.cancel();
     if (useUrdu && _urduVoice && textUr) {
@@ -1861,7 +1881,7 @@ function renderAreaChips(areas) {
   if (!areas.length) return;
   const row = document.getElementById('area-row');
   row.style.display = 'flex';
-  row.innerHTML = `<button class="area-chip active" onclick="filterArea('')" data-area="" id="area-all-btn">${(localStorage.getItem("sq_lang")||"en")==="ur"?"سب علاقے":"All Areas"}</button>` +
+  row.innerHTML = `<button class="area-chip active" onclick="filterArea('')" data-area="" id="area-all-btn">${(localStorage.getItem("sq_lang")||"ur")==="ur"?"سب علاقے":"All Areas"}</button>` +
     areas.map(a => `<button class="area-chip" onclick="filterArea('${esc(a)}')" data-area="${esc(a)}">${esc(a)}</button>`).join('');
 }
 
@@ -1886,13 +1906,13 @@ document.getElementById('c-name').addEventListener('keydown', e => { if(e.key===
 // ── BOOT ───────────────────────────────────────────────────
 // ── LANGUAGE SYSTEM ──────────────────────────────────────────
 function toggleLangAndReload() {
-  const cur = localStorage.getItem('sq_lang') || 'en';
+  const cur = localStorage.getItem('sq_lang') || 'ur';
   localStorage.setItem('sq_lang', cur === 'en' ? 'ur' : 'en');
   window.location.reload();
 }
 
 function applyPageLanguage() {
-  const lang = localStorage.getItem('sq_lang') || 'en';
+  const lang = localStorage.getItem('sq_lang') || 'ur';
   const isUr = lang === 'ur';
   const key  = isUr ? 'ur' : 'en';
 

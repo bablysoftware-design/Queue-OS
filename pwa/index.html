@@ -1954,7 +1954,7 @@ function esc2(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;'
 
 // ── Language toggle (global) ─────────────────────────────────
 function toggleLang() {
-  const cur  = localStorage.getItem('sq_lang') || 'en';
+  const cur  = localStorage.getItem('sq_lang') || 'ur';
   localStorage.setItem('sq_lang', cur === 'en' ? 'ur' : 'en');
   window.location.reload();
 }
