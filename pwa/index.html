@@ -2058,6 +2058,7 @@ function downloadQRImage(shopName) {
 function downloadQRPoster(shopId, shopName) {
   window.open(`/poster.html?shop=${shopId}`, '_blank');
 }
+window.downloadQRPoster = downloadQRPoster;
 
 // ── Boot ──────────────────────────────────────────────────────
 (function boot() {

@@ -1,261 +1,369 @@
 <!DOCTYPE html>
-<html lang="ur" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>پوسٹر — ویٹ میٹ</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet"/>
+<title>WaitMate — Print Your QR Poster</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=Noto+Nastaliq+Urdu:wght@400;600;700&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
-:root{--gold:#D4AF37;--gold2:#F5C842;--void:#050810;--text:#EDE8D0;}
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Noto Nastaliq Urdu',serif;background:#1a1a2e;color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px;gap:20px;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --gold:#E8B84B;--gold2:#F5CC6A;--gold3:#FDE68A;
+  --dark:#080c14;--dark2:#0d1422;
+  --text:#F1F5F9;--text2:#94A3B8;--text3:#475569;
+  --green:#34D399;--cyan:#38BDF8;
+}
+body{font-family:'Sora',sans-serif;background:#111827;color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px 16px 40px;gap:20px;}
 
-/* Config panel - not printed */
-.config-panel{background:rgba(255,255,255,.05);border:1px solid rgba(212,175,55,.2);border-radius:16px;padding:20px;width:100%;max-width:500px;}
-.config-panel h2{font-family:'Orbitron',monospace;font-size:14px;color:var(--gold);margin-bottom:16px;direction:ltr;}
-.cfg-field{margin-bottom:12px;}
-.cfg-field label{display:block;font-size:11px;color:rgba(237,232,208,.5);margin-bottom:6px;}
-.cfg-field input{width:100%;background:rgba(5,8,16,.6);border:1px solid rgba(212,175,55,.15);border-radius:8px;padding:10px 12px;color:var(--text);font-family:inherit;font-size:13px;outline:none;direction:ltr;}
-.cfg-field input:focus{border-color:var(--gold);}
-.btn-gen{width:100%;padding:12px;border:none;border-radius:8px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#050810;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;margin-top:4px;}
-.btn-print{width:100%;padding:12px;border:1px solid var(--gold);border-radius:8px;background:transparent;color:var(--gold);font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;}
+/* ── CONTROL PANEL (not printed) ── */
+.controls{width:100%;max-width:520px;background:#0d1422;border:1px solid rgba(232,184,75,.2);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:12px;}
+.ctrl-title{font-size:12px;font-weight:700;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;}
+.ctrl-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.ctrl-field label{display:block;font-size:11px;color:var(--text2);margin-bottom:5px;}
+.ctrl-field input{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Sora',sans-serif;font-size:13px;outline:none;direction:ltr;transition:border-color .2s;}
+.ctrl-field input:focus{border-color:var(--gold);}
+.ctrl-field input::placeholder{color:var(--text3);}
+.btn-row{display:flex;gap:8px;}
+.btn-gen{flex:2;padding:11px;border:none;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#080c14;font-family:'Sora',sans-serif;font-size:13px;font-weight:700;cursor:pointer;}
+.btn-gen:hover{opacity:.9;}
+.btn-dl{flex:1;padding:11px;border:1px solid rgba(232,184,75,.3);border-radius:9px;background:transparent;color:var(--gold);font-family:'Sora',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;}
+.btn-dl:hover{background:rgba(232,184,75,.08);}
+.btn-print{flex:1;padding:11px;border:1px solid rgba(255,255,255,.1);border-radius:9px;background:transparent;color:var(--text2);font-family:'Sora',sans-serif;font-size:13px;font-weight:500;cursor:pointer;}
+.status-msg{font-size:12px;color:var(--text2);text-align:center;}
 
-/* THE POSTER */
+/* ── THE POSTER (A4 ratio, 600px wide) ── */
+#poster-wrap{display:flex;justify-content:center;}
+
 .poster{
-  width:380px;
-  background:linear-gradient(160deg,#0a0f1e 0%,#080d1a 100%);
-  border:3px solid var(--gold);
-  border-radius:20px;
-  padding:32px 28px;
+  width:600px;
+  background:#ffffff;
+  position:relative;
+  font-family:'Sora',sans-serif;
+  overflow:hidden;
+}
+
+/* Gold gradient header band */
+.poster-header{
+  background:linear-gradient(135deg,#1a1200 0%,#2a1e00 40%,#1a1200 100%);
+  padding:32px 36px 28px;
   text-align:center;
   position:relative;
   overflow:hidden;
-  box-shadow:0 0 60px rgba(212,175,55,.3),inset 0 0 60px rgba(212,175,55,.03);
 }
-
-.poster::before{
+.poster-header::before{
   content:'';position:absolute;top:0;left:0;right:0;height:3px;
-  background:linear-gradient(90deg,transparent,var(--gold),#00D4FF,var(--gold),transparent);
+  background:linear-gradient(90deg,transparent,#E8B84B,#FDE68A,#E8B84B,transparent);
+}
+.poster-header::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(232,184,75,.4),transparent);
 }
 
-/* Corner decorations */
-.poster::after{
-  content:'';position:absolute;inset:12px;
-  border:1px solid rgba(212,175,55,.1);border-radius:12px;pointer-events:none;
+.brand-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;}
+.brand-icon{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#E8B84B,#F5CC6A);display:flex;align-items:center;justify-content:center;font-size:20px;}
+.brand-name{font-size:26px;font-weight:900;letter-spacing:-.02em;color:#E8B84B;}
+.brand-tagline{font-size:11px;color:rgba(232,184,75,.6);letter-spacing:.04em;}
+
+.shop-name{
+  font-size:28px;font-weight:800;color:#ffffff;
+  letter-spacing:-.02em;margin:14px 0 4px;
+  text-shadow:0 2px 8px rgba(0,0,0,.3);
+}
+.shop-category{
+  font-size:13px;color:rgba(255,255,255,.5);
+  letter-spacing:.06em;text-transform:uppercase;
 }
 
-.poster-logo{
-  font-size:52px;margin-bottom:8px;
-  filter:drop-shadow(0 0 20px rgba(212,175,55,.5));
-  animation:float 3s ease-in-out infinite;
-}
-@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
-
-.poster-brand{
-  font-family:'Orbitron',monospace;font-size:22px;font-weight:900;
-  background:linear-gradient(135deg,var(--gold),#FFE066,#00D4FF);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  background-clip:text;direction:ltr;letter-spacing:3px;
-  margin-bottom:4px;
-}
-
-.poster-tagline{
-  font-size:14px;color:rgba(212,175,55,.7);margin-bottom:24px;
-}
-
-/* QR box */
-.qr-box{
-  background:white;
-  border-radius:16px;
-  padding:16px;
-  display:inline-flex;
+/* Body */
+.poster-body{
+  background:#ffffff;
+  padding:28px 36px;
+  display:flex;
+  flex-direction:column;
   align-items:center;
-  justify-content:center;
-  box-shadow:0 8px 32px rgba(212,175,55,.3);
-  margin-bottom:20px;
-  position:relative;
+  gap:24px;
 }
 
-.qr-box::before{
-  content:'';position:absolute;inset:-2px;
-  border-radius:18px;
-  background:linear-gradient(135deg,var(--gold),#00D4FF,var(--gold));
-  z-index:-1;
+/* QR section */
+.qr-section{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
 }
-
-#qr-code{width:180px!important;height:180px!important;}
-#qr-code img,#qr-code canvas{width:180px!important;height:180px!important;}
-
-.scan-label{
-  font-size:13px;color:rgba(237,232,208,.6);margin-bottom:20px;
+.qr-wrap{
+  background:#ffffff;
+  border:3px solid #E8B84B;
+  border-radius:16px;
+  padding:14px;
+  box-shadow:0 4px 24px rgba(232,184,75,.25);
 }
+#qr-code{width:200px;height:200px;}
+#qr-code img,#qr-code canvas{width:200px!important;height:200px!important;}
+
+.scan-prompt{font-size:15px;font-weight:700;color:#1e293b;letter-spacing:-.01em;}
+.scan-sub{font-size:12px;color:#64748B;}
+
+/* Bilingual message */
+.message-box{
+  background:linear-gradient(135deg,rgba(232,184,75,.08),rgba(232,184,75,.04));
+  border:1px solid rgba(232,184,75,.3);
+  border-radius:12px;
+  padding:16px 20px;
+  width:100%;
+  text-align:center;
+}
+.msg-en{font-size:15px;font-weight:700;color:#1e293b;margin-bottom:6px;}
+.msg-ur{font-family:'Noto Nastaliq Urdu',serif;font-size:16px;color:#92400e;direction:rtl;font-weight:600;}
 
 /* Steps */
-.steps{display:flex;flex-direction:column;gap:10px;text-align:right;margin-bottom:22px;}
+.steps-section{width:100%;}
+.steps-title{font-size:11px;font-weight:700;color:#94A3B8;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;text-align:center;}
+.steps{display:flex;flex-direction:column;gap:8px;}
 .step{
-  display:flex;align-items:center;gap:12px;
-  background:rgba(212,175,55,.06);
-  border:1px solid rgba(212,175,55,.1);
-  border-radius:10px;padding:10px 14px;
+  display:flex;align-items:center;gap:14px;
+  background:#F8FAFC;border:1px solid #E2E8F0;
+  border-radius:10px;padding:11px 14px;
 }
 .step-num{
   width:28px;height:28px;border-radius:50%;flex-shrink:0;
-  background:linear-gradient(135deg,var(--gold),var(--gold2));
-  color:#050810;font-weight:700;font-size:13px;
+  background:linear-gradient(135deg,#E8B84B,#F5CC6A);
+  color:#080c14;font-weight:800;font-size:13px;
   display:flex;align-items:center;justify-content:center;
-  font-family:'Orbitron',monospace;
+  font-family:'JetBrains Mono',monospace;
 }
-.step-txt{font-size:13px;color:var(--text);flex:1;}
+.step-content{flex:1;}
+.step-en{font-size:13px;font-weight:600;color:#1e293b;margin-bottom:2px;}
+.step-ur{font-family:'Noto Nastaliq Urdu',serif;font-size:12px;color:#64748B;direction:rtl;display:block;}
 
-/* WA number */
-.wa-num{
-  background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);
+/* URL bar */
+.url-bar{
+  background:#F1F5F9;border:2px dashed #CBD5E1;
   border-radius:10px;padding:10px 16px;
-  font-family:'Orbitron',monospace;font-size:14px;font-weight:700;
-  color:#25D366;letter-spacing:1px;direction:ltr;
-  margin-bottom:18px;display:inline-block;
-  box-shadow:0 0 20px rgba(37,211,102,.15);
+  font-family:'JetBrains Mono',monospace;font-size:13px;
+  color:#475569;width:100%;text-align:center;
+  word-break:break-all;
 }
+.url-label{font-size:10px;color:#94A3B8;margin-bottom:4px;text-align:center;font-weight:600;letter-spacing:.06em;text-transform:uppercase;}
 
-/* Shop name */
-.shop-name-display{
-  font-size:18px;font-weight:700;color:var(--gold2);
-  margin-bottom:6px;
+/* Footer */
+.poster-footer{
+  background:#F8FAFC;border-top:1px solid #E2E8F0;
+  padding:14px 36px;
+  display:flex;align-items:center;justify-content:space-between;
 }
+.footer-left{font-size:10px;color:#94A3B8;}
+.footer-right{font-size:10px;color:#94A3B8;text-align:right;font-family:'Noto Nastaliq Urdu',serif;direction:rtl;}
+.footer-brand{font-size:11px;font-weight:700;color:#E8B84B;letter-spacing:.04em;}
 
-.divider{
-  width:60px;height:2px;margin:0 auto 16px;
-  background:linear-gradient(90deg,transparent,var(--gold),transparent);
-}
-
-.footer-txt{font-size:10px;color:rgba(237,232,208,.3);font-family:'Orbitron',monospace;direction:ltr;letter-spacing:1px;}
-
-/* Print styles */
+/* ── PRINT STYLES ── */
 @media print {
-  body{background:white;padding:0;}
-  .config-panel,.no-print{display:none!important;}
-  .poster{
-    width:100%;max-width:400px;border-radius:0;
-    background:white!important;color:#000;
-    border:2px solid #000;box-shadow:none;
-    margin:0 auto;
-  }
-  .poster::before,.poster::after{display:none;}
-  .poster-brand{-webkit-text-fill-color:#000;background:none;color:#000;}
-  .poster-logo,.poster-tagline,.scan-label,.step,.wa-num,.shop-name-display,.footer-txt{color:#000!important;-webkit-text-fill-color:#000!important;}
-  .step{border:1px solid #ccc;background:#f9f9f9;}
-  .step-num{background:#000;color:white;}
-  .wa-num{background:#e8f8ee;border:1px solid #25D366;color:#000;}
-  .qr-box::before{display:none;}
-  .qr-box{box-shadow:none;border:2px solid #000;padding:12px;}
-  .divider{background:#000;}
+  body{background:white;padding:0;gap:0;}
+  .controls,.no-print{display:none!important;}
+  #poster-wrap{margin:0;}
+  .poster{width:100%;box-shadow:none;}
 }
 </style>
 </head>
 <body>
 
-<!-- Config (not printed) -->
-<div class="config-panel no-print">
-  <h2>⚙️ POSTER SETTINGS</h2>
-  <div class="cfg-field">
-    <label>دکان کا نام</label>
-    <input id="cfg-name" type="text" placeholder="مثال: علی باربر شاپ" value="آپ کی دکان"/>
+<!-- ── CONTROLS (not printed) ── -->
+<div class="controls no-print">
+  <div class="ctrl-title">🖨️ Business QR Poster</div>
+  <div class="ctrl-row">
+    <div class="ctrl-field">
+      <label>Business Name</label>
+      <input id="cfg-name" type="text" placeholder="Ali Medical Clinic"/>
+    </div>
+    <div class="ctrl-field">
+      <label>Category</label>
+      <input id="cfg-cat" type="text" placeholder="Clinic, Barber, Pharmacy..."/>
+    </div>
   </div>
-  <div class="cfg-field">
-    <label>دکان ID (ایڈمن پینل سے کاپی کریں)</label>
-    <input id="cfg-phone" type="text" placeholder="دکان ID (UUID)"/>
+  <div class="ctrl-field">
+    <label>Business Link (from dashboard → Share)</label>
+    <input id="cfg-url" type="text" placeholder="https://queue-os.pages.dev/customer.html?shop=..."/>
   </div>
-  <button class="btn-gen" onclick="generatePoster()">پوسٹر بنائیں</button>
-  <button class="btn-print" onclick="window.print()">🖨️ پرنٹ / PDF محفوظ کریں</button>
+  <div class="btn-row">
+    <button class="btn-gen" onclick="generatePoster()">✓ Generate Poster</button>
+    <button class="btn-dl" onclick="downloadPNG()">⬇ PNG</button>
+    <button class="btn-print" onclick="window.print()">🖨 Print</button>
+  </div>
+  <div class="status-msg" id="status-msg">Enter your business details and click Generate</div>
 </div>
 
-<!-- THE POSTER -->
+<!-- ── THE POSTER ── -->
+<div id="poster-wrap">
 <div class="poster" id="poster">
 
-  <div class="poster-logo">🏪</div>
-  <div class="poster-brand">WaitMate</div>
-  <div class="poster-tagline">آن لائن ٹوکن سسٹم</div>
-  <div class="divider"></div>
-
-  <div class="shop-name-display" id="poster-shop-name">آپ کی دکان</div>
-
-  <p style="font-size:12px;color:rgba(237,232,208,.5);margin-bottom:16px">
-    لائن میں کھڑے ہونے کی ضرورت نہیں!
-  </p>
-
-  <!-- QR Code -->
-  <div class="qr-box">
-    <div id="qr-code"></div>
+  <!-- Header -->
+  <div class="poster-header">
+    <div class="brand-row">
+      <div class="brand-icon">🏪</div>
+      <div>
+        <div class="brand-name">WaitMate</div>
+        <div class="brand-tagline">SMART QUEUE MANAGEMENT</div>
+      </div>
+    </div>
+    <div class="shop-name" id="p-name">Your Business Name</div>
+    <div class="shop-category" id="p-cat">Business Type</div>
   </div>
 
-  <div class="scan-label">📱 یہ QR اسکین کریں</div>
+  <!-- Body -->
+  <div class="poster-body">
 
-  <!-- Steps -->
-  <div class="steps">
-    <div class="step">
-      <div class="step-num">1</div>
-      <div class="step-txt">واٹس ایپ کھولیں اور QR اسکین کریں</div>
+    <!-- QR Code -->
+    <div class="qr-section">
+      <div class="qr-wrap">
+        <div id="qr-code"></div>
+      </div>
+      <div class="scan-prompt">📱 Scan to join the queue</div>
+      <div class="scan-sub">Works on any smartphone — no app needed</div>
     </div>
-    <div class="step">
-      <div class="step-num">2</div>
-      <div class="step-txt"><strong>"hi"</strong> لکھ کر بھیجیں</div>
+
+    <!-- Bilingual message -->
+    <div class="message-box">
+      <div class="msg-en">Skip the wait. Get your token. Come when it's your turn.</div>
+      <div class="msg-ur">لائن میں کھڑے ہونے کی ضرورت نہیں — گھر بیٹھ کر ٹوکن لیں</div>
     </div>
-    <div class="step">
-      <div class="step-num">3</div>
-      <div class="step-txt">اپنا ٹوکن نمبر ملے گا — گھر بیٹھیں!</div>
+
+    <!-- Steps -->
+    <div class="steps-section">
+      <div class="steps-title">How it works</div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <div class="step-en">Scan this QR code with your phone camera</div>
+            <span class="step-ur">اپنے فون کیمرے سے یہ QR اسکین کریں</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <div class="step-en">Enter your name and get your token number instantly</div>
+            <span class="step-ur">نام درج کریں اور فوری ٹوکن نمبر حاصل کریں</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <div class="step-en">Watch your live position — come only when it's your turn</div>
+            <span class="step-ur">اپنی قطار میں جگہ دیکھیں — صرف باری آنے پر آئیں</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <div class="step-en">Save the link — use it every visit without scanning again</div>
+            <span class="step-ur">لنک محفوظ کریں — اگلی بار اسکین کے بغیر استعمال کریں</span>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="step">
-      <div class="step-num">4</div>
-      <div class="step-txt">آپ کی باری آنے پر پیغام آئے گا</div>
+
+    <!-- URL -->
+    <div style="width:100%">
+      <div class="url-label">Or open directly on your browser</div>
+      <div class="url-bar" id="p-url">queue-os.pages.dev/customer.html?shop=...</div>
     </div>
+
   </div>
 
-  <!-- WA Number -->
-  <div>
-    <div style="font-size:11px;color:rgba(237,232,208,.4);margin-bottom:8px">یا واٹس ایپ پر لکھیں</div>
-    <div class="wa-num" id="poster-wa-num">نمبر یہاں آئے گا</div>
+  <!-- Footer -->
+  <div class="poster-footer">
+    <div>
+      <div class="footer-brand">WaitMate</div>
+      <div class="footer-left">Pakistan's Smart Queue Partner</div>
+    </div>
+    <div class="footer-right">آپ کی باری، آپ کے وقت پر</div>
   </div>
 
-  <div class="divider" style="margin-top:16px"></div>
-  <div class="footer-txt">POWERED BY WaitMate</div>
-</div>
+</div><!-- /poster -->
+</div><!-- /poster-wrap -->
 
 <script>
+const WORKER = 'https://saf-queue-worker.byker-software.workers.dev';
+
+// Auto-load from URL params (called from dashboard)
+const params  = new URLSearchParams(window.location.search);
+const shopId  = params.get('shop');
+const shopUrl = shopId ? `${location.origin}/customer.html?shop=${shopId}` : '';
+
+if (shopId) {
+  document.getElementById('cfg-url').value = shopUrl;
+  // Fetch shop name from API
+  fetch(`${WORKER}/public/shop/${shopId}`)
+    .then(r => r.json())
+    .then(({data}) => {
+      if (!data) return;
+      document.getElementById('cfg-name').value = data.name || '';
+      const cats = {barber:'Barber / Salon',clinic:'Clinic / Doctor',pharmacy:'Pharmacy',
+                    bank:'Bank',govt:'Govt Office',tailor:'Tailor'};
+      document.getElementById('cfg-cat').value  = cats[data.category] || data.category || '';
+      generatePoster();
+    })
+    .catch(() => { generatePoster(); });
+} else {
+  // Generate placeholder QR
+  generateQR('https://queue-os.pages.dev');
+}
+
 function generatePoster() {
-  const name  = document.getElementById('cfg-name').value.trim()  || 'آپ کی دکان';
-  const shopId = document.getElementById("cfg-phone").value.trim();
+  const name = document.getElementById('cfg-name').value.trim() || 'Your Business';
+  const cat  = document.getElementById('cfg-cat').value.trim()  || 'Business';
+  const url  = document.getElementById('cfg-url').value.trim();
 
-  if (!shopId) { alert('واٹس ایپ نمبر درج کریں'); return; }
+  if (!url) {
+    document.getElementById('status-msg').textContent = '⚠️ Please enter the business link from your dashboard';
+    return;
+  }
 
-  // Update poster text
-  document.getElementById('poster-shop-name').textContent = name;
-  document.getElementById('poster-wa-num').textContent = 'queue-os.pages.dev/join.html';
+  document.getElementById('p-name').textContent = name;
+  document.getElementById('p-cat').textContent  = cat.toUpperCase();
+  document.getElementById('p-url').textContent  = url.replace('https://', '');
+  document.getElementById('status-msg').textContent = '✅ Poster ready — download PNG or print';
 
-  // Generate WA deep link
-  const waLink = `https://queue-os.pages.dev/customer.html?shop=${shopId}`;
+  generateQR(url);
+}
 
-  // Clear old QR
-  const qrEl = document.getElementById('qr-code');
-  qrEl.innerHTML = '';
-
-  // Generate new QR
-  new QRCode(qrEl, {
-    text:          waLink,
-    width:         180,
-    height:        180,
-    colorDark:     '#000000',
-    colorLight:    '#FFFFFF',
-    correctLevel:  QRCode.CorrectLevel.H,
+function generateQR(url) {
+  const el = document.getElementById('qr-code');
+  el.innerHTML = '';
+  new QRCode(el, {
+    text:         url,
+    width:        200,
+    height:       200,
+    colorDark:    '#1e293b',
+    colorLight:   '#ffffff',
+    correctLevel: QRCode.CorrectLevel.H,
   });
 }
 
-// Generate default on load if phone in URL
-const params = new URLSearchParams(window.location.search);
-if (params.get('phone')) {
-  document.getElementById('cfg-phone').value = params.get('phone');
-  if (params.get('name'))  document.getElementById('cfg-name').value = params.get('name');
-  generatePoster();
+async function downloadPNG() {
+  const btn = document.querySelector('.btn-dl');
+  btn.textContent = '⏳ Generating...';
+  btn.disabled = true;
+  try {
+    const canvas = await html2canvas(document.getElementById('poster'), {
+      scale:           2,
+      useCORS:         true,
+      backgroundColor: '#ffffff',
+      logging:         false,
+    });
+    const name = document.getElementById('cfg-name').value.trim().replace(/\s+/g, '-') || 'WaitMate-Poster';
+    const link = document.createElement('a');
+    link.download = `${name}-QR-Poster.png`;
+    link.href     = canvas.toDataURL('image/png');
+    link.click();
+    btn.textContent = '⬇ PNG';
+  } catch(e) {
+    alert('Download failed — use Print → Save as PDF instead');
+  }
+  btn.disabled = false;
+  btn.textContent = '⬇ PNG';
 }
 </script>
 </body>
