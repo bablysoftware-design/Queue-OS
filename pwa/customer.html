@@ -458,7 +458,7 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
       <button onclick="window.location.href='/'" 
         style="padding:7px 13px;border:1px solid rgba(255,255,255,0.08);border-radius:100px;
                background:transparent;color:#94A3B8;font-family:'Sora',sans-serif;
-               font-size:12px;font-weight:500;cursor:pointer">← Back</button>
+               font-size:12px;font-weight:500;cursor:pointer" data-en="← Back" data-ur="← واپس">← Back</button>
     </div>
   </div>
 
@@ -471,23 +471,23 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
 
     <!-- City quick-filter -->
     <div style="display:flex;gap:6px;overflow-x:auto;padding:6px 0;scrollbar-width:none" id="city-filter-row">
-      <button class="cat-chip active" data-city="" onclick="filterCity('')">🌍 سب</button>
-      <button class="cat-chip" data-city="Islamabad" onclick="filterCity('Islamabad')">📍 اسلام آباد</button>
-      <button class="cat-chip" data-city="Rawalpindi" onclick="filterCity('Rawalpindi')">📍 راولپنڈی</button>
-      <button class="cat-chip" data-city="Lahore" onclick="filterCity('Lahore')">📍 لاہور</button>
-      <button class="cat-chip" data-city="Karachi" onclick="filterCity('Karachi')">📍 کراچی</button>
-      <button class="cat-chip" data-city="Peshawar" onclick="filterCity('Peshawar')">📍 پشاور</button>
+      <button class="cat-chip active" data-city="" onclick="filterCity('')" data-en="🌍 All" data-ur="🌍 سب">🌍 All</button>
+      <button class="cat-chip" data-city="Islamabad"  onclick="filterCity('Islamabad')"  data-en="📍 Islamabad"  data-ur="📍 اسلام آباد">📍 Islamabad</button>
+      <button class="cat-chip" data-city="Rawalpindi" onclick="filterCity('Rawalpindi')" data-en="📍 Rawalpindi" data-ur="📍 راولپنڈی">📍 Rawalpindi</button>
+      <button class="cat-chip" data-city="Lahore"     onclick="filterCity('Lahore')"     data-en="📍 Lahore"     data-ur="📍 لاہور">📍 Lahore</button>
+      <button class="cat-chip" data-city="Karachi"    onclick="filterCity('Karachi')"    data-en="📍 Karachi"    data-ur="📍 کراچی">📍 Karachi</button>
+      <button class="cat-chip" data-city="Peshawar"   onclick="filterCity('Peshawar')"   data-en="📍 Peshawar"   data-ur="📍 پشاور">📍 Peshawar</button>
     </div>
 
     <!-- Category filter -->
     <div class="cat-row" id="cat-row">
-      <button class="cat-chip active" onclick="filterCat('')" data-cat="">All</button>
-      <button class="cat-chip" onclick="filterCat('barber')"   data-cat="barber">✂️ Barber</button>
-      <button class="cat-chip" onclick="filterCat('clinic')"   data-cat="clinic">🏥 Clinic</button>
-      <button class="cat-chip" onclick="filterCat('pharmacy')" data-cat="pharmacy">💊 Pharmacy</button>
-      <button class="cat-chip" onclick="filterCat('bank')"     data-cat="bank">🏦 Bank</button>
-      <button class="cat-chip" onclick="filterCat('govt')"     data-cat="govt">🏛️ Govt</button>
-      <button class="cat-chip" onclick="filterCat('tailor')"   data-cat="tailor">🧵 Tailor</button>
+      <button class="cat-chip active" onclick="filterCat('')" data-cat="" data-en="All" data-ur="سب">All</button>
+      <button class="cat-chip" onclick="filterCat('barber')"   data-cat="barber"   data-en="✂️ Barber"   data-ur="✂️ حجام">✂️ Barber</button>
+      <button class="cat-chip" onclick="filterCat('clinic')"   data-cat="clinic"   data-en="🏥 Clinic"   data-ur="🏥 کلینک">🏥 Clinic</button>
+      <button class="cat-chip" onclick="filterCat('pharmacy')" data-cat="pharmacy" data-en="💊 Pharmacy" data-ur="💊 فارمیسی">💊 Pharmacy</button>
+      <button class="cat-chip" onclick="filterCat('bank')"     data-cat="bank"     data-en="🏦 Bank"     data-ur="🏦 بینک">🏦 Bank</button>
+      <button class="cat-chip" onclick="filterCat('govt')"     data-cat="govt"     data-en="🏛️ Govt"     data-ur="🏛️ سرکاری">🏛️ Govt</button>
+      <button class="cat-chip" onclick="filterCat('tailor')"   data-cat="tailor"   data-en="🧵 Tailor"   data-ur="🧵 درزی">🧵 Tailor</button>
     </div>
 
     <!-- Area filter (populated dynamically) -->
@@ -545,7 +545,7 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
     </div>
     <div class="empty-state" id="empty-state" style="display:none">
       <div class="empty-icon">🔍</div>
-      <div class="empty-txt">کوئی دکان نہیں ملی</div>
+      <div class="empty-txt" data-en="No shops found" data-ur="کوئی دکان نہیں ملی">No shops found</div>
     </div>
 
     <!-- Related shops — shown when arriving via shared link -->
@@ -884,7 +884,7 @@ async function loadShops() {
     const qp = [];
     if (activeArea)     qp.push(`area=${encodeURIComponent(activeArea)}`);
     if (activeCategory) qp.push(`category=${activeCategory}`);
-    if (activeCity)     qp.push(`city=${encodeURIComponent(activeCity)}`);
+    if (activeCity)     qp.push(`area=${encodeURIComponent(activeCity)}`);
     if (searchQuery)    qp.push(`search=${encodeURIComponent(searchQuery)}`);
     if (qp.length)      url += '?' + qp.join('&');
 
@@ -1826,7 +1826,9 @@ function filterCity(city) {
 
 function filterCat(cat) {
   activeCategory = cat;
-  document.querySelectorAll('.cat-chip').forEach(c => c.classList.toggle('active', c.dataset.cat === cat));
+  document.querySelectorAll('#cat-row .cat-chip').forEach(c =>
+    c.classList.toggle('active', c.dataset.cat === cat)
+  );
   applyFilters();
 }
 
@@ -1891,42 +1893,25 @@ function toggleLangAndReload() {
 function applyPageLanguage() {
   const lang = localStorage.getItem('sq_lang') || 'en';
   const isUr = lang === 'ur';
-  // Apply direction
-  document.getElementById('html-root').lang = isUr ? 'ur' : 'en';
-  document.getElementById('html-root').dir  = isUr ? 'rtl' : 'ltr';
-  // Update font
+  const key  = isUr ? 'ur' : 'en';
+
+  // Direction + font
+  const html = document.getElementById('html-root');
+  if (html) { html.lang = lang; html.dir = isUr ? 'rtl' : 'ltr'; }
   document.body.style.fontFamily = isUr ? "'Noto Nastaliq Urdu', serif" : "'Sora', sans-serif";
-  // Update lang button label (shows what you switch TO)
+
+  // Lang toggle button label (shows what you SWITCH TO)
   const label = document.getElementById('lang-label');
   if (label) label.textContent = isUr ? 'English' : 'اردو';
-  // Update search placeholder
+
+  // All elements with data-en / data-ur attributes get updated automatically
+  document.querySelectorAll('[data-en][data-ur]').forEach(el => {
+    el.textContent = el.dataset[key];
+  });
+
+  // Search placeholder
   const si = document.getElementById('search-input');
   if (si) si.placeholder = isUr ? 'دکان یا علاقہ تلاش کریں...' : 'Search shops or areas...';
-  // Update topbar sub
-  const sub = document.querySelector('.topbar-sub');
-  if (sub) sub.textContent = isUr ? 'لائن سے بچیں' : 'Skip the line';
-  // Update static chips
-  const allBtn = document.querySelector('.cat-chip[data-cat=""]');
-  if (allBtn) allBtn.textContent = isUr ? 'سب' : 'All';
-  // Update category chips
-  const catLabels = {
-    barber:   isUr ? '✂️ حجام'   : '✂️ Barber',
-    clinic:   isUr ? '🏥 کلینک'  : '🏥 Clinic',
-    pharmacy: isUr ? '💊 فارمیسی': '💊 Pharmacy',
-    bank:     isUr ? '🏦 بینک'   : '🏦 Bank',
-    govt:     isUr ? '🏛️ سرکاری' : '🏛️ Govt',
-    tailor:   isUr ? '🧵 درزی'   : '🧵 Tailor',
-  };
-  document.querySelectorAll('.cat-chip[data-cat]').forEach(btn => {
-    const cat = btn.dataset.cat;
-    if (cat && catLabels[cat]) btn.textContent = catLabels[cat];
-  });
-  // Update section label
-  const secLabel = document.getElementById('shops-section-label');
-  if (secLabel) secLabel.textContent = isUr ? 'تمام دکانیں' : 'All Shops';
-  // Update back button
-  const backBtn = document.querySelector('.back-btn');
-  if (backBtn) backBtn.textContent = isUr ? '← واپس' : '← Back';
 }
 
 // Apply immediately on load

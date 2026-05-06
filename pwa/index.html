@@ -1952,6 +1952,14 @@ window.loadDirectory = loadDirectory;
 
 function esc2(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
+// ── Language toggle (global) ─────────────────────────────────
+function toggleLang() {
+  const cur  = localStorage.getItem('sq_lang') || 'en';
+  localStorage.setItem('sq_lang', cur === 'en' ? 'ur' : 'en');
+  window.location.reload();
+}
+window.toggleLang = toggleLang;
+
 // ── Boot ──────────────────────────────────────────────────────
 (function boot() {
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/service-worker.js').catch(() => {});
