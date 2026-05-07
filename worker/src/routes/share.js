@@ -19,8 +19,8 @@ export async function getShareLink(request, env) {
     if (!rows?.length) return notFound('Shop not found');
 
     const shop    = rows[0];
-    const link    = buildShareLink(shop);
-    const message = generateShareMessage(shop);
+    const link    = buildShareLink(shop, env.SITE_URL);
+    const message = generateShareMessage(shop, env.SITE_URL);
     const waUrl   = buildWhatsAppUrl(message);
 
     return ok({ link, message, whatsapp_url: waUrl });
@@ -60,7 +60,7 @@ export async function getShopQR(request, env) {
     if (!rows?.length) return notFound('Shop not found');
 
     const shop   = rows[0];
-    const link   = buildShareLink(shop);
+    const link   = buildShareLink(shop, env.SITE_URL);
     const qrUrl  = await generateQRCodeUrl(link, 300);
 
     return ok({ qr_url: qrUrl, shop_link: link, shop_name: shop.name });

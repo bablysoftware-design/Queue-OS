@@ -1,14 +1,13 @@
 // ── Share Service ─────────────────────────────────────────────
 
-const BASE_URL = 'https://queue-os.pages.dev';
-
-export function buildShareLink(shop) {
-  const path = shop.slug ? `/s/${shop.slug}` : `/customer?shop=${shop.id}`;
-  return `${BASE_URL}${path}`;
+export function buildShareLink(shop, siteUrl) {
+  const base = siteUrl || 'https://queue-os.pages.dev';
+  const path = shop.slug ? `/s/${shop.slug}` : `/customer.html?shop=${shop.id}`;
+  return `${base}${path}`;
 }
 
-export function generateShareMessage(shop) {
-  const link = buildShareLink(shop);
+export function generateShareMessage(shop, siteUrl) {
+  const link = buildShareLink(shop, siteUrl);
   return [
     `🏪 *${shop.name}* — Ab Line Mein Khare Rehne Ki Zarurat Nahi!`,
     ``,
