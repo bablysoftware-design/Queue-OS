@@ -22,67 +22,75 @@ export async function getPublicShops(request, env) {
     const area     = sanitizeParam(url.searchParams.get('area'));
     const category = sanitizeParam(url.searchParams.get('category'));
     const search   = sanitizeSearch(url.searchParams.get('search'));
-    const limit    = Math.min(parseInt(url.searchParams.get('limit')  || '50', 10),  100);
-    const offset   = Math.max(parseInt(url.searchParams.get('offset') || '0',  10), 0);
+    const limit    = Math.min(parseInt(url.searchParams.get('limit') || '50', 10), 100);
+    const offset   = Math.max(parseInt(url.searchParams.get('offset') || '0', 10), 0);
 
     const db = createClient(env);
-
     let shops = [], areas = [], total = 0;
 
+    // Try RPC first (fast, single query)
     try {
       const result = await db.rpc('get_public_shops', {
-        p_area:     area     || null,
-        p_category: category || null,
-        p_limit:    limit,
-        p_offset:   offset,
+        p_area: area || null, p_category: category || null,
+        p_limit: limit, p_offset: offset,
       });
       const r = Array.isArray(result) ? result[0] : result;
-      shops = r?.shops || [];
-      areas = r?.areas || [];
-      total = r?.total || shops.length;
-      if (!Array.isArray(shops)) shops = [];
-    } catch {
-      // Fallback: direct query if RPC not yet created
+      if (r?.shops && Array.isArray(r.shops)) {
+        shops = r.shops;
+        areas = r.areas || [];
+        total = r.total || shops.length;
+      }
+    } catch(rpcErr) {
+      // RPC not created yet — fast fallback (no N+1)
       let query = `is_active=eq.true&select=id,name,category,area,address,description,opening_time,closing_time,is_open,current_token,avg_service_time_mins,token_mode,token_price&order=is_open.desc,name.asc&limit=${limit}&offset=${offset}`;
       if (area)     query += `&area=ilike.*${area}*`;
       if (category) query += `&category=eq.${category}`;
 
       const rawShops = await db.select('shops', query);
 
-      // Attach queue counts (simple version)
-      shops = await Promise.all(rawShops.map(async sh => {
-        try {
-          const waiting = await db.select('tokens', `shop_id=eq.${sh.id}&status=eq.waiting&select=id`);
-          const called  = await db.select('tokens', `shop_id=eq.${sh.id}&status=eq.called&select=token_number`);
-          return {
-            ...sh,
-            queue_length:    waiting.length,
-            current_serving: called[0]?.token_number ?? null,
-            estimated_wait:  waiting.length * sh.avg_service_time_mins,
-            is_busy:         waiting.length >= 15,
-          };
-        } catch { return { ...sh, queue_length: 0, estimated_wait: 0, is_busy: false }; }
-      }));
+      // Get ALL today's tokens in ONE query (not N+1)
+      const today    = new Date().toISOString().split('T')[0];
+      let allTokens  = [];
+      try {
+        allTokens = await db.select('tokens',
+          `created_at=gte.${today}T00:00:00&status=in.(waiting,called)&select=shop_id,status,token_number`
+        );
+      } catch(e) {}
+
+      shops = rawShops.map(sh => {
+        const shopTokens = allTokens.filter(t => t.shop_id === sh.id);
+        const waiting    = shopTokens.filter(t => t.status === 'waiting').length;
+        const called     = shopTokens.find(t => t.status === 'called');
+        return {
+          ...sh,
+          queue_length:    waiting,
+          current_serving: called?.token_number ?? null,
+          estimated_wait:  waiting * (sh.avg_service_time_mins || 10),
+          is_busy:         waiting >= 15,
+        };
+      });
 
       areas = [...new Set(rawShops.map(s => s.area).filter(Boolean))].sort();
       total = shops.length;
     }
 
-    // Client-side search
+    // Search filter
     if (search && shops.length) {
       const s = search.toLowerCase();
       shops = shops.filter(sh =>
         sh.name.toLowerCase().includes(s) ||
-        (sh.area        || '').toLowerCase().includes(s) ||
-        (sh.category    || '').toLowerCase().includes(s)
+        (sh.area || '').toLowerCase().includes(s) ||
+        (sh.category || '').toLowerCase().includes(s)
       );
     }
 
     return ok({ shops, areas, total, limit, offset });
-  } catch (err) { return serverError(`shops: ${err.message}`); }
+  } catch(err) {
+    return serverError(err.message);
+  }
 }
 
-/** GET /public/shop/:id — single shop with hours, address (FIX #18, #19) */
+
 export async function getPublicShop(request, env) {
   try {
     const url    = new URL(request.url);
