@@ -404,7 +404,7 @@ function applyLang() {
 // ── LOAD SHOPS ────────────────────────────────────────────────
 async function loadShops() {
   document.getElementById('loading-box').style.display = 'block';
-  document.getElementById('loading-box').innerHTML = '<div class="spinner"></div><div id="loading-msg">' + (isUrdu() ? 'دکانیں لوڈ ہو رہی ہیں...' : 'Loading shops...') + '</div>';
+  document.getElementById('loading-box').innerHTML = '<div class="spinner"></div><div>' + (isUrdu() ? 'دکانیں لوڈ ہو رہی ہیں...' : 'Loading shops...') + '</div>';
   document.getElementById('shops-box').style.display  = 'none';
   document.getElementById('empty-box').style.display  = 'none';
 
