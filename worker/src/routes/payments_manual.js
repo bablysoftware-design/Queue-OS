@@ -103,7 +103,9 @@ export async function approvePaymentRequest(request, env) {
     const pr = rows[0];
 
     // Create token
-    const result = await createToken(db, pr.shop_id, pr.customer_phone, pr.customer_name, env);
+    // bypassOpenCheck: business explicitly approving the request;
+    // they control whether to issue token regardless of shop open state
+    const result = await createToken(db, pr.shop_id, pr.customer_phone, pr.customer_name, env, { bypassOpenCheck: true });
 
     // Update payment request — split into two updates so status change succeeds
     // even if token_id column doesn't exist in older DB schemas
@@ -161,7 +163,7 @@ export async function checkPaymentStatus(request, env) {
 
     const db   = createClient(env);
     const rows = await db.select('payment_requests',
-      `select=id,status,token_id,reviewed_at&id=eq.${id}&limit=1`
+      `select=id,status,token_id,reviewed_at,shop_id&id=eq.${id}&limit=1`
     );
     if (!rows?.length) return notFound('Request nahi mili');
     const pr = rows[0];

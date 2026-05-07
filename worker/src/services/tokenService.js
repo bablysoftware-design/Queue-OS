@@ -27,14 +27,16 @@ async function countWaitingTokens(db, shopId) {
  * FIX #8: Store customer_name.
  * FIX #6: Prevent same customer getting multiple tokens per day.
  */
-export async function createToken(db, shopId, customerPhone, customerName = null, env = null) {
+export async function createToken(db, shopId, customerPhone, customerName = null, env = null, opts = {}) {
   const shops = await db.select('shops', `id=eq.${shopId}`);
   if (!shops.length) throw new Error('دکان نہیں ملی۔');
 
   const shop = shops[0];
 
   if (!shop.is_active) throw new Error('آپ کا فری ٹرائل ختم ہو گیا ہے۔ پلان لیں۔');
-  if (!shop.is_open)   throw new Error(`${shop.name} ابھی بند ہے۔ بعد میں آئیں۔`);
+  // opts.bypassOpenCheck: set true for admin-approved payment requests
+  // (business explicitly approving — they decide to issue regardless of open state)
+  if (!shop.is_open && !opts.bypassOpenCheck) throw new Error(`${shop.name} ابھی بند ہے۔ بعد میں آئیں۔`);
 
   // Subscription check
   const { valid, reason, sub } = await checkSubscriptionValid(db, shopId);
