@@ -1823,8 +1823,10 @@ async function shareShopLink() {
       await navigator.share({ title: selectedShop.name, url: json.data?.link || location.href });
     }
   } catch(e) {
-    // Fallback: share current URL
-    const link = `${location.origin}/s/${selectedShop.slug || ''}?shop=${selectedShop.id}`;
+    // Fallback: use slug URL if available, otherwise UUID URL (permanent contract)
+    const link = selectedShop?.slug
+      ? `${location.origin}/s/${selectedShop.slug}`
+      : `${location.origin}/customer.html?shop=${selectedShop.id}`;
     if (navigator.share) navigator.share({ title: selectedShop.name, url: link });
     else window.open(`https://wa.me/?text=${encodeURIComponent(link)}`, '_blank');
   }
@@ -2014,12 +2016,17 @@ function buildCatChips() {
     } catch(e) { clearTokenStorage(); }
   }
 
-  // Resolve /s/slug → shop id
+  // Resolve /s/slug → UUID — additive only, UUID flow untouched
   if (HIGHLIGHT_SLUG && !HIGHLIGHT_SHOP) {
     try {
       const res  = await fetch(`${WORKER}/shops/by-slug/${encodeURIComponent(HIGHLIGHT_SLUG)}`);
       const json = await res.json();
-      if (json.data?.id) _resolvedShopId = json.data.id;
+      if (json.data?.id) {
+        _resolvedShopId = json.data.id;
+        // Canonicalize URL to UUID — no reload, UUID is session identity
+        // Preserves saf_token_shop and all localStorage contracts
+        history.replaceState({}, '', `?shop=${json.data.id}`);
+      }
     } catch(e) {}
   }
   const effectiveShop = _resolvedShopId || HIGHLIGHT_SHOP;
