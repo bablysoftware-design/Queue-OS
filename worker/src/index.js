@@ -43,7 +43,6 @@ const ROUTES = [
   }},
 
   // WhatsApp
-  { method: 'GET',    path: '/debug/shops',                      handler: debugShopsHandler },
   { method: 'GET',    path: '/webhook',                         handler: handleVerify },
   { method: 'POST',   path: '/webhook',                         handler: handleMessage },
 
@@ -117,21 +116,6 @@ const ROUTES = [
   { method: 'POST',   path: '/admin/registrations/:id/reject',  handler: rejectRegistration },
 ];
 
-
-// Debug handler - temporary
-async function debugShopsHandler(request, env) {
-  try {
-    const db = createClient(env);
-    const shops = await db.select('shops', 'is_active=eq.true&select=id,name,is_open&limit=5');
-    return new Response(JSON.stringify({ success: true, count: shops.length, shops, supabase_url: env.SUPABASE_URL?.slice(0,40) }), {
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-    });
-  } catch(err) {
-    return new Response(JSON.stringify({ success: false, error: err.message }), {
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-    });
-  }
-}
 
 function matchRoute(method, pathname) {
   for (const route of ROUTES) {
