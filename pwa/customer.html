@@ -1895,7 +1895,7 @@ function catLabel(cat) {
     const fb = {barber:'حجام',clinic:'کلینک',pharmacy:'فارمیسی',bank:'بینک',govt:'سرکاری',tailor:'درزی'};
     return fb[cat] || cat || 'دیگر';
   }
-  return window.catDisplay(cat, getLang());
+  return window.catDisplay(cat, localStorage.getItem('sq_lang') || 'ur');
 }
 
 function esc(s) {
@@ -1943,7 +1943,7 @@ applyPageLanguage();
 function buildCatChips() {
   const row = document.getElementById('cat-row');
   if (!row || !window.CATEGORY_MAP) return;
-  const ur = getLang() === 'ur';
+  const ur = (localStorage.getItem('sq_lang') || 'ur') === 'ur';
   let html = `<button class="cat-chip active" onclick="filterCat('')" data-cat="">${ur ? 'سب' : 'All'}</button>`;
   for (const [key, cfg] of Object.entries(window.CATEGORY_MAP)) {
     if (key === 'other') continue;
