@@ -22,8 +22,6 @@ export async function getPublicShops(request, env) {
     const area     = sanitizeParam(url.searchParams.get('area'));
     const category = sanitizeParam(url.searchParams.get('category'));
     const search   = sanitizeSearch(url.searchParams.get('search'));
-    const country  = sanitizeParam(url.searchParams.get('country'));
-    const city     = sanitizeParam(url.searchParams.get('city'));
     const limit    = Math.min(parseInt(url.searchParams.get('limit')  || '50', 10),  100);
     const offset   = Math.max(parseInt(url.searchParams.get('offset') || '0',  10), 0);
 
@@ -37,8 +35,6 @@ export async function getPublicShops(request, env) {
         p_category: category || null,
         p_limit:    limit,
         p_offset:   offset,
-        p_country:  country  || null,
-        p_city:     city     || null,
       });
       const r = Array.isArray(result) ? result[0] : result;
       shops = r?.shops || [];
