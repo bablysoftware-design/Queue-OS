@@ -934,14 +934,9 @@ function renderSuggestions(featuredShop) {
 
 // ── LOAD SHOPS ─────────────────────────────────────────────
 async function loadShops() {
-  const loadingEl = document.getElementById('loading-state');
-  const shopsEl   = document.getElementById('shops-container');
-  const emptyEl   = document.getElementById('empty-state');
-
-  loadingEl.style.display = 'block';
-  loadingEl.innerHTML = '<div class="spinner"></div><div>دکانیں لوڈ ہو رہی ہیں...</div>';
-  if (shopsEl) shopsEl.style.display = 'none';
-  if (emptyEl) emptyEl.style.display = 'none';
+  document.getElementById('loading-state').style.display = 'block';
+  document.getElementById('shops-container').style.display = 'none';
+  document.getElementById('empty-state').style.display   = 'none';
 
   try {
     let url = `${WORKER}/public/shops`;
@@ -963,15 +958,1659 @@ async function loadShops() {
     renderAreaChips(json.data?.areas || []);
     renderShops();
 
+    // Auto-open highlighted shop (from shared link)
+    // Featured shop: scroll to it but don't click (openShop is called from boot)
+    if (HIGHLIGHT_SHOP || _resolvedShopId) {
+      const targetId = _resolvedShopId || HIGHLIGHT_SHOP;
+      setTimeout(() => {
+        const card = document.getElementById(`shop-${targetId}`);
+        if (card) card.scrollIntoView({behavior:'smooth', block:'center'});
+      }, 400);
+    }
+
   } catch (e) {
-    loadingEl.innerHTML = `
-      <div style="color:#F87171;padding:32px 20px;text-align:center">
-        <div style="font-size:32px;margin-bottom:10px">⚠️</div>
-        <div style="font-weight:700;margin-bottom:6px">لوڈ نہیں ہو سکا</div>
-        <div style="font-size:11px;opacity:.7;direction:ltr;margin-bottom:16px">${e.message}</div>
-        <button onclick="loadShops()" style="padding:9px 20px;border:1px solid var(--gold);border-radius:20px;background:transparent;color:var(--gold);font-family:inherit;cursor:pointer;font-size:13px">دوبارہ کوشش کریں</button>
+    console.error('loadShops failed:', e);
+    document.getElementById('loading-state').innerHTML =
+      `<div style="color:var(--red);padding:40px;text-align:center">
+        <div style="font-size:20px;margin-bottom:8px">⚠️</div>
+        <div>لوڈ نہیں ہو سکا</div>
+        <div style="font-size:10px;opacity:.5;direction:ltr">${e.name === 'AbortError' ? 'Timeout - server took too long' : e.message}</div>
+        <div style="font-size:11px;opacity:0.6;margin-top:6px;direction:ltr">${e.message}</div>
+        <button onclick="location.reload()" style="margin-top:16px;padding:8px 20px;border:1px solid var(--gold);border-radius:20px;background:transparent;color:var(--gold);font-family:inherit;cursor:pointer;">دوبارہ کوشش کریں</button>
       </div>`;
   }
 }
 
+function renderShops() {
+  document.getElementById('loading-state').style.display = 'none';
 
+  if (!filteredShops.length) {
+    document.getElementById('shops-container').style.display = 'none';
+    document.getElementById('empty-state').style.display   = 'block';
+    return;
+  }
+
+  document.getElementById('shops-container').style.display = 'block';
+  document.getElementById('empty-state').style.display     = 'none';
+
+  // Stats banner
+  const openCount  = filteredShops.filter(s => s.is_open).length;
+  const totalQueue = filteredShops.reduce((a,s) => a + (s.queue_length||0), 0);
+  document.getElementById('b-open').textContent   = openCount;
+  document.getElementById('b-total').textContent  = filteredShops.length;
+  document.getElementById('b-tokens').textContent = totalQueue;
+
+  // Label
+  const label = activeCategory ? catLabel(activeCategory) : activeArea ? activeArea : 'تمام دکانیں';
+  const labelEl = document.getElementById('shops-section-label') || document.getElementById('shops-label');
+  if (labelEl) labelEl.textContent = label;
+
+  // Sort: open first, then by queue length ascending
+  // Exclude the featured shop from main list (it's already shown at top)
+  const listShops = HIGHLIGHT_SHOP
+    ? filteredShops.filter(s => s.id !== HIGHLIGHT_SHOP)
+    : filteredShops;
+
+  const sorted = [...listShops].sort((a,b) => {
+    if (a.is_open !== b.is_open) return b.is_open - a.is_open;
+    return (a.queue_length||0) - (b.queue_length||0);
+  });
+
+  // Build shop list with mid-list CTA after 3rd card
+  const cards = sorted.map((s, i) => buildShopCard(s, i));
+  const midCta = `
+    <div onclick="window.location.href='/register.html'" style="cursor:pointer;background:linear-gradient(135deg,rgba(232,184,75,.1),rgba(232,184,75,.04));border:1px dashed rgba(232,184,75,.35);border-radius:16px;padding:18px;text-align:center;transition:all .25s" onmouseover="this.style.borderColor='rgba(232,184,75,.7)'" onmouseout="this.style.borderColor='rgba(232,184,75,.35)'">
+      <div style="font-size:22px;margin-bottom:8px">🏪</div>
+      <div style="font-size:14px;font-weight:700;color:#E8B84B;margin-bottom:4px">Own a shop? Join WaitMate Free</div>
+      <div style="font-size:11px;color:#94A3B8">Register in 2 minutes. Get your QR poster instantly.</div>
+    </div>`;
+  if (cards.length > 3) cards.splice(3, 0, midCta);
+  else if (cards.length > 0) cards.push(midCta);
+  document.getElementById('shop-list').innerHTML = cards.join('');
+}
+
+function buildShopCard(s, i) {
+  const isOpen   = s.is_open;
+  const isBusy   = s.is_busy;
+  const qLen     = s.queue_length || 0;
+  const maxQ     = 20;
+  const fillPct  = Math.min((qLen / maxQ) * 100, 100);
+  const fillClass = fillPct > 75 ? 'full' : fillPct > 40 ? 'busy' : '';
+
+  let statusBadge, cardClass;
+  if (!isOpen) {
+    statusBadge = `<span class="status-badge closed"><span class="s-dot"></span>بند</span>`;
+    cardClass   = 'closed';
+  } else if (isBusy) {
+    statusBadge = `<span class="status-badge busy"><span class="s-dot"></span>مصروف</span>`;
+    cardClass   = 'open busy';
+  } else {
+    statusBadge = `<span class="status-badge open"><span class="s-dot"></span>کھلی</span>`;
+    cardClass   = 'open';
+  }
+
+  const highlighted = s.id === HIGHLIGHT_SHOP ? ' highlighted' : '';
+
+  // Suggestions
+  let suggestion = '';
+  if (!isOpen) {
+    // Find open alternative in same category
+    const alt = allShops.find(a => a.id !== s.id && a.category === s.category && a.is_open);
+    if (alt) {
+      suggestion = `<div class="suggestion-tag alt">💡 متبادل: ${esc(alt.name)} کھلی ہے</div>`;
+    }
+    suggestion += `<div class="timing-info">⏰ <strong>اگلی بار:</strong> دکان کھلنے پر دوبارہ چیک کریں</div>`;
+  } else if (isBusy) {
+    const quieter = allShops.find(a => a.id !== s.id && a.category === s.category && a.is_open && !a.is_busy);
+    if (quieter) {
+      suggestion = `<div class="suggestion-tag alt">💡 کم قطار: ${esc(quieter.name)} — ${quieter.queue_length} لوگ</div>`;
+    } else {
+      suggestion = `<div class="suggestion-tag warn">⚠️ قطار لمبی ہے — انتظار ہو سکتا ہے</div>`;
+    }
+  } else {
+    suggestion = `<div class="suggestion-tag go">✅ ابھی ٹوکن لینے کا اچھا وقت ہے</div>`;
+  }
+
+  const clickHandler = isOpen ? `onclick="openShop('${s.id}')"` : '';
+
+  return `
+  <div class="shop-card ${cardClass}${highlighted}" id="shop-${s.id}" ${clickHandler} style="animation-delay:${i*0.05}s">
+    <div class="card-top">
+      <div class="shop-icon">${catIcon(s.category)}</div>
+      <div class="shop-info">
+        <div class="shop-title">${esc(s.name)}</div>
+        <div class="shop-area">📍 ${esc(s.area||'')}${s.city ? ' · ' + esc(s.city) : ''} &nbsp;·&nbsp; ${catLabel(s.category)}</div>
+        ${s.address ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">🏠 ${esc(s.address)}</div>` : ''}
+        ${s.owner_phone ? `<div style="font-size:10px;color:var(--muted);margin-top:1px">📞 ${esc(s.owner_phone)}</div>` : ''}
+      </div>
+      ${statusBadge}
+    </div>
+
+    ${isOpen ? `
+    <div class="queue-bar-wrap">
+      <div class="queue-bar-labels">
+        <span>قطار: ${qLen} لوگ</span>
+        <span>~${s.estimated_wait} منٹ</span>
+      </div>
+      <div class="queue-bar-track">
+        <div class="queue-bar-fill ${fillClass}" style="width:${fillPct}%"></div>
+      </div>
+    </div>
+    <div class="card-stats">
+      <div class="c-stat"><div class="c-stat-val">${s.current_serving??'—'}</div><div class="c-stat-lbl">ابھی نمبر</div></div>
+      <div class="c-stat"><div class="c-stat-val">${qLen}</div><div class="c-stat-lbl">قطار میں</div></div>
+      <div class="c-stat"><div class="c-stat-val">${s.estimated_wait}m</div><div class="c-stat-lbl">انتظار</div></div>
+      ${s.token_mode==='paid'&&s.token_price>0?`<div class="c-stat" style="border-color:rgba(232,184,75,.35);background:rgba(232,184,75,.07)"><div class="c-stat-val" style="color:var(--gold)">Rs ${s.token_price}</div><div class="c-stat-lbl" style="color:var(--gold);opacity:.8">Fee</div></div>`:''}
+    </div>` : ''}
+
+    ${suggestion}
+  </div>`;
+}
+
+// ── OPEN SHOP MODAL ────────────────────────────────────────
+async function openShop(shopId) {
+  selectedShop = allShops.find(s => s.id === shopId);
+
+  // If shop not in allShops yet (e.g. arrived via shared link before list loaded),
+  // fetch it directly from the public API
+  if (!selectedShop) {
+    try {
+      const res = await fetch(`${WORKER}/public/shop/${shopId}`);
+      const { data } = await res.json();
+      if (data) selectedShop = data;
+    } catch(e) {}
+  }
+
+  if (!selectedShop) return;
+
+  // If customer already has an active token for THIS shop → show tracker, not join form
+  const savedShop = localStorage.getItem('saf_token_shop');
+  const savedId   = localStorage.getItem('saf_token_id');
+  if (savedId && savedShop) {
+    try {
+      const saved = JSON.parse(savedShop);
+      if (saved.id === shopId && myTokenId) {
+        document.getElementById('join-form-wrap').style.display = 'none';
+        document.getElementById('result-wrap').style.display    = 'block';
+        document.getElementById('token-modal').classList.add('show');
+  // Immediately refresh live stats when modal opens
+  fetch(`${WORKER}/public/shop/${shopId}`)
+    .then(r => r.json()).then(({data}) => {
+      if (!data) return;
+      document.getElementById('m-current').textContent = data.current_serving ?? '—';
+      document.getElementById('m-queue').textContent   = data.queue_length;
+      document.getElementById('m-wait').textContent    = `${data.estimated_wait ?? 0}m`;
+      selectedShop = { ...selectedShop, ...data };
+    }).catch(() => {});
+        document.getElementById('r-num').textContent = myTokenNum || '?';
+        document.getElementById('r-greeting').textContent = `${selectedShop.name} — آپ کا ٹوکن`;
+        return;
+      }
+    } catch(e) {}
+  }
+
+  // Reset modal to join form
+  document.getElementById('join-form-wrap').style.display = 'block';
+  document.getElementById('result-wrap').style.display    = 'none';
+  document.getElementById('sheet-err').textContent         = '';
+  document.getElementById('c-name').value                  = '';
+  document.getElementById('c-phone').value                 = '';
+  document.getElementById('join-btn').disabled             = false;
+
+  // Paid token mode
+  const isPaid = selectedShop.token_mode === 'paid';
+  document.getElementById('paid-token-section').style.display = isPaid ? 'block' : 'none';
+  if (isPaid) {
+    const amtEl = document.getElementById('paid-amount-txt');
+    if (amtEl) amtEl.innerHTML =
+      `<span style="font-size:20px;color:var(--gold);font-weight:800">Rs ${selectedShop.token_price}</span>` +
+      `<span style="font-size:11px;color:var(--muted);margin-right:6px"> — ${esc(selectedShop.name)} کو ادا کریں</span>`;
+  }
+  document.getElementById('join-btn-label').textContent = isPaid
+    ? `ادائیگی کی درخواست دیں — Rs ${selectedShop.token_price}`
+    : 'ٹوکن لیں';
+
+  // Populate
+  document.getElementById('m-shop-name').textContent = selectedShop.name;
+  document.getElementById('m-shop-meta').textContent = `${catLabel(selectedShop.category)} · ${selectedShop.area||''}`;
+
+  // FIX: Show token price prominently if paid mode
+  const priceEl = document.getElementById('m-token-price-banner');
+  if (priceEl) {
+    if (selectedShop.token_mode === 'paid' && selectedShop.token_price > 0) {
+      priceEl.style.display = 'block';
+      priceEl.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:2px">Token Fee</div>
+            <div style="font-size:22px;font-weight:800;color:var(--gold)">Rs ${selectedShop.token_price}</div>
+          </div>
+          <div style="text-align:right;font-size:11px;color:var(--muted);line-height:1.5">
+            Pay via Easypaisa / JazzCash<br/>then upload screenshot below
+          </div>
+        </div>`;
+    } else {
+      priceEl.style.display = 'none';
+    }
+  }
+  // FIX #19: Show address
+  if (selectedShop.address) {
+    document.getElementById('m-addr-txt').textContent  = selectedShop.address;
+    document.getElementById('m-shop-address').style.display = 'block';
+  } else {
+    document.getElementById('m-shop-address').style.display = 'none';
+  }
+  // FIX #18: Show hours
+  if (selectedShop.opening_time && selectedShop.closing_time) {
+    document.getElementById('m-hours-txt').textContent = `${selectedShop.opening_time} – ${selectedShop.closing_time}`;
+    document.getElementById('m-shop-hours').style.display = 'block';
+  } else {
+    document.getElementById('m-shop-hours').style.display = 'none';
+  }
+  document.getElementById('m-current').textContent   = selectedShop.current_serving ?? '—';
+  document.getElementById('m-queue').textContent     = selectedShop.queue_length;
+  document.getElementById('m-wait').textContent      = `${selectedShop.estimated_wait}m`;
+
+  document.getElementById('token-modal').classList.add('show');
+  setTimeout(() => document.getElementById('c-name').focus(), 400);
+
+  // Refresh live stats
+  try {
+    const res  = await fetch(`${WORKER}/public/shop/${shopId}`);
+    const {data} = await res.json();
+    document.getElementById('m-current').textContent = data.current_serving ?? '—';
+    document.getElementById('m-queue').textContent   = data.queue_length;
+    document.getElementById('m-wait').textContent    = `${data.estimated_wait}m`;
+  } catch(e) {}
+}
+
+function closeModal(keepResult = false) {
+  if (!keepResult) {
+    clearInterval(trackerTimer);
+    myTokenId  = null;
+    myTokenNum = null;
+  }
+  document.getElementById('token-modal').classList.remove('show');
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('token-modal')) closeModal();
+}
+
+// ── SUBMIT JOIN ────────────────────────────────────────────
+// ── Screenshot upload helpers ─────────────────────────────────
+function previewScreenshot(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const data = e.target.result; // base64 data URL
+    document.getElementById('c-screenshot-data').value = data;
+    document.getElementById('screenshot-img').src = data;
+    document.getElementById('screenshot-preview').style.display = 'block';
+    document.getElementById('screenshot-drop').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+window.previewScreenshot = previewScreenshot;
+
+function clearScreenshot() {
+  document.getElementById('c-screenshot-data').value = '';
+  document.getElementById('c-screenshot-file').value = '';
+  document.getElementById('screenshot-preview').style.display = 'none';
+  document.getElementById('screenshot-drop').style.display = 'block';
+}
+window.clearScreenshot = clearScreenshot;
+
+// ── Payment approval polling ───────────────────────────────────
+let _payPollTimer = null;
+
+function startPaymentPolling(requestId, customerName, customerPhone) {
+  if (_payPollTimer) clearInterval(_payPollTimer);
+  let attempts = 0;
+  const maxAttempts = 120; // poll for up to 20 mins (10s interval)
+
+  _payPollTimer = setInterval(async () => {
+    attempts++;
+    if (attempts > maxAttempts) {
+      clearInterval(_payPollTimer);
+      const errEl = document.getElementById('sheet-err');
+      if (errEl) { errEl.style.color = ''; errEl.textContent = 'وقت ختم — براہ کرم دوبارہ کوشش کریں'; }
+      const btn = document.getElementById('join-btn');
+      const lbl = document.getElementById('join-btn-label');
+      if (btn) btn.disabled = false;
+      if (lbl) lbl.textContent = 'دوبارہ کوشش کریں';
+      return;
+    }
+
+    try {
+      const res  = await fetch(`${WORKER}/public/payment-status?request_id=${requestId}`);
+      const json = await res.json();
+      if (!json.success) return;
+
+      if (json.data.status === 'approved') { // approved — switch to token card
+        clearInterval(_payPollTimer);
+        localStorage.removeItem('saf_pending_payment');
+
+        // Set state
+        myTokenId  = json.data.token_id  || null;
+        myTokenNum = json.data.token_number || null;
+
+        // Save for refresh restore
+        if (myTokenId) localStorage.setItem('saf_token_id',  myTokenId);
+        if (myTokenNum) localStorage.setItem('saf_token_num', String(myTokenNum));
+        localStorage.setItem('saf_token_shop', JSON.stringify(selectedShop));
+
+        // ── Switch UI to token card ──────────────────────────────────
+        const modal = document.getElementById('token-modal');
+        if (modal) modal.classList.add('show');
+        document.getElementById('join-form-wrap').style.display = 'none';
+        document.getElementById('result-wrap').style.display    = 'block';
+        document.getElementById('r-num').textContent            = myTokenNum || '✓';
+        document.getElementById('r-greeting').textContent       = `🎉 منظور! ${selectedShop?.name || ''} — آپ قطار میں ہیں`;
+
+        // Clear all payment form data so it doesn't show if modal re-opens
+        ['c-name','c-phone','c-screenshot-data'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = '';
+        });
+        const prev = document.getElementById('screenshot-preview');
+        if (prev) prev.style.display = 'none';
+        const errEl2 = document.getElementById('sheet-err');
+        if (errEl2) { errEl2.textContent = ''; errEl2.style.color = ''; }
+        const paidSec = document.getElementById('paid-token-section');
+        if (paidSec) paidSec.style.display = 'none';
+
+        // Alert customer
+        try { playAlarm('ready'); } catch(e) {}
+        startTracker();
+
+        // Share prompt
+        setTimeout(() => {
+          const sp = document.getElementById('share-after-join');
+          if (sp) sp.style.display = 'block';
+        }, 2000);
+      } else if (json.data.status === 'rejected') {
+        clearInterval(_payPollTimer);
+        localStorage.removeItem('saf_pending_payment');
+        const errEl = document.getElementById('sheet-err');
+        if (errEl) { errEl.style.color = 'var(--red)'; errEl.textContent = '❌ ادائیگی رد کر دی گئی — براہ کرم دوبارہ کوشش کریں'; }
+        const btn = document.getElementById('join-btn');
+        const lbl = document.getElementById('join-btn-label');
+        if (btn) btn.disabled = false;
+        if (lbl) lbl.textContent = 'دوبارہ کوشش کریں';
+      }
+    } catch(e) { /* silent — keep polling */ }
+  }, 5000); // check every 5 seconds
+}
+window.startPaymentPolling = startPaymentPolling;
+
+async function submitJoin() {
+  const name  = document.getElementById('c-name').value.trim();
+  const phone = document.getElementById('c-phone').value.trim();
+  const errEl = document.getElementById('sheet-err');
+  const btn   = document.getElementById('join-btn');
+  errEl.textContent = '';
+
+  if (!name) { errEl.textContent = 'نام ضروری ہے'; return; }
+
+  btn.disabled = true;
+  document.getElementById('join-btn-label').textContent = '...';
+
+  // ── Paid mode: submit payment request instead ─────────
+  if (selectedShop.token_mode === 'paid') {
+    const screenshot = document.getElementById('c-screenshot-data')?.value || null;
+    if (!phone) { errEl.textContent = 'ادائیگی کے لیے فون نمبر ضروری ہے'; btn.disabled=false; document.getElementById('join-btn-label').textContent=`ادائیگی کی درخواست دیں — Rs ${selectedShop.token_price}`; return; }
+    try {
+      const res  = await fetch(`${WORKER}/public/payment-request`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ shop_id: selectedShop.id, customer_name: name, customer_phone: phone, screenshot_url: screenshot })
+      });
+      const { success, data, error } = await res.json();
+      if (!success) throw new Error(error);
+      errEl.style.color = 'var(--green)';
+      errEl.textContent = '✓ درخواست موصول! دکان منظور کرے گی تو خودبخود ٹوکن ملے گا...';
+      btn.disabled = true;
+      document.getElementById('join-btn-label').textContent = '⏳ منظوری کا انتظار...';
+      // Save so restore works on refresh
+      localStorage.setItem('saf_pending_payment', JSON.stringify({
+        reqId: data.request_id, shopData: selectedShop
+      }));
+      // Start polling for approval
+      startPaymentPolling(data.request_id, name, phone);
+    } catch(e) {
+      errEl.style.color = '';
+      errEl.textContent = e.message;
+      btn.disabled = false;
+      document.getElementById('join-btn-label').textContent = `ادائیگی کی درخواست دیں — Rs ${selectedShop.token_price}`;
+    }
+    return;
+  }
+
+  try {
+    const res  = await fetch(`${WORKER}/public/join`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({shop_id: selectedShop.id, customer_name: name, customer_phone: phone||null})
+    });
+    const {data, success, error} = await res.json();
+    if (!success) throw new Error(error);
+
+    myTokenId  = data.token_id;
+    myTokenNum = data.token_number;
+
+    // Persist so tracker survives page refresh
+    localStorage.setItem('saf_token_id',   data.token_id);
+    localStorage.setItem('saf_token_num',  String(data.token_number));
+    localStorage.setItem('saf_token_shop', JSON.stringify(selectedShop));
+
+    // Show result
+    document.getElementById('join-form-wrap').style.display = 'none';
+    document.getElementById('result-wrap').style.display    = 'block';
+    document.getElementById('r-num').textContent           = data.token_number;
+    document.getElementById('r-greeting').textContent      = `🎉 ${name}, you're in line!`;
+    document.getElementById('r-pos').textContent           = data.position;
+    document.getElementById('r-wait-val').textContent      = data.estimated_wait + ' min';
+    updateCountdown(data.estimated_wait, data.position);
+
+    // Vibrate
+    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+    playAlarm('ready');
+
+    // Show share prompt after 2s
+    setTimeout(() => {
+      document.getElementById('share-after-join').style.display = 'block';
+    }, 2000);
+
+    startTracker();
+
+    // Ask for push permission
+    if ('Notification' in window && Notification.permission !== 'denied') {
+      setTimeout(async () => {
+        const el = document.getElementById('notify-prompt');
+        if (el) el.style.display = 'flex';
+      }, 1500);
+    }
+
+  } catch(e) {
+    errEl.textContent = e.message || 'خرابی';
+    btn.disabled = false;
+    document.getElementById('join-btn-label').textContent = 'ٹوکن لیں';
+  }
+}
+
+
+// Save shop link
+function shareShopSaveLink() {
+  const shopName = selectedShop?.name || 'this shop';
+  const url      = `${location.origin}/customer.html?shop=${selectedShop?.id}`;
+  const waMsg    = encodeURIComponent(
+    `🏪 I just used WaitMate at *${shopName}*!\n\n` +
+    `No more standing in line — get your token on your phone and come only when it's your turn.\n\n` +
+    `📱 Try it here:\n${url}\n\n` +
+    `_WaitMate — آپ کی باری، آپ کے وقت پر_`
+  );
+  const waUrl = `https://wa.me/?text=${waMsg}`;
+
+  if (navigator.share) {
+    navigator.share({
+      title: `Skip the queue at ${shopName}`,
+      text:  `Get your token at ${shopName} on WaitMate — no waiting in line.`,
+      url
+    }).catch(() => window.open(waUrl, '_blank'));
+  } else {
+    window.open(waUrl, '_blank');
+  }
+}
+
+// FIX #14: Cancel token
+async function enableNotifications() {
+  if (!myTokenId || !selectedShop) return;
+  const btn = document.querySelector('#notify-prompt button');
+  if (btn) { btn.textContent = '...'; btn.disabled = true; }
+
+  const ok = await requestPushPermission(myTokenId, selectedShop.id);
+
+  const prompt = document.getElementById('notify-prompt');
+  if (ok) {
+    if (prompt) prompt.innerHTML = '<span style="font-size:14px">🔔</span><div style="font-size:13px;color:var(--green)">Notifications enabled! We\'ll alert you when your turn is near.</div>';
+    setTimeout(() => { if (prompt) prompt.style.display = 'none'; }, 3000);
+  } else {
+    if (prompt) prompt.style.display = 'none';
+  }
+}
+
+async function cancelMyToken() {
+  // Get shop_id from memory OR localStorage fallback
+  const shopId = selectedShop?.id || (() => {
+    try { return JSON.parse(localStorage.getItem('saf_token_shop'))?.id; } catch(e) { return null; }
+  })();
+
+  if (!myTokenId) {
+    myTokenId = localStorage.getItem('saf_token_id');
+  }
+
+  if (!myTokenId || !shopId) {
+    alert('ٹوکن کی معلومات نہیں ملی — صفحہ تازہ کریں');
+    return;
+  }
+
+  if (!confirm('کیا آپ واقعی اپنا ٹوکن منسوخ کرنا چاہتے ہیں؟')) return;
+
+  const btn = document.getElementById('cancel-token-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '...'; }
+
+  try {
+    const res  = await fetch(`${WORKER}/public/cancel`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ token_id: myTokenId, shop_id: shopId })
+    });
+    const data = await res.json();
+    if (data.success) {
+      clearInterval(trackerTimer);
+      clearTokenStorage();
+      myTokenId = null; myTokenNum = null;
+      const badge = document.getElementById('tracker-badge');
+      const sub   = document.getElementById('tracker-sub');
+      if (badge) { badge.className = 'tracker-badge done'; badge.textContent = '❌ منسوخ'; }
+      if (sub)   sub.textContent = 'آپ کا ٹوکن منسوخ ہو گیا';
+      if (btn)   btn.style.display = 'none';
+    } else {
+      alert(data.error || 'منسوخ نہیں ہو سکا');
+      if (btn) { btn.disabled = false; btn.textContent = 'ٹوکن منسوخ کریں'; }
+    }
+  } catch(e) {
+    alert('کنکشن کا مسئلہ — دوبارہ کوشش کریں');
+    if (btn) { btn.disabled = false; btn.textContent = 'ٹوکن منسوخ کریں'; }
+  }
+}
+
+
+// ── VAPID PUBLIC KEY ──────────────────────────────────────────
+const VAPID_PUBLIC_KEY = 'BEhHj1q439bpBSggOfW14NI7PjtgL5GQpYX6Zvt4H1imsJgbpi6Aba4ziH4AqoQ9Htr6akwOncK7tkp8yTIaGOw';
+
+// ── WEB PUSH SUBSCRIPTION ─────────────────────────────────────
+async function requestPushPermission(tokenId, shopId) {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    return false;
+  }
+
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') return false;
+
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly:      true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+    });
+
+    // Send subscription to server
+    await fetch(`${WORKER}/push/subscribe`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ token_id: tokenId, shop_id: shopId, subscription: sub.toJSON() }),
+    });
+
+    // Store locally
+    localStorage.setItem('saf_push_token_id', tokenId);
+    return true;
+  } catch (e) {
+    console.error('Push subscription failed:', e);
+    return false;
+  }
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding  = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64   = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData  = atob(base64);
+  const output   = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) output[i] = rawData.charCodeAt(i);
+  return output;
+}
+
+// ── ALARM SOUND (Web Audio API) ──────────────────────────────
+function playAlarm(type = 'called') {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function beep(freq, startTime, duration, vol, wave) {
+      vol  = vol  || 0.7;
+      wave = wave || 'square';
+      var osc  = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = wave;
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(vol, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(startTime);
+      osc.stop(startTime + duration + 0.01);
+    }
+
+    var t = ctx.currentTime;
+
+    if (type === 'called') {
+      // URGENT loud alarm — double burst
+      beep(880,  t + 0.00, 0.18, 0.9, 'square');
+      beep(1100, t + 0.22, 0.18, 0.9, 'square');
+      beep(880,  t + 0.44, 0.18, 0.9, 'square');
+      beep(1100, t + 0.66, 0.18, 0.9, 'square');
+      beep(1320, t + 0.88, 0.50, 1.0, 'square');
+      beep(880,  t + 1.50, 0.18, 0.9, 'square');
+      beep(1100, t + 1.72, 0.18, 0.9, 'square');
+      beep(1320, t + 1.94, 0.60, 1.0, 'square');
+      if (navigator.vibrate) navigator.vibrate([400,150,400,150,600,200,400,150,600]);
+    } else if (type === 'near') {
+      // 2-tone gentle warning — almost your turn
+      beep(660, t + 0.00, 0.20, 0.6, 'sine');
+      beep(880, t + 0.25, 0.20, 0.6, 'sine');
+      beep(660, t + 0.55, 0.20, 0.6, 'sine');
+      beep(880, t + 0.80, 0.30, 0.7, 'sine');
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+    } else {
+      // ready / join confirmation — soft ascending
+      beep(440, t + 0.00, 0.15, 0.5, 'sine');
+      beep(550, t + 0.18, 0.15, 0.5, 'sine');
+      beep(660, t + 0.36, 0.20, 0.5, 'sine');
+    }
+  } catch (e) {}
+}
+
+// ── COUNTDOWN TIMER ───────────────────────────────────────────
+let countdownInterval = null;
+let graceCountdown    = null;
+
+function startGraceCountdown(seconds, onExpire) {
+  let remaining = seconds;
+  const el = document.getElementById('grace-countdown');
+  if (!el) return;
+  el.style.display = 'block';
+
+  graceCountdown = setInterval(() => {
+    remaining--;
+    el.textContent = `${remaining}s`;
+    if (remaining <= 0) {
+      clearInterval(graceCountdown);
+      el.style.display = 'none';
+      if (onExpire) onExpire();
+    }
+  }, 1000);
+}
+
+
+// ── COUNTDOWN RING ─────────────────────────────────────────
+function updateCountdown(minutes, position) {
+  const wrap   = document.getElementById('countdown-wrap');
+  const circle = document.getElementById('countdown-circle');
+  const val    = document.getElementById('countdown-val');
+  if (!wrap || !circle || !val) return;
+
+  wrap.style.display = 'block';
+
+  const maxMin   = 60; // ring fills at 0, empties at 60
+  const pct      = Math.max(0, Math.min(1, 1 - (minutes / maxMin)));
+  const dashArr  = 339.3;
+  const offset   = dashArr * (1 - pct);
+
+  circle.style.strokeDashoffset = offset;
+  val.textContent = minutes;
+
+  const isUrgent = minutes <= 5;
+  circle.classList.toggle('urgent', isUrgent);
+  val.classList.toggle('urgent', isUrgent);
+}
+
+// ── RATING ───────────────────────────────────────────────────
+function showRatingPrompt() {
+  const prompt = document.getElementById('rating-prompt');
+  const shopNameEl = document.getElementById('rating-shop-name');
+  if (prompt && selectedShop) {
+    if (shopNameEl) shopNameEl.textContent = selectedShop.name;
+    prompt.style.display = 'block';
+  }
+}
+
+async function submitRating(stars) {
+  // Highlight selected stars
+  document.querySelectorAll('.star-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', i < stars);
+  });
+  // Store locally (backend endpoint can be added later)
+  try {
+    const key = `rating_${selectedShop?.id}_${new Date().toISOString().split('T')[0]}`;
+    localStorage.setItem(key, stars);
+  } catch(e) {}
+  document.getElementById('stars-row').style.display = 'none';
+  document.getElementById('rating-done').style.display = 'block';
+}
+
+// ── LIVE TRACKER ───────────────────────────────────────────
+// ── ALERT STATE ────────────────────────────────────────────
+// Stages: 5 ahead, 3 ahead, 1 ahead, 0 (called)
+const ALERT_STAGES = new Set(); // tracks which stages already fired this session
+
+let _calledAlarmFired = false;
+
+function resetAlertStages() {
+  ALERT_STAGES.clear();
+  _calledAlarmFired = false;
+}
+
+// ── MUTE SYSTEM ────────────────────────────────────────────
+function isMuted() {
+  return localStorage.getItem('queue_mute') === 'true';
+}
+
+function toggleMute() {
+  const muted = !isMuted();
+  localStorage.setItem('queue_mute', muted ? 'true' : 'false');
+  updateMuteUI();
+  if (!muted) playBeep(660, 0.15); // confirmation beep on unmute
+}
+
+function updateMuteUI() {
+  const muted   = isMuted();
+  const icon    = document.getElementById('mute-icon');
+  const label   = document.getElementById('mute-label');
+  const btn     = document.getElementById('mute-btn');
+  if (!icon) return;
+  icon.textContent  = muted ? '🔇' : '🔊';
+  if (label) label.textContent = muted ? 'Muted' : 'Alerts On';
+  if (label) label.style.color = muted ? 'var(--muted)' : 'var(--gold)';
+  if (btn)   btn.style.opacity = muted ? '0.6' : '1';
+}
+
+// ── VOICE ANNOUNCEMENT ─────────────────────────────────────
+// Uses Azure Neural TTS (ur-PK-UzmaNeural) via Worker proxy.
+// Falls back to Web Speech API if Azure key not configured.
+// Falls back to silence if neither works.
+
+let _webVoices    = [];
+let _wsLoaded     = false;
+let _azureWorks   = null; // null=unknown, true=works, false=unavailable
+let _audioCache   = {};   // cache audio blobs by text
+
+// Pre-load Web Speech voices
+if ('speechSynthesis' in window) {
+  const load = () => { _webVoices = window.speechSynthesis.getVoices(); _wsLoaded = true; };
+  load();
+  window.speechSynthesis.onvoiceschanged = load;
+}
+
+function isMuted() { return localStorage.getItem('sq_muted') === '1'; }
+function toggleMute() {
+  const m = localStorage.getItem('sq_muted') === '1';
+  localStorage.setItem('sq_muted', m ? '0' : '1');
+  const btn = document.getElementById('mute-btn');
+  if (btn) btn.textContent = m ? '🔔' : '🔕';
+}
+
+async function playVoice(textEn, textUr) {
+  if (isMuted()) return;
+  if (document.hidden) return;
+
+  const lang  = localStorage.getItem('sq_lang') || 'en';
+  const isUr  = lang === 'ur';
+  const text  = isUr ? textUr : textEn;
+  const langCode = isUr ? 'ur' : 'en';
+
+  // Try Azure TTS first
+  if (_azureWorks !== false) {
+    const played = await playAzureTTS(text, langCode);
+    if (played) return;
+  }
+
+  // Fallback: Web Speech API
+  playWebSpeech(text, isUr);
+}
+
+async function playAzureTTS(text, lang) {
+  try {
+    // Check cache first
+    const cacheKey = `${lang}:${text}`;
+    let audioUrl   = _audioCache[cacheKey];
+
+    if (!audioUrl) {
+      const res = await fetch(
+        `${WORKER}/tts?text=${encodeURIComponent(text)}&lang=${lang}`,
+        { cache: 'no-store' }
+      );
+
+      // 204 = Azure not configured
+      if (res.status === 204) { _azureWorks = false; return false; }
+      if (!res.ok)             { _azureWorks = false; return false; }
+
+      _azureWorks = true;
+      const blob  = await res.blob();
+      audioUrl    = URL.createObjectURL(blob);
+      _audioCache[cacheKey] = audioUrl;
+    }
+
+    const audio = new Audio(audioUrl);
+    audio.volume = 1.0;
+    await audio.play();
+    return true;
+  } catch(e) {
+    _azureWorks = false;
+    return false;
+  }
+}
+
+function playWebSpeech(text, isUr) {
+  if (!('speechSynthesis' in window)) return;
+  try {
+    window.speechSynthesis.cancel();
+    const utt  = new SpeechSynthesisUtterance(text);
+
+    if (isUr) {
+      // Find any Urdu or Hindi voice (Hindi sounds close to Urdu)
+      const urVoice = _webVoices.find(v => v.lang === 'ur-PK')
+                   || _webVoices.find(v => v.lang === 'ur')
+                   || _webVoices.find(v => v.lang.startsWith('hi')); // Hindi fallback
+      if (urVoice) utt.voice = urVoice;
+      utt.lang  = 'ur-PK';
+      utt.rate  = 0.82;
+      utt.pitch = 1.0;
+    } else {
+      const enVoice = _webVoices.find(v => v.name.includes('Samantha'))
+                   || _webVoices.find(v => v.name.includes('Karen'))
+                   || _webVoices.find(v => v.lang === 'en-US' && v.localService)
+                   || _webVoices.find(v => v.lang.startsWith('en'));
+      if (enVoice) utt.voice = enVoice;
+      utt.lang  = 'en-US';
+      utt.rate  = 0.88;
+      utt.pitch = 1.05;
+    }
+    utt.volume = 1.0;
+    window.speechSynthesis.speak(utt);
+  } catch(e) {}
+}
+
+// ── RATING ───────────────────────────────────────────────────
+function showRatingPrompt() {
+  const prompt = document.getElementById('rating-prompt');
+  const shopNameEl = document.getElementById('rating-shop-name');
+  if (prompt && selectedShop) {
+    if (shopNameEl) shopNameEl.textContent = selectedShop.name;
+    prompt.style.display = 'block';
+  }
+}
+
+async function submitRating(stars) {
+  // Highlight selected stars
+  document.querySelectorAll('.star-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', i < stars);
+  });
+  // Store locally (backend endpoint can be added later)
+  try {
+    const key = `rating_${selectedShop?.id}_${new Date().toISOString().split('T')[0]}`;
+    localStorage.setItem(key, stars);
+  } catch(e) {}
+  document.getElementById('stars-row').style.display = 'none';
+  document.getElementById('rating-done').style.display = 'block';
+}
+
+// ── LIVE TRACKER ───────────────────────────────────────────
+// ── ALERT STATE ────────────────────────────────────────────
+// Stages: 5 ahead, 3 ahead, 1 ahead, 0 (called)
+const ALERT_STAGES = new Set(); // tracks which stages already fired this session
+
+let _calledAlarmFired = false;
+
+function resetAlertStages() {
+  ALERT_STAGES.clear();
+  _calledAlarmFired = false;
+}
+
+// ── MUTE SYSTEM ────────────────────────────────────────────
+function isMuted() {
+  return localStorage.getItem('queue_mute') === 'true';
+}
+
+function toggleMute() {
+  const muted = !isMuted();
+  localStorage.setItem('queue_mute', muted ? 'true' : 'false');
+  updateMuteUI();
+  if (!muted) playBeep(660, 0.15); // confirmation beep on unmute
+}
+
+function updateMuteUI() {
+  const muted   = isMuted();
+  const icon    = document.getElementById('mute-icon');
+  const label   = document.getElementById('mute-label');
+  const btn     = document.getElementById('mute-btn');
+  if (!icon) return;
+  icon.textContent  = muted ? '🔇' : '🔊';
+  if (label) label.textContent = muted ? 'Muted' : 'Alerts On';
+  if (label) label.style.color = muted ? 'var(--muted)' : 'var(--gold)';
+  if (btn)   btn.style.opacity = muted ? '0.6' : '1';
+}
+
+// ── VOICE ANNOUNCEMENT ─────────────────────────────────────
+let _voiceList = [];
+let _urduVoice = null;
+let _engVoice  = null;
+
+function _loadVoices() {
+  _voiceList  = window.speechSynthesis.getVoices();
+  // Find best Urdu voice
+  _urduVoice  = _voiceList.find(v => v.lang === 'ur-PK')
+             || _voiceList.find(v => v.lang === 'ur');
+  // Find best English voice (natural, not robotic)
+  _engVoice   = _voiceList.find(v => v.name.includes('Samantha'))
+             || _voiceList.find(v => v.name.includes('Karen'))
+             || _voiceList.find(v => v.name.includes('Daniel'))
+             || _voiceList.find(v => v.lang === 'en-US' && v.localService)
+             || _voiceList.find(v => v.lang.startsWith('en') && v.localService)
+             || _voiceList.find(v => v.lang.startsWith('en'));
+}
+
+if ('speechSynthesis' in window) {
+  _loadVoices();
+  window.speechSynthesis.onvoiceschanged = _loadVoices;
+}
+
+function playVoice(textEn, textUr) {
+  if (isMuted()) return;
+  if (!('speechSynthesis' in window)) return;
+  if (document.hidden) return;
+  const useUrdu = (localStorage.getItem('sq_lang') || 'ur') === 'ur';
+  try {
+    window.speechSynthesis.cancel();
+    if (useUrdu && _urduVoice && textUr) {
+      // Urdu voice with Urdu text
+      const utt   = new SpeechSynthesisUtterance(textUr);
+      utt.voice   = _urduVoice;
+      utt.lang    = 'ur-PK';
+      utt.rate    = 0.82;   // slower = clearer for Urdu
+      utt.pitch   = 1.0;
+      utt.volume  = 1.0;
+      window.speechSynthesis.speak(utt);
+    } else {
+      // English voice with English text
+      const utt   = new SpeechSynthesisUtterance(textEn);
+      if (_engVoice) utt.voice = _engVoice;
+      utt.lang    = _engVoice?.lang || 'en-US';
+      utt.rate    = 0.88;
+      utt.pitch   = 1.05;
+      utt.volume  = 1.0;
+      window.speechSynthesis.speak(utt);
+    }
+  } catch(e) {}
+}
+
+// ── SOUND BEEP ─────────────────────────────────────────────
+function playBeep(freq, duration, vol) {
+  if (isMuted()) return;
+  if (document.hidden) return;
+  freq     = freq     || 880;
+  duration = duration || 0.2;
+  vol      = vol      || 0.5;
+  try {
+    const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + duration + 0.01);
+  } catch(e) {}
+}
+
+// ── TRIGGER ALERT (voice + sound) ─────────────────────────
+function triggerAlert(stage) {
+  if (ALERT_STAGES.has(stage)) return; // already fired
+  ALERT_STAGES.add(stage);
+
+  // Each entry: [English, Urdu]
+  const messages = {
+    5: ['5 people ahead of you. Please be ready soon.',
+        'آپ سے پہلے 5 لوگ ہیں۔ تیار رہیں۔'],
+    3: ['3 people remaining. Please start making your way.',
+        'صرف 3 لوگ باقی ہیں۔ آنا شروع کریں۔'],
+    1: ['Only 1 person left. Your turn is coming right now.',
+        'صرف ایک شخص باقی ہے۔ آپ کی باری آنے والی ہے۔'],
+    0: ['It is your turn now. Please come to the counter immediately.',
+        'آپ کی باری آ گئی۔ ابھی کاؤنٹر پر آئیں۔'],
+  };
+
+  const beeps = {
+    5: [660, 0.2, 0.4],
+    3: [880, 0.2, 0.5],
+    1: [1100, 0.25, 0.6],
+    0: null, // playAlarm('called') handles this
+  };
+
+  if (stage === 0) {
+    // Final call — use existing loud alarm
+    playAlarm('called');
+    playVoice(messages[0][0], messages[0][1]);
+    if (navigator.vibrate) navigator.vibrate([400, 150, 400, 150, 600]);
+  } else {
+    const [freq, dur, vol] = beeps[stage];
+    playBeep(freq, dur, vol);
+    // Small delay so beep finishes before voice
+    setTimeout(() => playVoice(messages[stage][0], messages[stage][1]), 600);
+    if (navigator.vibrate) navigator.vibrate([stage === 1 ? 300 : 150]);
+  }
+}
+
+// ── TRACKER ────────────────────────────────────────────────
+function startTracker() {
+  resetAlertStages();
+  if (trackerTimer) clearInterval(trackerTimer);
+  updateMuteUI();
+  updateTracker();
+  trackerTimer = setInterval(updateTracker, 8000);
+}
+
+async function updateTracker() {
+  if (!myTokenId || !selectedShop) return;
+  try {
+    const res  = await fetch(`${WORKER}/public/position?shop_id=${selectedShop.id}&token_id=${myTokenId}`);
+    const json = await res.json();
+    const data = json.data;
+    if (!data) return;
+
+    const badge  = document.getElementById('tracker-badge');
+    const sub    = document.getElementById('tracker-sub');
+    const posEl  = document.getElementById('r-pos');
+    const waitEl = document.getElementById('r-wait-val');
+
+    if (data.status === 'called') {
+      badge.className   = 'tracker-badge called';
+      badge.textContent = '🔔 آپ کی باری آ گئی!';
+      sub.textContent   = 'ابھی کاؤنٹر پر آئیں!';
+      if (posEl)  posEl.textContent  = '🎯';
+      if (waitEl) waitEl.textContent = '0 min';
+      clearInterval(trackerTimer);
+      if (!_calledAlarmFired) {
+        _calledAlarmFired = true;
+        triggerAlert(0);
+        setTimeout(() => { if (!isMuted()) playAlarm('called'); }, 9000);
+        if (Notification.permission === 'granted') {
+          new Notification('آپ کی باری آ گئی! 🔔', { body: 'ابھی کاؤنٹر پر آئیں!', icon: '/icons/icon-192.png', tag: 'saf-called' });
+        }
+      }
+      const graceEl = document.getElementById('grace-timer');
+      if (graceEl && graceEl.style.display === 'none') {
+        graceEl.style.display = 'block';
+        let rem = 120;
+        const gi = setInterval(() => {
+          rem--;
+          const m = Math.floor(rem/60), s = rem%60;
+          const gt = graceEl.querySelector('.grace-time');
+          if (gt) gt.textContent = m + ':' + String(s).padStart(2,'0');
+          if (rem <= 30) graceEl.style.borderColor = 'var(--red)';
+          if (rem <= 0) clearInterval(gi);
+        }, 1000);
+      }
+
+    } else if (data.status === 'shop_closed') {
+      badge.className   = 'tracker-badge done';
+      badge.textContent = '🔒 دکان بند ہو گئی';
+      sub.textContent   = 'آپ کا ٹوکن منسوخ ہو گیا';
+      clearInterval(trackerTimer);
+      clearTokenStorage();
+      const cb = document.getElementById('cancel-token-btn');
+      if (cb) cb.style.display = 'none';
+
+    } else if (['cancelled','no_show','expired'].includes(data.status)) {
+      badge.className   = 'tracker-badge done';
+      badge.textContent = '❌ منسوخ';
+      sub.textContent   = 'آپ کا ٹوکن منسوخ ہو گیا';
+      clearInterval(trackerTimer);
+      clearTokenStorage();
+
+    } else if (data.status === 'completed') {
+      badge.className   = 'tracker-badge done';
+      badge.textContent = '✅ مکمل';
+      sub.textContent   = 'آپ کی سروس ہو گئی';
+      clearInterval(trackerTimer);
+      clearTokenStorage();
+
+    } else if (data.status === 'waiting') {
+      const pos   = data.position       || 0;
+      const ahead = data.people_ahead   || 0;
+      const wait  = data.estimated_wait || 0;
+
+      badge.className   = 'tracker-badge waiting';
+      badge.textContent = 'انتظار — نمبر #' + pos;
+      sub.textContent   = ahead + ' لوگ آگے · ~' + wait + ' منٹ • 10 سیکنڈ میں اپڈیٹ';
+      if (posEl)  posEl.textContent  = pos;
+      if (waitEl) waitEl.textContent = wait + ' min';
+      updateCountdown(wait, pos);
+
+      // ── Smart staged alerts ────────────────────────────
+      // Stage 5: 5 people ahead
+      if (ahead === 5) triggerAlert(5);
+      // Stage 3: 3 people ahead
+      if (ahead === 3) triggerAlert(3);
+      // Stage 1: 1 person ahead
+      if (ahead === 1) triggerAlert(1);
+      // Stage 0 (position 1 = next up) — softer pre-warning
+      if (pos === 1 && !ALERT_STAGES.has(0)) triggerAlert(0); // final call — you're next
+    }
+  } catch(e) { console.error('tracker:', e); }
+}
+
+function clearTokenStorage() {
+  localStorage.removeItem('saf_token_id');
+  localStorage.removeItem('saf_token_num');
+  localStorage.removeItem('saf_token_shop');
+}
+
+// ── RELATED SHOPS (Growth Loop) ────────────────────────────
+async function loadRelatedShops(shopId) {
+  try {
+    const res  = await fetch(`${WORKER}/shops/related?shop_id=${shopId}`);
+    const json = await res.json();
+    const shops = json.data?.shops || [];
+    if (!shops.length) return;
+
+    const container = document.getElementById('related-shops-section');
+    if (!container) return;
+
+    container.style.display = 'block';
+    const list = document.getElementById('related-shops-list');
+    list.innerHTML = shops.map(s => `
+      <div class="shop-card" onclick="openShop('${s.id}')" style="cursor:pointer">
+        <div style="font-weight:700;font-size:14px;color:var(--gold)">${s.name}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">${s.category || ''} · ${s.area || ''}</div>
+        <div style="margin-top:6px;display:flex;gap:8px;align-items:center">
+          <span style="font-size:11px;color:${s.is_open ? 'var(--green)' : 'var(--red)'}">
+            ${s.is_open ? '🟢 کھلی' : '🔴 بند'}
+          </span>
+          <span style="font-size:11px;color:var(--muted)">ٹوکن: ${s.current_token || 0}</span>
+        </div>
+      </div>`).join('');
+  } catch(e) {}
+}
+
+// ── SHARE SHOP LINK (one tap after join) ──────────────────
+async function shareShopLink() {
+  if (!selectedShop) return;
+  try {
+    const res  = await fetch(`${WORKER}/shops/${selectedShop.id}/share-link`);
+    const json = await res.json();
+    const msg  = json.data?.message;
+    const waUrl = json.data?.whatsapp_url;
+    if (waUrl) {
+      window.open(waUrl, '_blank');
+    } else if (navigator.share) {
+      await navigator.share({ title: selectedShop.name, url: json.data?.link || location.href });
+    }
+  } catch(e) {
+    // Fallback: share current URL
+    const link = `${location.origin}/s/${selectedShop.slug || ''}?shop=${selectedShop.id}`;
+    if (navigator.share) navigator.share({ title: selectedShop.name, url: link });
+    else window.open(`https://wa.me/?text=${encodeURIComponent(link)}`, '_blank');
+  }
+}
+
+// ── POLL PAYMENT APPROVAL ──────────────────────────────────
+// ── FILTERS ────────────────────────────────────────────────
+function filterCity(city) {
+  if (city) {
+    // Navigate to SEO area page for indexability
+    window.location.href = `/area.html?area=${encodeURIComponent(city)}`;
+    return;
+  }
+  activeCity = '';
+  document.querySelectorAll('#city-filter-row .cat-chip').forEach(c =>
+    c.classList.toggle('active', c.dataset.city === '')
+  );
+  loadShops();
+}
+
+function filterCat(cat) {
+  activeCategory = cat;
+  document.querySelectorAll('#cat-row .cat-chip').forEach(c =>
+    c.classList.toggle('active', c.dataset.cat === cat)
+  );
+  applyFilters();
+}
+
+function filterArea(area) {
+  activeArea = area;
+  document.querySelectorAll('.area-chip').forEach(c => c.classList.toggle('active', c.dataset.area === area));
+  applyFilters();
+}
+
+function onSearch() {
+  searchQuery = document.getElementById('search-input').value.trim().toLowerCase();
+  applyFilters();
+}
+
+function applyFilters() {
+  filteredShops = allShops.filter(s => {
+    const catOk  = !activeCategory || s.category === activeCategory;
+    const areaOk = !activeArea     || (s.area||'').toLowerCase().includes(activeArea.toLowerCase());
+    const srchOk = !searchQuery    ||
+      s.name.toLowerCase().includes(searchQuery) ||
+      (s.area||'').toLowerCase().includes(searchQuery) ||
+      (s.category||'').toLowerCase().includes(searchQuery);
+    return catOk && areaOk && srchOk;
+  });
+  renderShops();
+}
+
+function renderAreaChips(areas) {
+  if (!areas.length) return;
+  const row = document.getElementById('area-row');
+  row.style.display = 'flex';
+  row.innerHTML = `<button class="area-chip active" onclick="filterArea('')" data-area="" id="area-all-btn">${(localStorage.getItem("sq_lang")||"ur")==="ur"?"سب علاقے":"All Areas"}</button>` +
+    areas.map(a => `<button class="area-chip" onclick="filterArea('${esc(a)}')" data-area="${esc(a)}">${esc(a)}</button>`).join('');
+}
+
+// ── HELPERS ────────────────────────────────────────────────
+function catIcon(cat) {
+  const icons = {barber:'✂️',clinic:'🏥',pharmacy:'💊',bank:'🏦',govt:'🏛️',tailor:'🧵'};
+  return icons[cat] || '🏪';
+}
+
+function catLabel(cat) {
+  const labels = {barber:'حجام',clinic:'کلینک',pharmacy:'فارمیسی',bank:'بینک',govt:'سرکاری',tailor:'درزی'};
+  return labels[cat] || cat || 'دیگر';
+}
+
+function esc(s) {
+  return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Enter key on name field
+document.getElementById('c-name').addEventListener('keydown', e => { if(e.key==='Enter') submitJoin(); });
+
+// ── BOOT ───────────────────────────────────────────────────
+// ── LANGUAGE SYSTEM ──────────────────────────────────────────
+function toggleLangAndReload() {
+  const cur = localStorage.getItem('sq_lang') || 'ur';
+  localStorage.setItem('sq_lang', cur === 'en' ? 'ur' : 'en');
+  window.location.reload();
+}
+
+function applyPageLanguage() {
+  const lang = localStorage.getItem('sq_lang') || 'ur';
+  const isUr = lang === 'ur';
+  const key  = isUr ? 'ur' : 'en';
+
+  // Direction + font
+  const html = document.getElementById('html-root');
+  if (html) { html.lang = lang; html.dir = isUr ? 'rtl' : 'ltr'; }
+  document.body.style.fontFamily = isUr ? "'Noto Nastaliq Urdu', serif" : "'Sora', sans-serif";
+
+  // Lang toggle button label (shows what you SWITCH TO)
+  const label = document.getElementById('lang-label');
+  if (label) label.textContent = isUr ? 'English' : 'اردو';
+
+  // All elements with data-en / data-ur attributes get updated automatically
+  document.querySelectorAll('[data-en][data-ur]').forEach(el => {
+    el.textContent = el.dataset[key];
+  });
+
+  // Search placeholder
+  const si = document.getElementById('search-input');
+  if (si) si.placeholder = isUr ? 'دکان یا علاقہ تلاش کریں...' : 'Search shops or areas...';
+}
+
+// Apply immediately on load
+applyPageLanguage();
+
+(async function boot() {
+  updateMuteUI(); // init mute button state from localStorage
+  // Restore active token from previous session
+  const savedTokenId  = localStorage.getItem('saf_token_id');
+  const savedTokenNum = localStorage.getItem('saf_token_num');
+  const savedShop     = localStorage.getItem('saf_token_shop');
+
+  // Restore pending payment poll if customer refreshed while waiting for approval
+  const pendingPayment = localStorage.getItem('saf_pending_payment');
+  if (pendingPayment && !savedTokenId) {
+    try {
+      const { reqId, shopData } = JSON.parse(pendingPayment);
+      if (reqId && shopData) {
+        selectedShop = shopData;
+        // Show modal directly in waiting state — do NOT call openShop (it resets the form)
+        const modal = document.getElementById('token-modal');
+        if (modal) modal.classList.add('show');
+        document.getElementById('join-form-wrap').style.display  = 'block';
+        document.getElementById('result-wrap').style.display     = 'none';
+        // Show paid section in waiting mode
+        const paidSec = document.getElementById('paid-token-section');
+        if (paidSec) paidSec.style.display = 'block';
+        const btn = document.getElementById('join-btn');
+        const lbl = document.getElementById('join-btn-label');
+        if (btn) btn.disabled = true;
+        if (lbl) lbl.textContent = '⏳ منظوری کا انتظار...';
+        const errEl = document.getElementById('sheet-err');
+        if (errEl) { errEl.style.color = 'var(--green)'; errEl.textContent = '✓ درخواست موصول! ہر 5 سیکنڈ میں چیک ہو رہا ہے...'; }
+        startPaymentPolling(reqId, '', '');
+      }
+    } catch(e) { localStorage.removeItem('saf_pending_payment'); }
+  }
+
+  if (savedTokenId && savedShop) {
+    try {
+      myTokenId    = savedTokenId;
+      myTokenNum   = parseInt(savedTokenNum) || null;
+      selectedShop = JSON.parse(savedShop);
+
+      const res  = await fetch(`${WORKER}/public/position?shop_id=${selectedShop.id}&token_id=${myTokenId}`);
+      const json = await res.json();
+      const st   = json.data?.status;
+
+      if (st && !['completed','cancelled','expired','no_show','shop_closed'].includes(st)) {
+        // Restore directly into result/tracker view — skip join form
+        document.getElementById('r-num').textContent           = myTokenNum || '?';
+        document.getElementById('r-greeting').textContent      = `${selectedShop.name} — ٹوکن بحال`;
+        document.getElementById('join-form-wrap').style.display = 'none';
+        document.getElementById('result-wrap').style.display    = 'block';
+        // Show modal and overlay
+        const modal = document.getElementById('token-modal');
+        const overlay = document.getElementById('modal-overlay') || document.querySelector('.modal-overlay');
+        if (modal) modal.classList.add('show');
+        if (overlay) overlay.classList.add('show');
+        if (Notification.permission === 'default') Notification.requestPermission();
+        startTracker();
+      } else {
+        clearTokenStorage();
+      }
+    } catch(e) { clearTokenStorage(); }
+  }
+
+  // Resolve /s/slug → shop id
+  if (HIGHLIGHT_SLUG && !HIGHLIGHT_SHOP) {
+    try {
+      const res  = await fetch(`${WORKER}/shops/by-slug/${encodeURIComponent(HIGHLIGHT_SLUG)}`);
+      const json = await res.json();
+      if (json.data?.id) _resolvedShopId = json.data.id;
+    } catch(e) {}
+  }
+  const effectiveShop = _resolvedShopId || HIGHLIGHT_SHOP;
+
+  // Load global trust stats
+fetch(`${WORKER}/public/stats`)
+  .then(r => r.json()).then(({data}) => {
+    if (!data) return;
+    document.getElementById('trust-open').textContent   = data.open_shops   ?? '—';
+    document.getElementById('trust-tokens').textContent = data.tokens_today  ?? '—';
+    document.getElementById('trust-shops').textContent  = data.total_shops   ?? '—';
+  }).catch(() => {});
+
+await loadShops();
+
+  // If shop param or slug: load featured shop
+  if (effectiveShop) {
+    await loadFeaturedShop(effectiveShop);
+    document.querySelector('.search-wrap').style.opacity = '0.7';
+    try {
+      const res    = await fetch(`${WORKER}/public/shop/${effectiveShop}`);
+      const {data} = await res.json();
+      if (data?.is_open) setTimeout(() => openShop(effectiveShop), 1500);
+    } catch(e) {}
+
+    // Load related shops (growth loop)
+    loadRelatedShops(effectiveShop);
+  }
+
+  // Refresh every 60s in background
+  setInterval(async () => {
+    if (!myTokenId) {
+      // Show first-visit bar if arriving via shared link and haven't seen it before
+  if (HIGHLIGHT_SHOP && !localStorage.getItem('wm_visited')) {
+    document.getElementById('first-visit-bar').style.display = 'block';
+    localStorage.setItem('wm_visited', '1');
+  }
+
+  await loadShops();
+      if (effectiveShop) await loadFeaturedShop(effectiveShop);
+    }
+  }, 60000);
+})();
+
+// ── PWA INSTALL PROMPT ─────────────────────────────────────
+let _deferredInstall = null;
+const INSTALL_KEY    = 'saf_pwa_installed';
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _deferredInstall = e;
+  if (!localStorage.getItem(INSTALL_KEY)) showInstallBanner();
+});
+
+window.addEventListener('appinstalled', () => {
+  localStorage.setItem(INSTALL_KEY, '1');
+  hideInstallBanner();
+});
+
+function showInstallBanner() {
+  if (localStorage.getItem(INSTALL_KEY)) return;
+  let banner = document.getElementById('install-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'install-banner';
+    banner.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:28px">📲</span>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:14px;color:var(--gold)">ایپ انسٹال کریں</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">WaitMate — Your Smart Queue Partner</div>
+        </div>
+        <button onclick="doInstall()" style="background:var(--gold);color:#000;border:none;border-radius:20px;padding:8px 18px;font-weight:700;font-size:13px;cursor:pointer;flex-shrink:0">Install</button>
+        <button onclick="hideInstallBanner()" style="background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:0 4px">×</button>
+      </div>`;
+    Object.assign(banner.style, {
+      position:'fixed', bottom:'20px', left:'12px', right:'12px',
+      background:'var(--surface)', border:'1px solid rgba(212,175,55,.35)',
+      borderRadius:'16px', padding:'14px 16px', zIndex:'999',
+      boxShadow:'0 8px 32px rgba(0,0,0,.5)', animation:'sheetUp .4s ease both'
+    });
+    document.body.appendChild(banner);
+  }
+  banner.style.display = 'block';
+  // Re-show every 5 minutes if not installed
+  setTimeout(() => {
+    if (!localStorage.getItem(INSTALL_KEY)) showInstallBanner();
+  }, 5 * 60 * 1000);
+}
+
+function hideInstallBanner() {
+  const b = document.getElementById('install-banner');
+  if (b) b.style.display = 'none';
+}
+
+async function doInstall() {
+  if (!_deferredInstall) return;
+  _deferredInstall.prompt();
+  const { outcome } = await _deferredInstall.userChoice;
+  if (outcome === 'accepted') {
+    localStorage.setItem(INSTALL_KEY, '1');
+    hideInstallBanner();
+  }
+  _deferredInstall = null;
+}
+</script>
+
+<!-- ── SUPPORT WIDGET (floating) ── -->
+<div id="support-widget" style="display:none;position:fixed;bottom:80px;right:16px;z-index:200">
+  <div id="support-popup" style="display:none;position:absolute;bottom:56px;right:0;background:#111827;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:16px;width:220px;box-shadow:0 8px 32px rgba(0,0,0,.4)">
+    <div style="font-size:12px;font-weight:700;color:#F1F5F9;margin-bottom:4px" id="sw-message">Need help?</div>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px">
+      <a id="sw-wa" href="#" target="_blank" rel="noopener" style="display:none;align-items:center;gap:8px;padding:9px 12px;background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);border-radius:8px;text-decoration:none;color:#25D166;font-size:12px;font-weight:600">
+        💬 WhatsApp Support
+      </a>
+      <a id="sw-email" href="#" style="display:none;align-items:center;gap:8px;padding:9px 12px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.2);border-radius:8px;text-decoration:none;color:#38BDF8;font-size:12px;font-weight:600">
+        ✉️ Email Support
+      </a>
+    </div>
+  </div>
+  <button onclick="toggleSupportPopup()" title="Contact Support"
+    style="width:48px;height:48px;border-radius:50%;border:none;background:linear-gradient(135deg,#E8B84B,#F5CC6A);color:#080c14;font-size:20px;cursor:pointer;box-shadow:0 4px 16px rgba(232,184,75,.35);transition:transform .2s"
+    onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+    💬
+  </button>
+</div>
+<script>
+function toggleSupportPopup() {
+  const p = document.getElementById('support-popup');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', e => {
+  if (!document.getElementById('support-widget')?.contains(e.target)) {
+    const p = document.getElementById('support-popup');
+    if (p) p.style.display = 'none';
+  }
+});
+(async function loadSupport() {
+  try {
+    const WK  = 'https://saf-queue-worker.byker-software.workers.dev';
+    const res  = await fetch(`${WK}/public/settings`);
+    const {data} = await res.json();
+    if (!data) return;
+    const widget = document.getElementById('support-widget');
+    const hasWa  = data.support_whatsapp?.trim();
+    const hasEm  = data.support_email?.trim();
+    if (!hasWa && !hasEm) return; // hide if not configured
+    widget.style.display = 'block';
+    if (data.support_message) document.getElementById('sw-message').textContent = data.support_message;
+    if (hasWa) {
+      const waEl = document.getElementById('sw-wa');
+      waEl.href = `https://wa.me/${data.support_whatsapp.replace(/\D/g,'')}`;
+      waEl.style.display = 'flex';
+    }
+    if (hasEm) {
+      const emEl = document.getElementById('sw-email');
+      emEl.href = `mailto:${data.support_email}`;
+      emEl.style.display = 'flex';
+    }
+  } catch(e) {}
+})();
+</script>
+
+
+<!-- ── PWA INSTALL PROMPT (persistent) ── -->
+<div id="pwa-install-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:10000;background:linear-gradient(135deg,#0d1422,#111827);border-top:2px solid #E8B84B;padding:14px 16px;box-shadow:0 -8px 32px rgba(0,0,0,.6)">
+  <div style="max-width:480px;margin:0 auto;display:flex;align-items:center;gap:12px">
+    <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#E8B84B,#F5CC6A);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🏪</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:13px;font-weight:700;color:#F1F5F9;margin-bottom:2px">Install WaitMate App</div>
+      <div style="font-size:11px;color:#94A3B8">Works offline · Instant access · No app store needed</div>
+    </div>
+    <div style="display:flex;gap:6px;flex-shrink:0">
+      <button id="pwa-install-btn" onclick="triggerInstall()"
+        style="padding:9px 16px;border:none;border-radius:9px;background:linear-gradient(135deg,#E8B84B,#F5CC6A);color:#080c14;font-family:'Sora',sans-serif;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap">
+        Install
+      </button>
+      <button onclick="dismissInstall()"
+        style="padding:9px 10px;border:1px solid rgba(255,255,255,.1);border-radius:9px;background:transparent;color:#64748B;font-family:'Sora',sans-serif;font-size:12px;cursor:pointer">
+        ✕
+      </button>
+    </div>
+  </div>
+  <!-- iOS manual instruction (shown on iOS) -->
+  <div id="ios-install-hint" style="display:none;margin-top:10px;background:rgba(232,184,75,.08);border:1px solid rgba(232,184,75,.2);border-radius:8px;padding:9px 12px;font-size:11px;color:#94A3B8;text-align:center">
+    📱 On iPhone: tap <strong style="color:#E8B84B">Share ↑</strong> then <strong style="color:#E8B84B">"Add to Home Screen"</strong>
+  </div>
+</div>
+
+<script>
+(function initPWAPrompt() {
+  let _deferredPrompt = null;
+  const DISMISS_KEY   = 'pwa_dismissed_until';
+  const INSTALL_KEY   = 'pwa_installed';
+
+  // Don't show if already installed
+  if (window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true) {
+    localStorage.setItem('pwa_installed', '1');
+    return;
+  }
+  if (localStorage.getItem(INSTALL_KEY)) return;
+
+  function showBanner() {
+    const banner = document.getElementById('pwa-install-banner');
+    if (banner) banner.style.display = 'block';
+    // Push page content up so banner doesn't cover content
+    document.body.style.paddingBottom = '90px';
+  }
+
+  function isIOS() {
+    return /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+  }
+
+  // Capture install prompt (Android/Chrome)
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    _deferredPrompt = e;
+    // Check if dismissed recently (max 1 hour snooze)
+    const until = parseInt(localStorage.getItem(DISMISS_KEY) || '0');
+    if (Date.now() > until) showBanner();
+  });
+
+  // iOS — show manual instructions after 3 seconds
+  if (isIOS()) {
+    const until = parseInt(localStorage.getItem(DISMISS_KEY) || '0');
+    if (Date.now() > until) {
+      setTimeout(() => {
+        showBanner();
+        const hint = document.getElementById('ios-install-hint');
+        if (hint) hint.style.display = 'block';
+      }, 3000);
+    }
+  }
+
+  // App installed event
+  window.addEventListener('appinstalled', () => {
+    localStorage.setItem(INSTALL_KEY, '1');
+    const b = document.getElementById('pwa-install-banner');
+    if (b) b.style.display = 'none';
+    document.body.style.paddingBottom = '';
+  });
+
+  window.triggerInstall = async function() {
+    if (_deferredPrompt) {
+      _deferredPrompt.prompt();
+      const { outcome } = await _deferredPrompt.userChoice;
+      _deferredPrompt = null;
+      if (outcome === 'accepted') {
+        localStorage.setItem(INSTALL_KEY, '1');
+        document.getElementById('pwa-install-banner').style.display = 'none';
+        document.body.style.paddingBottom = '';
+      } else {
+        // Dismissed — snooze for 30 minutes then show again
+        localStorage.setItem(DISMISS_KEY, Date.now() + 30 * 60 * 1000);
+      }
+    } else if (isIOS()) {
+      // iOS — show instructions
+      const hint = document.getElementById('ios-install-hint');
+      if (hint) hint.style.display = hint.style.display === 'none' ? 'block' : 'none';
+    }
+  };
+
+  window.dismissInstall = function() {
+    // Only snooze 1 hour — not permanent
+    localStorage.setItem(DISMISS_KEY, Date.now() + 60 * 60 * 1000);
+    document.getElementById('pwa-install-banner').style.display = 'none';
+    document.body.style.paddingBottom = '';
+  };
+
+  // Re-show after snooze expires (check every 5 min)
+  setInterval(() => {
+    if (localStorage.getItem(INSTALL_KEY)) return;
+    const until = parseInt(localStorage.getItem(DISMISS_KEY) || '0');
+    if (Date.now() > until && _deferredPrompt) showBanner();
+  }, 5 * 60 * 1000);
+})();
+</script>
+
+</body>
+</html>
