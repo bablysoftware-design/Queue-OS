@@ -240,18 +240,21 @@ export async function adminResetPinHandler(request, env) {
 
 /** GET /shops/:id/scan-stats — scan counts for business dashboard */
 export async function getScanStats(request, env) {
+  const zero = { today: 0, week: 0, total: 0 };
   try {
     const auth   = await requireShopAuth(request, env);
     if (auth instanceof Response) return auth;
+    // Path: /shops/:id/scan-stats  →  ['','shops',UUID,'scan-stats']
     const shopId = new URL(request.url).pathname.split('/')[2];
     if (!isValidUUID(shopId))    return badRequest('Invalid shop_id');
     if (auth.shop_id !== shopId) return unauthorized('Not your shop');
 
-    const db = createClient(env);
-    const result = await db.rpc('get_shop_scan_counts', { p_shop_id: shopId });
-    return ok(Array.isArray(result) ? result[0] : result || { today: 0, week: 0, total: 0 });
+    const db     = createClient(env);
+    const rows   = await db.rpc('get_shop_scan_counts', { p_shop_id: shopId });
+    // RPC returns a JSON object (not array) via PostgREST scalar function
+    const result = Array.isArray(rows) ? rows[0] : rows;
+    return ok(result || zero);
   } catch(err) {
-    // Table may not exist yet — return zeros, never fail
-    return ok({ today: 0, week: 0, total: 0 });
+    return ok(zero); // shop_scans table may not exist yet — always return safely
   }
 }
