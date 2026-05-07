@@ -1860,16 +1860,8 @@ function clearTokenStorage() {
 }
 
 // ── RELATED SHOPS (Growth Loop) ────────────────────────────
-async function loadRelatedShops(shopId) {
-  // Endpoint /shops/related not yet implemented — no-op until Phase 4
-  return;
-  // trunk-ignore: unreachable code preserved for when endpoint ships
-          </span>
-          <span style="font-size:11px;color:var(--muted)">ٹوکن: ${s.current_token || 0}</span>
-        </div>
-      </div>`).join('');
-  } catch(e) {}
-}
+// Endpoint /shops/related not yet implemented. No-op until Phase 4.
+async function loadRelatedShops(shopId) { return; }
 
 // ── SAVE SHOP LINK — practical self-interested action ─────
 // Opens native share sheet or copies link. No WhatsApp message.
