@@ -1267,7 +1267,17 @@ function startPaymentPolling(requestId, customerName, customerPhone) {
     try {
       const res  = await fetch(`${WORKER}/public/payment-status?request_id=${requestId}`);
       const json = await res.json();
-      if (!json.success) return;
+      if (!json.success) {
+        // After 3 consecutive failures surface the error — not silently swallowed
+        if (attempts > 3) {
+          const errEl = document.getElementById('sheet-err');
+          if (errEl) {
+            errEl.style.color = 'var(--red)';
+            errEl.textContent = json.error || 'Status check failed — retrying...';
+          }
+        }
+        return;
+      }
 
       if (json.data.status === 'approved') { // approved — switch to token card
         clearInterval(_payPollTimer);

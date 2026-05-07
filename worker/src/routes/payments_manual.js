@@ -30,9 +30,12 @@ export async function submitPaymentRequest(request, env) {
     const shop = shopRows[0];
     if (shop.token_mode !== 'paid') return badRequest('یہ دکان فری ٹوکن موڈ پر ہے');
 
-    // Store screenshot - accept base64 data URIs directly
-    // Base64 images are stored in the DB for display in dashboard
-    const screenshotStored = screenshot_url || null;
+    // Truncate base64 data URIs — store a marker only, not the full image.
+    // Full base64 (200KB-2MB) causes Supabase insert failures / slow responses.
+    // Dashboard shows the upload marker; actual image is on the customer device.
+    const screenshotStored = screenshot_url
+      ? (screenshot_url.startsWith('data:') ? '[screenshot_uploaded]' : screenshot_url)
+      : null;
 
     const pr = await db.insert('payment_requests', {
       shop_id,
