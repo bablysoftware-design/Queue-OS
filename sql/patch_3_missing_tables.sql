@@ -115,3 +115,35 @@ WHERE table_schema = 'public'
   )
 ORDER BY table_name;
 -- Expected: 4 rows
+
+-- ── PATCH 8: shop_scans table ────────────────────────────────
+-- One row per meaningful customer scan/visit event.
+-- Time-series: daily/weekly/monthly aggregated at query time.
+-- Foundation for ranking, social proof, and discovery signals.
+
+CREATE TABLE IF NOT EXISTS shop_scans (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  shop_id    UUID NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+  source     TEXT DEFAULT 'direct', -- 'qr', 'link', 'direct'
+  scanned_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Composite index supports: shop totals, time-window queries, area aggregates
+CREATE INDEX IF NOT EXISTS idx_shop_scans_shop_time
+  ON shop_scans(shop_id, scanned_at DESC);
+
+-- For platform-wide analytics (area/category discovery)
+CREATE INDEX IF NOT EXISTS idx_shop_scans_time
+  ON shop_scans(scanned_at DESC);
+
+-- Convenience RPC for dashboard stats (avoids O(n) scan in Worker)
+CREATE OR REPLACE FUNCTION get_shop_scan_counts(p_shop_id UUID)
+RETURNS JSON LANGUAGE SQL AS $$
+  SELECT json_build_object(
+    'today',    COUNT(*) FILTER (WHERE scanned_at >= CURRENT_DATE),
+    'week',     COUNT(*) FILTER (WHERE scanned_at >= CURRENT_DATE - 7),
+    'total',    COUNT(*)
+  )
+  FROM shop_scans
+  WHERE shop_id = p_shop_id;
+$$;

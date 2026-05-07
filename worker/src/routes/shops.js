@@ -236,3 +236,22 @@ export async function adminResetPinHandler(request, env) {
     return ok({ message: 'PIN reset successfully' });
   } catch (err) { return serverError(err.message); }
 }
+
+
+/** GET /shops/:id/scan-stats — scan counts for business dashboard */
+export async function getScanStats(request, env) {
+  try {
+    const auth   = await requireShopAuth(request, env);
+    if (auth instanceof Response) return auth;
+    const shopId = new URL(request.url).pathname.split('/')[2];
+    if (!isValidUUID(shopId))    return badRequest('Invalid shop_id');
+    if (auth.shop_id !== shopId) return unauthorized('Not your shop');
+
+    const db = createClient(env);
+    const result = await db.rpc('get_shop_scan_counts', { p_shop_id: shopId });
+    return ok(Array.isArray(result) ? result[0] : result || { today: 0, week: 0, total: 0 });
+  } catch(err) {
+    // Table may not exist yet — return zeros, never fail
+    return ok({ today: 0, week: 0, total: 0 });
+  }
+}

@@ -288,3 +288,26 @@ export async function getGlobalStats(request, env) {
     });
   } catch(err) { return serverError(err.message); }
 }
+
+/**
+ * POST /public/scan — record a meaningful customer shop visit
+ * Fire-and-forget from client. Always returns 200.
+ * Client deduplicates per session via sessionStorage.
+ */
+export async function recordScan(request, env) {
+  try {
+    const { shop_id, source = 'direct' } = await request.json();
+    if (!shop_id) return ok({ recorded: false });
+
+    const db = createClient(env);
+    // Fire-and-forget insert — do not await to avoid slowing shop load
+    db.insert('shop_scans', {
+      shop_id,
+      source: ['qr','link','direct'].includes(source) ? source : 'direct',
+    }).catch(() => {}); // silent fail — never block customer flow
+
+    return ok({ recorded: true });
+  } catch(e) {
+    return ok({ recorded: false }); // always 200 — client doesn't need to know
+  }
+}

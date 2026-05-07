@@ -7,7 +7,7 @@ import { createTokenHandler, nextTokenHandler,
          getQueueHandler, noShowHandler,
          getStatsHandler, getPositionHandler,
          cancelTokenHandler }                         from './routes/tokens.js';
-import { createShopHandler, loginShopHandler,
+import { createShopHandler, getScanStats, loginShopHandler,
          toggleShopHandler, getShopHandler,
          deleteShopHandler, activateShopHandler,
          updateShopSettingsHandler, changePinHandler } from './routes/shops.js';
@@ -20,7 +20,7 @@ import { submitRegistration, listRegistrations,
 import { subscribePush, unsubscribePush, requestDelay } from './routes/push.js';
 import { getPublicShops, getPublicShop,
          joinQueue, checkPosition,
-         publicCancelToken, getGlobalStats }                          from './routes/public.js';
+         publicCancelToken, getGlobalStats, recordScan }                          from './routes/public.js';
 import { getShareLink, getShopBySlug,
          getShopQR, getRelatedShops }                 from './routes/share.js';
 import { searchLocations, searchCategories }          from './routes/search.js';
@@ -59,6 +59,7 @@ const ROUTES = [
   { method: 'GET',    path: '/public/settings',                  handler: getPublicSettings },
   { method: 'PATCH',  path: '/admin/settings',                    handler: updateSettings },
   { method: 'POST',   path: '/admin/shops/:id/reset-pin',          handler: adminResetPinHandler },
+  { method: 'POST',   path: '/public/scan',                      handler: recordScan },
   { method: 'GET',    path: '/public/stats',                     handler: getGlobalStats },
 
   // Autocomplete search (no auth)
@@ -93,6 +94,7 @@ const ROUTES = [
   { method: 'PATCH',  path: '/shops/:id/toggle',                handler: toggleShopHandler },
   { method: 'GET',    path: '/shops/:id',                       handler: getShopHandler },
   { method: 'PATCH',  path: '/shops/:id/settings',              handler: updateShopSettingsHandler },
+  { method: 'GET',    path: '/shops/:id/scan-stats',              handler: getScanStats },
   { method: 'POST',   path: '/shops/:id/change-pin',            handler: changePinHandler },
 
   // Subscriptions
