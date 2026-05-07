@@ -1,1118 +1,581 @@
 <!DOCTYPE html>
-<html lang="ur" dir="rtl" id="html-root">
+<html lang="en" dir="ltr" id="html-root">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<meta name="theme-color" content="#050810"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<meta name="theme-color" content="#080c14"/>
+<meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<title>ویٹ میٹ — ٹوکن لیں</title>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Noto+Nastaliq+Urdu:wght@400;600;700&family=Orbitron:wght@700;900&family=Dancing+Script:wght@700&display=swap" rel="stylesheet"/>
+<meta property="og:title" id="og-title" content="WaitMate — Skip the Queue"/>
+<meta property="og:description" id="og-desc" content="Get your token and come only when it's your turn."/>
+<meta property="og:image" content="/icons/icon-512.png"/>
+<title>WaitMate — Find a Shop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Noto+Nastaliq+Urdu:wght@400;600;700&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet"/>
 <style>
-:root{
-  --void:#050810;--surface:#0d1424;--glass:rgba(13,20,36,.78);
-  --border:rgba(212,175,55,.12);--gold:#D4AF37;--gold2:#F5C842;
-  --gold3:#FFE066;--cyan:#00D4FF;--red:#FF4560;--green:#00E396;
-  --amber:#F59E0B;--text:#EDE8D0;--muted:rgba(237,232,208,.4);--r:16px;
-}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-height:100dvh;overflow-x:hidden;} [lang='ur'] body,[dir='rtl'] body{font-family:'Noto Nastaliq Urdu',serif;}
-#particle-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;}
-.holo-grid{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(212,175,55,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(212,175,55,.03) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;animation:gridDrift 25s linear infinite;}
-@keyframes gridDrift{to{background-position:50px 50px;}}
-#app{position:relative;z-index:1;min-height:100dvh;display:flex;flex-direction:column;}
+:root{
+  --bg:#080c14;--bg2:#0d1422;--glass:rgba(17,24,39,.65);
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);
+  --gold:#E8B84B;--gold2:#F5CC6A;--cyan:#38BDF8;
+  --green:#34D399;--red:#F87171;--amber:#FBBF24;
+  --text:#F1F5F9;--text2:#94A3B8;--text3:#475569;--r:14px;
+}
+*{-webkit-font-smoothing:antialiased;}
+body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;overflow-x:hidden;direction:ltr;}
+[dir=rtl]{font-family:'Noto Nastaliq Urdu',serif;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 50% at 20% 10%,rgba(232,184,75,.06),transparent 55%);pointer-events:none;z-index:0;}
 
 /* ── TOPBAR ── */
-.topbar{padding:calc(env(safe-area-inset-top,0px)+14px) 18px 14px;display:flex;align-items:center;justify-content:space-between;background:rgba(5,8,16,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;}
-.topbar-brand{display:flex;align-items:center;gap:10px;}
-.topbar-gem{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 0 16px rgba(212,175,55,.3);animation:gemPulse 3s ease-in-out infinite;}
-@keyframes gemPulse{0%,100%{box-shadow:0 0 16px rgba(212,175,55,.3);}50%{box-shadow:0 0 28px rgba(212,175,55,.6);}}
-.topbar-name{font-size:14px;font-weight:700;color:var(--text);}
-.topbar-sub{font-size:10px;color:var(--gold);}
-.back-btn{padding:7px 14px;border:1px solid var(--border);border-radius:100px;background:transparent;color:var(--muted);font-family:inherit;font-size:12px;cursor:pointer;transition:all .2s;}
-.back-btn:hover{border-color:var(--gold);color:var(--gold);}
+.topbar{position:sticky;top:0;z-index:50;background:rgba(8,12,20,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;}
+.topbar-brand{display:flex;align-items:center;gap:8px;}
+.topbar-logo{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:15px;}
+.topbar-name{font-size:15px;font-weight:800;color:var(--gold);letter-spacing:-.02em;}
+.topbar-tag{font-size:10px;color:var(--text2);}
+.topbar-right{display:flex;align-items:center;gap:6px;}
+.btn-pill{padding:6px 12px;border-radius:100px;font-family:'Sora',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;text-decoration:none;display:inline-flex;align-items:center;gap:4px;}
+.btn-pill-gold{background:rgba(232,184,75,.1);border:1px solid rgba(232,184,75,.3);color:var(--gold);}
+.btn-pill-ghost{background:transparent;border:1px solid var(--border2);color:var(--text2);}
+.btn-pill-ghost:hover{border-color:var(--border2);color:var(--text);}
 
-/* ── SEARCH + FILTER ── */
-.search-wrap{padding:16px 16px 0;background:rgba(5,8,16,.5);}
-.search-box{display:flex;gap:10px;margin-bottom:12px;}
-.search-input{flex:1;background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:12px 16px;color:var(--text);font-family:inherit;font-size:14px;outline:none;transition:border-color .3s;backdrop-filter:blur(16px);}
+/* ── TRUST BAR ── */
+.trust-bar{background:rgba(232,184,75,.04);border-bottom:1px solid rgba(232,184,75,.08);padding:7px 16px;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;}
+.trust-item{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px;}
+.trust-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green);animation:blink 1.5s ease-in-out infinite;}
+.trust-sep{color:var(--text3);font-size:10px;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── SEARCH + FILTERS ── */
+.search-section{padding:12px 14px 8px;background:rgba(8,12,20,.5);position:relative;z-index:1;}
+.search-row{display:flex;gap:8px;margin-bottom:10px;}
+.search-input{flex:1;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-family:'Sora',sans-serif;font-size:14px;outline:none;transition:border-color .2s;}
 .search-input:focus{border-color:var(--gold);}
-.search-input::placeholder{color:var(--muted);}
-.search-btn{padding:12px 18px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#050810;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.search-input::placeholder{color:var(--text3);}
+.btn-search{padding:10px 14px;border:none;border-radius:10px;background:var(--gold);color:#080c14;font-size:14px;cursor:pointer;font-weight:700;}
+.chips-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
+.chips-row::-webkit-scrollbar{display:none;}
+.chip{flex-shrink:0;padding:5px 13px;border:1px solid var(--border);border-radius:100px;background:transparent;color:var(--text2);font-family:'Sora',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.chip.active{border-color:var(--gold);color:var(--gold);background:rgba(232,184,75,.08);}
+.chip:hover{border-color:rgba(232,184,75,.4);color:var(--text);}
+.area-chip{flex-shrink:0;padding:4px 11px;border:1px solid rgba(56,189,248,.15);border-radius:100px;background:transparent;color:var(--text2);font-family:'Sora',sans-serif;font-size:10px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.area-chip.active{border-color:var(--cyan);color:var(--cyan);background:rgba(56,189,248,.06);}
 
-/* Category chips */
-.cat-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:14px;scrollbar-width:none;}
-.cat-row::-webkit-scrollbar{display:none;}
-.cat-chip{flex-shrink:0;padding:6px 14px;border:1px solid var(--border);border-radius:100px;background:transparent;color:var(--muted);font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap;}
-.cat-chip.active{border-color:var(--gold);color:var(--gold);background:rgba(212,175,55,.08);}
-.cat-chip:hover{border-color:rgba(212,175,55,.4);color:var(--text);}
+/* ── BODY ── */
+.body{flex:1;overflow-y:auto;padding:14px 14px 80px;position:relative;z-index:1;}
 
-/* Area chips */
-.area-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:14px;scrollbar-width:none;}
-.area-row::-webkit-scrollbar{display:none;}
-.area-chip{flex-shrink:0;padding:5px 12px;border:1px solid rgba(0,212,255,.15);border-radius:100px;background:transparent;color:var(--muted);font-family:inherit;font-size:10px;font-weight:600;cursor:pointer;transition:all .2s;}
-.area-chip.active{border-color:var(--cyan);color:var(--cyan);background:rgba(0,212,255,.06);}
+/* ── STATS BANNER ── */
+.stats-banner{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.stat-box{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:11px;text-align:center;backdrop-filter:blur(12px);}
+.stat-val{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--gold2);}
+.stat-lbl{font-size:9px;color:var(--text3);margin-top:2px;font-weight:500;}
 
-/* ── MAIN BODY ── */
-.body{flex:1;overflow-y:auto;padding:16px 16px 80px;}
+/* ── SECTION LABEL ── */
+.sec-label{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;font-family:'Sora',sans-serif;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.sec-label::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(232,184,75,.15),transparent);}
 
-/* Stats banner */
-.stats-banner{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;}
-.banner-stat{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;backdrop-filter:blur(12px);}
-.banner-val{font-family:'Orbitron',monospace;font-size:20px;font-weight:700;color:var(--gold2);}
-.banner-lbl{font-size:9px;color:var(--muted);margin-top:3px;}
-
-/* Section label */
-.sec-lbl{font-size:9px;font-weight:700;color:var(--gold);letter-spacing:2px;font-family:'Orbitron',monospace;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
-.sec-lbl::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(212,175,55,.2),transparent);}
-
-/* ── SHOP CARD ── */
+/* ── SHOP CARDS ── */
 .shop-list{display:flex;flex-direction:column;gap:10px;}
-
-.shop-card{background:var(--glass);border:1px solid var(--border);border-radius:var(--r);padding:16px;backdrop-filter:blur(16px);cursor:pointer;transition:all .3s cubic-bezier(.16,1,.3,1);position:relative;overflow:hidden;animation:cardIn .4s cubic-bezier(.16,1,.3,1) both;}
-.shop-card::before{content:'';position:absolute;right:0;top:0;width:3px;height:100%;background:linear-gradient(180deg,var(--gold),transparent);opacity:0;transition:opacity .3s;}
-.shop-card:hover{border-color:rgba(212,175,55,.3);transform:translateX(-3px);box-shadow:-4px 0 24px rgba(212,175,55,.08);}
+.shop-card{background:var(--glass);border:1px solid var(--border);border-radius:var(--r);padding:16px;backdrop-filter:blur(16px);cursor:pointer;transition:all .25s;position:relative;overflow:hidden;animation:cardIn .4s cubic-bezier(.16,1,.3,1) both;}
+.shop-card::before{content:'';position:absolute;right:0;top:0;width:2px;height:100%;background:linear-gradient(180deg,var(--gold),transparent);opacity:0;transition:opacity .3s;}
+.shop-card:hover{border-color:rgba(232,184,75,.25);transform:translateX(-2px);}
 .shop-card:hover::before{opacity:1;}
-.shop-card.open{border-color:rgba(212,175,55,.15);}
-.shop-card.closed{opacity:.6;cursor:not-allowed;}
-.shop-card.closed:hover{transform:none;box-shadow:none;}
-.shop-card.busy{border-color:rgba(245,158,11,.2);}
-.shop-card.highlighted{border-color:rgba(212,175,55,.5);box-shadow:0 0 30px rgba(212,175,55,.1);animation:highlightPulse 2s ease-in-out 3;}
-@keyframes highlightPulse{0%,100%{box-shadow:0 0 30px rgba(212,175,55,.1);}50%{box-shadow:0 0 50px rgba(212,175,55,.3);}}
-@keyframes cardIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+.shop-card.closed{opacity:.6;cursor:default;}
+.shop-card.closed:hover{transform:none;}
+@keyframes cardIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
 
-.card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
-.shop-icon{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,rgba(212,175,55,.15),rgba(212,175,55,.05));border:1px solid rgba(212,175,55,.15);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
-.shop-info{flex:1;padding-right:12px;}
-.shop-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:3px;}
-.shop-area{font-size:11px;color:var(--muted);}
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px;}
+.shop-icon{width:42px;height:42px;border-radius:11px;background:rgba(232,184,75,.08);border:1px solid rgba(232,184,75,.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.shop-info{flex:1;}
+.shop-name{font-size:15px;font-weight:700;margin-bottom:2px;}
+.shop-meta{font-size:11px;color:var(--text2);}
 
-/* Status badge */
-.status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:100px;font-size:10px;font-weight:700;border:1px solid;white-space:nowrap;flex-shrink:0;}
-.status-badge.open{background:rgba(0,227,150,.1);border-color:var(--green);color:var(--green);}
-.status-badge.closed{background:rgba(255,69,96,.08);border-color:var(--red);color:var(--red);}
-.status-badge.busy{background:rgba(245,158,11,.1);border-color:var(--amber);color:var(--amber);}
-.s-dot{width:6px;height:6px;border-radius:50%;}
-.status-badge.open .s-dot{background:var(--green);box-shadow:0 0 5px var(--green);animation:blink 1.5s ease-in-out infinite;}
-.status-badge.closed .s-dot{background:var(--red);}
-.status-badge.busy .s-dot{background:var(--amber);}
-@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700;border:1px solid;flex-shrink:0;}
+.badge-open  {background:rgba(52,211,153,.1);border-color:var(--green);color:var(--green);}
+.badge-closed{background:rgba(248,113,113,.08);border-color:var(--red);color:var(--red);}
+.badge-busy  {background:rgba(251,191,36,.1);border-color:var(--amber);color:var(--amber);}
+.badge-dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
+.badge-open .badge-dot{animation:blink 1.5s ease-in-out infinite;}
 
-/* Queue bar */
-.queue-bar-wrap{margin-bottom:10px;}
-.queue-bar-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:5px;}
-.queue-bar-track{height:4px;background:rgba(255,255,255,.05);border-radius:100px;overflow:hidden;}
-.queue-bar-fill{height:100%;border-radius:100px;transition:width .5s ease;background:linear-gradient(90deg,var(--green),var(--gold));}
-.queue-bar-fill.busy{background:linear-gradient(90deg,var(--gold),var(--amber));}
-.queue-bar-fill.full{background:linear-gradient(90deg,var(--amber),var(--red));}
+.queue-bar-track{height:3px;background:rgba(255,255,255,.05);border-radius:100px;overflow:hidden;margin:8px 0;}
+.queue-bar-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--green),var(--gold));transition:width .6s ease;}
+.queue-bar-fill.mid {background:linear-gradient(90deg,var(--gold),var(--amber));}
+.queue-bar-fill.high{background:linear-gradient(90deg,var(--amber),var(--red));}
 
-/* Card stats row */
-.card-stats{display:flex;gap:8px;flex-wrap:wrap;}
-.c-stat{background:rgba(5,8,16,.4);border:1px solid var(--border);border-radius:8px;padding:6px 10px;text-align:center;}
-.c-stat-val{font-family:'Orbitron',monospace;font-size:14px;font-weight:700;color:var(--gold2);}
-.c-stat-lbl{font-size:9px;color:var(--muted);}
+.card-stats{display:flex;gap:6px;flex-wrap:wrap;}
+.c-stat{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:7px;padding:5px 9px;text-align:center;}
+.c-stat-val{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--gold2);}
+.c-stat-lbl{font-size:9px;color:var(--text3);margin-top:1px;}
+.c-stat-fee{border-color:rgba(232,184,75,.3);background:rgba(232,184,75,.06);}
+.c-stat-fee .c-stat-val,.c-stat-fee .c-stat-lbl{color:var(--gold);}
 
-/* Suggestion tag */
-.suggestion-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:600;margin-top:8px;}
-.suggestion-tag.alt{background:rgba(0,212,255,.08);color:var(--cyan);border:1px solid rgba(0,212,255,.2);}
-.suggestion-tag.warn{background:rgba(245,158,11,.08);color:var(--amber);border:1px solid rgba(245,158,11,.2);}
-.suggestion-tag.go{background:rgba(0,227,150,.08);color:var(--green);border:1px solid rgba(0,227,150,.2);}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;margin-top:7px;}
+.tag-go  {background:rgba(52,211,153,.07);color:var(--green);border:1px solid rgba(52,211,153,.2);}
+.tag-wait{background:rgba(251,191,36,.07);color:var(--amber);border:1px solid rgba(251,191,36,.2);}
+.tag-alt {background:rgba(56,189,248,.07);color:var(--cyan);border:1px solid rgba(56,189,248,.2);}
 
-/* Timing info for closed shops */
-.timing-info{background:rgba(5,8,16,.4);border:1px solid rgba(255,69,96,.1);border-radius:10px;padding:10px 12px;margin-top:8px;font-size:12px;color:var(--muted);}
-.timing-info strong{color:var(--text);}
+/* ── BUSINESS CTA (mid-list) ── */
+.biz-cta{background:linear-gradient(135deg,rgba(232,184,75,.08),rgba(232,184,75,.02));border:1px dashed rgba(232,184,75,.3);border-radius:var(--r);padding:16px;text-align:center;cursor:pointer;transition:all .2s;}
+.biz-cta:hover{border-color:rgba(232,184,75,.6);}
 
-/* ── TOKEN MODAL ── */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(10px);z-index:100;align-items:flex-end;justify-content:center;padding:0;}
-.modal-overlay.show{display:flex;}
-.modal-sheet{background:var(--surface);border:1px solid rgba(212,175,55,.2);border-radius:24px 24px 0 0;padding:16px 18px 28px;width:100%;max-width:500px;animation:sheetUp .4s cubic-bezier(.16,1,.3,1) both;position:relative;overflow:hidden;max-height:92dvh;overflow-y:auto;}
-.modal-sheet::before{content:'';position:absolute;top:0;left:30px;right:30px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
-@keyframes sheetUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
-.sheet-handle{width:40px;height:4px;background:rgba(255,255,255,.1);border-radius:100px;margin:0 auto 20px;}
-.sheet-shop-name{font-size:18px;font-weight:700;color:var(--gold2);text-align:center;margin-bottom:4px;}
-.sheet-shop-meta{font-size:12px;color:var(--muted);text-align:center;margin-bottom:20px;}
-.sheet-live{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px;}
-.sheet-stat{background:rgba(5,8,16,.5);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;}
-.sheet-stat-val{font-family:'Orbitron',monospace;font-size:18px;font-weight:700;color:var(--gold2);}
-.sheet-stat-lbl{font-size:9px;color:var(--muted);margin-top:3px;}
-.sheet-field{margin-bottom:14px;}
-.sheet-field label{display:block;font-size:11px;color:var(--muted);margin-bottom:7px;}
-.sheet-field input{width:100%;background:rgba(5,8,16,.6);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:inherit;font-size:14px;outline:none;transition:border-color .3s;direction:ltr;text-align:right;}
-.sheet-field input:focus{border-color:var(--gold);box-shadow:0 0 14px rgba(212,175,55,.12);}
-.sheet-field input::placeholder{color:var(--muted);}
-.btn-gold{width:100%;padding:18px;border:none;border-radius:14px;background:linear-gradient(135deg,var(--gold),var(--gold2),var(--gold3));color:#080c14;font-family:'Sora',sans-serif;font-size:17px;font-weight:800;cursor:pointer;transition:all .25s cubic-bezier(.16,1,.3,1);box-shadow:0 8px 32px rgba(232,184,75,.3),0 2px 8px rgba(0,0,0,.3);letter-spacing:-.01em;}
-.btn-gold:hover{transform:translateY(-2px);}
-.btn-gold:disabled{opacity:.5;pointer-events:none;}
-.sheet-err{color:var(--red);font-size:12px;text-align:center;margin-top:10px;min-height:18px;}
-.btn-cancel{width:100%;padding:12px;border:1px solid var(--border);border-radius:12px;background:transparent;color:var(--muted);font-family:inherit;font-size:13px;cursor:pointer;margin-top:8px;transition:all .2s;}
-.btn-cancel:hover{border-color:var(--red);color:var(--red);}
-
-/* ── RATING PROMPT ── */
-.rating-prompt{background:var(--glass);border:1px solid rgba(232,184,75,.25);border-radius:16px;padding:18px 16px;margin-top:12px;text-align:center;display:none;}
-.rating-title{font-size:14px;font-weight:700;margin-bottom:4px;}
-.rating-sub{font-size:11px;color:var(--muted);margin-bottom:14px;}
-.stars-row{display:flex;justify-content:center;gap:8px;margin-bottom:12px;}
-.star-btn{font-size:28px;background:none;border:none;cursor:pointer;transition:transform .15s;filter:grayscale(1);}
-.star-btn:hover,.star-btn.active{filter:grayscale(0);transform:scale(1.2);}
-.rating-done{font-size:13px;color:var(--green);font-weight:600;display:none;}
-
-/* ── TOKEN RESULT SHEET ── */
-.result-wrap{display:none;text-align:center;}
-.big-num{font-family:'JetBrains Mono',monospace;font-size:100px;font-weight:700;letter-spacing:-0.04em;background:linear-gradient(135deg,var(--gold),var(--gold3),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;filter:drop-shadow(0 8px 24px rgba(212,175,55,.4));animation:numPulse 2s ease-in-out infinite;}
-@keyframes numPulse{0%,100%{filter:drop-shadow(0 8px 24px rgba(212,175,55,.4));}50%{filter:drop-shadow(0 8px 36px rgba(212,175,55,.7));}}
-.result-label{font-size:11px;color:var(--gold);letter-spacing:3px;font-family:'JetBrains Mono',monospace;font-weight:600;margin-bottom:10px;}
-.result-greeting{font-size:13px;color:var(--text);margin:4px 0 8px;}
-.result-stats-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
-.rs{background:rgba(5,8,16,.5);border:1px solid var(--border);border-radius:12px;padding:14px;}
-.rs-val{font-family:'Orbitron',monospace;font-size:22px;font-weight:700;color:var(--gold2);}
-.rs-lbl{font-size:10px;color:var(--muted);margin-top:4px;}
-.tracker-box{background:rgba(5,8,16,.5);border:1px solid var(--border);border-radius:14px;padding:10px 14px;margin-bottom:8px;}
-.tracker-hd{font-family:'Orbitron',monospace;font-size:9px;color:var(--gold);letter-spacing:2px;margin-bottom:10px;direction:ltr;}
-.tracker-badge{padding:8px 20px;border-radius:100px;font-size:13px;font-weight:700;border:1px solid;display:inline-block;transition:all .3s;}
-.tracker-badge.waiting{background:rgba(212,175,55,.08);border-color:var(--gold);color:var(--gold);}
-.tracker-badge.called{background:rgba(0,227,150,.12);border-color:var(--green);color:var(--green);animation:calledPulse 1s ease-in-out infinite;}
-.tracker-badge.done{background:rgba(100,116,139,.08);border-color:var(--muted);color:var(--muted);}
-@keyframes calledPulse{0%,100%{box-shadow:0 0 0 0 rgba(0,227,150,.3);}50%{box-shadow:0 0 0 10px rgba(0,227,150,0);}}
-.tracker-sub{font-size:11px;color:var(--muted);margin-top:8px;}
-
-/* Loading */
-.loading{text-align:center;padding:60px 20px;color:var(--muted);}
-.spinner{width:36px;height:36px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 14px;}
+/* ── LOADING / EMPTY ── */
+.loading-box{text-align:center;padding:50px 20px;color:var(--text2);}
+.spinner{width:30px;height:30px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px;}
 @keyframes spin{to{transform:rotate(360deg);}}
-.empty-state{text-align:center;padding:50px 20px;}
-.empty-icon{font-size:44px;margin-bottom:12px;}
-.empty-txt{font-size:14px;color:var(--muted);}
+.empty-box{text-align:center;padding:48px 20px;color:var(--text2);}
 
-/* ── FEATURED SHOP HERO (poster scan mode) ── */
-#featured-section{display:none;margin-bottom:20px;}
+/* ── TOKEN MODAL (bottom sheet) ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(10px);z-index:100;align-items:flex-end;justify-content:center;}
+.modal-overlay.show{display:flex;}
+.modal-sheet{background:var(--bg2);border:1px solid rgba(232,184,75,.2);border-radius:20px 20px 0 0;padding:24px 20px 40px;width:100%;max-width:500px;animation:sheetUp .35s cubic-bezier(.16,1,.3,1) both;position:relative;overflow:hidden;max-height:90dvh;overflow-y:auto;}
+.modal-sheet::before{content:'';position:absolute;top:0;left:25%;right:25%;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+@keyframes sheetUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.sheet-handle{width:36px;height:4px;background:rgba(255,255,255,.1);border-radius:100px;margin:0 auto 18px;}
 
-.featured-hero{
-  background:var(--glass);
-  border:1px solid rgba(212,175,55,.35);
-  border-radius:22px;
-  padding:24px 20px;
-  backdrop-filter:blur(20px);
-  position:relative;
-  overflow:hidden;
-  box-shadow:0 0 50px rgba(212,175,55,.08);
-  animation:heroIn .6s cubic-bezier(.16,1,.3,1) both;
-}
-.featured-hero::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,transparent,var(--gold),var(--cyan),var(--gold),transparent);
-  animation:shimmerLine 3s linear infinite;
-}
-.featured-hero::after{
-  content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse at 50% -10%,rgba(212,175,55,.07),transparent 60%);
-  pointer-events:none;
-}
-@keyframes shimmerLine{0%{background-position:-200%;}100%{background-position:200%;}}
-@keyframes heroIn{from{opacity:0;transform:translateY(20px) scale(.98);}to{opacity:1;transform:translateY(0) scale(1);}}
+.sheet-shop-name{font-size:18px;font-weight:700;color:var(--gold2);text-align:center;margin-bottom:3px;}
+.sheet-shop-meta{font-size:11px;color:var(--text2);text-align:center;margin-bottom:4px;}
+.sheet-shop-hours{font-size:11px;color:var(--text3);text-align:center;margin-bottom:12px;font-family:'JetBrains Mono',monospace;}
 
-.featured-badge{
-  display:inline-flex;align-items:center;gap:5px;
-  padding:4px 12px;border-radius:100px;
-  background:linear-gradient(135deg,rgba(212,175,55,.15),rgba(212,175,55,.05));
-  border:1px solid rgba(212,175,55,.3);
-  font-family:'Orbitron',monospace;font-size:9px;font-weight:700;
-  color:var(--gold);letter-spacing:1px;margin-bottom:14px;
-}
+.sheet-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+.sheet-stat{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;}
+.sheet-stat-val{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:var(--gold2);}
+.sheet-stat-lbl{font-size:9px;color:var(--text3);margin-top:2px;}
 
-.featured-top{display:flex;align-items:flex-start;gap:14px;margin-bottom:16px;}
-.featured-icon{
-  width:60px;height:60px;border-radius:16px;flex-shrink:0;
-  background:linear-gradient(135deg,rgba(212,175,55,.2),rgba(212,175,55,.05));
-  border:1px solid rgba(212,175,55,.25);
-  display:flex;align-items:center;justify-content:center;font-size:26px;
-  box-shadow:0 0 20px rgba(212,175,55,.15);
-}
-.featured-info{flex:1;}
-.featured-name{font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px;line-height:1.3;}
-.featured-meta{font-size:11px;color:var(--muted);}
+.price-banner{background:rgba(232,184,75,.07);border:1px solid rgba(232,184,75,.25);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:none;}
+.price-amount{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;color:var(--gold);}
+.price-note{font-size:11px;color:var(--text2);margin-top:3px;}
 
-.featured-status-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px;}
+.field input{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:9px;padding:11px 13px;color:var(--text);font-family:'Sora',sans-serif;font-size:14px;outline:none;transition:border-color .2s;direction:ltr;}
+.field input:focus{border-color:var(--gold);}
+.field input::placeholder{color:var(--text3);}
 
-/* Live queue bar in hero */
-.featured-bar-wrap{margin-bottom:16px;}
-.featured-bar-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px;}
-.featured-bar-track{height:6px;background:rgba(255,255,255,.05);border-radius:100px;overflow:hidden;}
-.featured-bar-fill{height:100%;border-radius:100px;transition:width .8s ease;}
-.featured-bar-fill.low{background:linear-gradient(90deg,var(--green),#34d399);}
-.featured-bar-fill.mid{background:linear-gradient(90deg,var(--gold),var(--amber));}
-.featured-bar-fill.high{background:linear-gradient(90deg,var(--amber),var(--red));}
+.btn-join{width:100%;padding:15px;border:none;border-radius:11px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#080c14;font-family:'Sora',sans-serif;font-size:16px;font-weight:800;cursor:pointer;transition:all .2s;box-shadow:0 6px 20px rgba(232,184,75,.25);}
+.btn-join:hover{transform:translateY(-1px);box-shadow:0 10px 28px rgba(232,184,75,.4);}
+.btn-join:disabled{opacity:.5;pointer-events:none;}
+.btn-cancel-sheet{width:100%;padding:11px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--text2);font-family:'Sora',sans-serif;font-size:13px;cursor:pointer;margin-top:8px;transition:all .2s;}
+.btn-cancel-sheet:hover{border-color:var(--red);color:var(--red);}
+.sheet-err{color:var(--red);font-size:12px;text-align:center;margin-top:8px;min-height:18px;}
 
-/* Featured stats */
-.featured-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;}
-.featured-stat{
-  background:rgba(5,8,16,.5);border:1px solid var(--border);
-  border-radius:12px;padding:12px 8px;text-align:center;
-}
-.featured-stat-val{font-family:'Orbitron',monospace;font-size:20px;font-weight:700;color:var(--gold2);}
-.featured-stat-lbl{font-size:9px;color:var(--muted);margin-top:3px;}
+/* ── TOKEN RESULT ── */
+.result-wrap{display:none;text-align:center;}
+.token-label{font-size:10px;color:var(--gold);letter-spacing:.12em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:8px;}
+.token-big{font-family:'JetBrains Mono',monospace;font-size:100px;font-weight:700;line-height:1;background:linear-gradient(135deg,var(--gold),var(--gold2),#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 6px 20px rgba(232,184,75,.4));animation:float 2.5s ease-in-out infinite;letter-spacing:-.04em;}
+@keyframes float{0%,100%{filter:drop-shadow(0 6px 20px rgba(232,184,75,.35));}50%{filter:drop-shadow(0 10px 30px rgba(232,184,75,.65));transform:translateY(-3px);}}
+.token-greeting{font-size:14px;color:var(--text);margin:8px 0 14px;}
 
-/* Big CTA button */
-.featured-btn{
-  width:100%;padding:16px;border:none;border-radius:14px;
-  background:linear-gradient(135deg,var(--gold),var(--gold2),var(--gold3));
-  color:#050810;font-family:inherit;font-size:16px;font-weight:700;
-  cursor:pointer;transition:transform .2s,box-shadow .2s;
-  box-shadow:0 8px 32px rgba(212,175,55,.35);
-  display:flex;align-items:center;justify-content:center;gap:10px;
-}
-.featured-btn:hover{transform:translateY(-2px);box-shadow:0 14px 40px rgba(212,175,55,.5);}
-.featured-btn:disabled{opacity:.5;pointer-events:none;background:rgba(212,175,55,.3);}
-.featured-btn-arrow{font-size:18px;transition:transform .2s;}
-.featured-btn:hover .featured-btn-arrow{transform:translateX(-4px);}
+.result-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.r-stat{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:14px;}
+.r-stat-val{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;color:var(--text);}
+.r-stat-lbl{font-size:10px;color:var(--text2);margin-top:3px;}
 
-/* Closed featured shop */
-.featured-closed-banner{
-  background:rgba(255,69,96,.05);border:1px solid rgba(255,69,96,.15);
-  border-radius:12px;padding:14px 16px;text-align:center;margin-bottom:12px;
-}
-.featured-closed-title{font-size:14px;font-weight:700;color:var(--red);margin-bottom:4px;}
-.featured-closed-sub{font-size:12px;color:var(--muted);}
-.featured-closed-hours{
-  display:inline-flex;align-items:center;gap:6px;margin-top:10px;
-  background:rgba(5,8,16,.4);border:1px solid var(--border);
-  border-radius:100px;padding:5px 14px;font-size:11px;color:var(--text);
-  font-family:'Orbitron',monospace;direction:ltr;
-}
+.tracker-box{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:13px;padding:14px;margin-bottom:12px;}
+.tracker-label{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;}
+.tracker-badge{display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:100px;font-size:14px;font-weight:600;border:1px solid;transition:all .3s;}
+.tracker-badge.waiting{background:rgba(232,184,75,.08);border-color:var(--gold);color:var(--gold);}
+.tracker-badge.called {background:rgba(52,211,153,.1);border-color:var(--green);color:var(--green);animation:callPulse 1s ease-in-out infinite;}
+.tracker-badge.done   {background:rgba(148,163,184,.06);border-color:var(--text3);color:var(--text2);}
+@keyframes callPulse{0%,100%{box-shadow:0 0 0 0 rgba(52,211,153,.3);}50%{box-shadow:0 0 0 10px rgba(52,211,153,0);}}
+.tracker-sub{font-size:11px;color:var(--text2);margin-top:8px;}
 
-/* Suggestions strip */
-.suggestions-strip{margin-bottom:4px;}
-.suggestions-scroll{
-  display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;
-  scrollbar-width:none;
-}
-.suggestions-scroll::-webkit-scrollbar{display:none;}
-.suggest-card{
-  flex-shrink:0;width:170px;
-  background:var(--glass);border:1px solid var(--border);
-  border-radius:14px;padding:12px;backdrop-filter:blur(12px);
-  cursor:pointer;transition:all .25s;
-  animation:cardIn .4s cubic-bezier(.16,1,.3,1) both;
-}
-.suggest-card:hover{border-color:rgba(212,175,55,.3);transform:translateY(-2px);}
-.suggest-card.closed{opacity:.55;cursor:not-allowed;}
-.suggest-card.closed:hover{transform:none;}
-.suggest-icon{font-size:20px;margin-bottom:8px;}
-.suggest-name{font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.suggest-area{font-size:10px;color:var(--muted);margin-bottom:6px;}
-.suggest-queue{font-size:10px;font-family:'Orbitron',monospace;}
-.suggest-queue.open{color:var(--green);}
-.suggest-queue.busy{color:var(--amber);}
-.suggest-queue.closed-txt{color:var(--red);}
-.suggest-tag-chip{
-  display:inline-block;margin-top:5px;padding:2px 7px;border-radius:4px;
-  font-size:9px;font-weight:700;
-}
-.suggest-tag-chip.same-cat{background:rgba(0,212,255,.08);color:var(--cyan);border:1px solid rgba(0,212,255,.15);}
-.suggest-tag-chip.near{background:rgba(0,227,150,.08);color:var(--green);border:1px solid rgba(0,227,150,.15);}
-
-/* Divider before full list */
-.list-divider{
-  display:flex;align-items:center;gap:12px;margin:20px 0 14px;
-}
-.list-divider-line{flex:1;height:1px;background:linear-gradient(90deg,rgba(212,175,55,.15),transparent);}
-.list-divider-txt{font-family:'Orbitron',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;white-space:nowrap;}
-
-
-
-/* ── COUNTDOWN TIMER ── */
-.countdown-wrap {
-  text-align: center;
-  margin: 6px 0;
-}
-.countdown-ring {
-  position: relative;
-  width: 80px;
-  height: 80px;
-  margin: 0 auto 6px;
-}
-.countdown-svg {
-  width: 80px;
-  height: 80px;
-  transform: rotate(-90deg);
-}
-.countdown-track {
-  fill: none;
-  stroke: rgba(255,255,255,0.06);
-  stroke-width: 6;
-}
-.countdown-progress {
-  fill: none;
-  stroke: var(--gold);
-  stroke-width: 6;
-  stroke-linecap: round;
-  stroke-dasharray: 339.3;
-  stroke-dashoffset: 0;
-  transition: stroke-dashoffset 1s linear, stroke 0.5s;
-}
-.countdown-progress.urgent { stroke: var(--red); }
-.countdown-num {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-.countdown-mins {
-  font-family: 'Orbitron', monospace;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--gold2);
-  line-height: 1;
-}
-.countdown-mins.urgent { color: var(--red); }
-.countdown-lbl {
-  font-size: 9px;
-  color: var(--muted);
-  letter-spacing: 1px;
-  margin-top: 2px;
-  font-family: 'Orbitron', monospace;
-}
-
-/* ── BIG TOKEN CTA ── */
-.big-join-btn {
-  display: block;
-  width: 100%;
-  max-width: 320px;
-  margin: 0 auto;
-  padding: 18px 32px;
-  border: none;
-  border-radius: 100px;
-  background: linear-gradient(135deg, var(--gold), var(--gold2), var(--gold3));
-  color: #050810;
-  font-family: 'Orbitron', monospace;
-  font-size: 16px;
-  font-weight: 900;
-  letter-spacing: 1px;
-  cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
-  box-shadow: 0 8px 32px rgba(212,175,55,0.4), 0 2px 8px rgba(0,0,0,0.3);
-  position: relative;
-  overflow: hidden;
-}
-.big-join-btn::before {
-  content: '';
-  position: absolute;
-  top: -50%; left: -50%;
-  width: 200%; height: 200%;
-  background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.25) 50%, transparent 70%);
-  transform: rotate(45deg) translateX(-100%);
-  transition: transform 0.6s;
-}
-.big-join-btn:hover::before { transform: rotate(45deg) translateX(100%); }
-.big-join-btn:hover {
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 16px 48px rgba(212,175,55,0.55), 0 4px 12px rgba(0,0,0,0.3);
-}
-.big-join-btn:active { transform: scale(0.98); }
-.big-join-btn:disabled {
-  opacity: 0.4;
-  pointer-events: none;
-  background: rgba(212,175,55,0.3);
-  box-shadow: none;
-}
-.big-join-btn-icon { font-size: 20px; margin-bottom: 4px; display: block; }
-
-/* Center the join form */
-.join-form-center { text-align: center; }
-.join-form-center .sheet-field { text-align: right; }
-
-/* Result big number */
-.result-token-display {
-  text-align: center;
-  padding: 8px 0 6px;
-}
-.result-token-num {
-  font-family: 'Orbitron', monospace;
-  font-size: 72px;
-  font-weight: 900;
-  background: linear-gradient(135deg, var(--gold), var(--gold3), var(--cyan));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  line-height: 1;
-  filter: drop-shadow(0 4px 20px rgba(212,175,55,0.5));
-  animation: numPulse 2s ease-in-out infinite;
-}
-
+.btn-share-link{width:100%;padding:12px;border:1px solid var(--border2);border-radius:10px;background:transparent;color:var(--text2);font-family:'Sora',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:8px;}
+.btn-share-link:hover{border-color:var(--cyan);color:var(--cyan);background:rgba(56,189,248,.05);}
+.btn-cancel-token{width:100%;padding:10px;border:1px solid rgba(248,113,113,.2);border-radius:10px;background:transparent;color:var(--text3);font-family:'Sora',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;}
+.btn-cancel-token:hover{border-color:var(--red);color:var(--red);background:rgba(248,113,113,.05);}
 </style>
 </head>
 <body>
-<canvas id="particle-canvas"></canvas>
-<div class="holo-grid"></div>
-<div id="app">
-
-  <!-- ── TOPBAR ── -->
-  <div class="topbar">
-    <div class="topbar-brand">
-      <div class="topbar-gem">🏪</div>
-      <div>
-        <div class="topbar-name">WaitMate</div>
-        <div class="topbar-sub" style="font-family:'Dancing Script',cursive;font-size:13px;background:linear-gradient(90deg,var(--gold),#fff8e7,var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:0.3px">Your Smart Queue Partner</div>
-      </div>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center">
-      <button onclick="toggleLangAndReload()" id="cust-lang-btn"
-        style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;
-               border:1px solid rgba(232,184,75,0.3);border-radius:100px;
-               background:rgba(232,184,75,0.06);color:#E8B84B;
-               font-family:'Sora',sans-serif;font-size:12px;font-weight:600;cursor:pointer">
-        🌐 <span id="lang-label">اردو</span>
-      </button>
-      <button onclick="window.location.href='/'" 
-        style="padding:7px 13px;border:1px solid rgba(255,255,255,0.08);border-radius:100px;
-               background:transparent;color:#94A3B8;font-family:'Sora',sans-serif;
-               font-size:12px;font-weight:500;cursor:pointer" data-en="← Back" data-ur="← واپس">← Back</button>
+<!-- ── TOPBAR ── -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-logo">🏪</div>
+    <div>
+      <div class="topbar-name">WaitMate</div>
+      <div class="topbar-tag" id="topbar-tag">Skip the line</div>
     </div>
   </div>
-
-  <!-- ── LIVE TRUST BAR ── -->
-  <div id="trust-bar" style="background:rgba(232,184,75,0.05);border-bottom:1px solid rgba(232,184,75,0.1);padding:8px 18px;display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;">
-    <span style="font-size:11px;color:#94A3B8;display:flex;align-items:center;gap:5px">
-      <span style="width:6px;height:6px;background:#34D399;border-radius:50%;display:inline-block;box-shadow:0 0 6px #34D399;animation:blink 1.5s ease-in-out infinite"></span>
-      <span id="trust-open">—</span> shops open now
-    </span>
-    <span style="color:rgba(255,255,255,0.12);font-size:10px">|</span>
-    <span style="font-size:11px;color:#94A3B8"><span id="trust-tokens">—</span> tokens issued today</span>
-    <span style="color:rgba(255,255,255,0.12);font-size:10px">|</span>
-    <span style="font-size:11px;color:#94A3B8"><span id="trust-shops">—</span> shops across Pakistan</span>
+  <div class="topbar-right">
+    <button class="btn-pill btn-pill-gold" onclick="toggleLangAndReload()" id="lang-btn">🌐 اردو</button>
+    <a href="/" class="btn-pill btn-pill-ghost" id="back-btn">← Back</a>
   </div>
-
-  <!-- ── SEARCH + FILTERS ── -->
-  <div class="search-wrap">
-    <div class="search-box">
-      <input class="search-input" id="search-input" type="text" placeholder="دکان یا علاقہ تلاش کریں..." oninput="onSearch()"/>
-      <button class="search-btn" onclick="loadShops()">🔍</button>
-    </div>
-
-    <!-- City quick-filter -->
-    <div style="display:flex;gap:6px;overflow-x:auto;padding:6px 0;scrollbar-width:none" id="city-filter-row">
-      <button class="cat-chip active" data-city="" onclick="filterCity('')" data-en="🌍 All" data-ur="🌍 سب">🌍 All</button>
-      <button class="cat-chip" data-city="Islamabad"  onclick="filterCity('Islamabad')"  data-en="📍 Islamabad"  data-ur="📍 اسلام آباد">📍 Islamabad</button>
-      <button class="cat-chip" data-city="Rawalpindi" onclick="filterCity('Rawalpindi')" data-en="📍 Rawalpindi" data-ur="📍 راولپنڈی">📍 Rawalpindi</button>
-      <button class="cat-chip" data-city="Lahore"     onclick="filterCity('Lahore')"     data-en="📍 Lahore"     data-ur="📍 لاہور">📍 Lahore</button>
-      <button class="cat-chip" data-city="Karachi"    onclick="filterCity('Karachi')"    data-en="📍 Karachi"    data-ur="📍 کراچی">📍 Karachi</button>
-      <button class="cat-chip" data-city="Peshawar"   onclick="filterCity('Peshawar')"   data-en="📍 Peshawar"   data-ur="📍 پشاور">📍 Peshawar</button>
-    </div>
-
-    <!-- Category filter -->
-    <div class="cat-row" id="cat-row">
-      <button class="cat-chip active" onclick="filterCat('')" data-cat="" data-en="All" data-ur="سب">All</button>
-      <button class="cat-chip" onclick="filterCat('barber')"   data-cat="barber"   data-en="✂️ Barber"   data-ur="✂️ حجام">✂️ Barber</button>
-      <button class="cat-chip" onclick="filterCat('clinic')"   data-cat="clinic"   data-en="🏥 Clinic"   data-ur="🏥 کلینک">🏥 Clinic</button>
-      <button class="cat-chip" onclick="filterCat('pharmacy')" data-cat="pharmacy" data-en="💊 Pharmacy" data-ur="💊 فارمیسی">💊 Pharmacy</button>
-      <button class="cat-chip" onclick="filterCat('bank')"     data-cat="bank"     data-en="🏦 Bank"     data-ur="🏦 بینک">🏦 Bank</button>
-      <button class="cat-chip" onclick="filterCat('govt')"     data-cat="govt"     data-en="🏛️ Govt"     data-ur="🏛️ سرکاری">🏛️ Govt</button>
-      <button class="cat-chip" onclick="filterCat('tailor')"   data-cat="tailor"   data-en="🧵 Tailor"   data-ur="🧵 درزی">🧵 Tailor</button>
-    </div>
-
-    <!-- Area filter (populated dynamically) -->
-    <div class="area-row" id="area-row" style="display:none"></div>
-
-    <!-- Add Business CTA -->
-    <div style="padding:10px 0 4px">
-      <button onclick="window.location.href='/register.html'"
-        style="width:100%;padding:13px 16px;border:none;border-radius:14px;background:linear-gradient(135deg,rgba(212,175,55,.18),rgba(212,175,55,.08));border:1px solid rgba(212,175,55,.35);color:var(--gold);font-family:'Sora',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s;box-shadow:0 2px 12px rgba(212,175,55,.1)">
-        <span style="font-size:20px">🏪</span>
-        <div style="text-align:right">
-          <div>اپنا کاروبار شامل کریں</div>
-          <div style="font-size:10px;font-weight:400;color:rgba(212,175,55,.7);margin-top:1px">Apna Business Add Karein →</div>
-        </div>
-      </button>
-    </div>
-  </div>
-
-
-  <!-- First-time visitor welcome bar -->
-  <div id="first-visit-bar" style="display:none;background:linear-gradient(135deg,rgba(232,184,75,.1),rgba(232,184,75,.05));border-bottom:1px solid rgba(232,184,75,.2);padding:10px 16px;text-align:center">
-    <span style="font-size:12px;color:#94A3B8">New to WaitMate? </span>
-    <span style="font-size:12px;color:#E8B84B;font-weight:600">Get tokens at any shop — no waiting in line.</span>
-    <a href="/home" style="font-size:11px;color:#E8B84B;margin-left:8px;text-decoration:none;font-weight:700">Learn more →</a>
-  </div>
-
-  <!-- ── FEATURED SHOP SECTION (when ?shop= param present) ── -->
-  <div id="featured-section">
-    <!-- Hero card -->
-    <div id="featured-hero" class="featured-hero">
-      <!-- populated by JS -->
-    </div>
-
-    <!-- Relevant suggestions strip -->
-    <div class="suggestions-strip" id="suggestions-strip" style="display:none">
-      <div class="sec-lbl" style="margin-top:18px;margin-bottom:10px" id="suggest-label">متعلقہ دکانیں</div>
-      <div class="suggestions-scroll" id="suggestions-scroll"></div>
-    </div>
-
-    <!-- Divider before full list -->
-    <div class="list-divider" id="list-divider" style="display:none">
-      <div class="list-divider-line"></div>
-      <div class="list-divider-txt">ALL SHOPS</div>
-      <div class="list-divider-line" style="background:linear-gradient(270deg,rgba(212,175,55,.15),transparent)"></div>
-    </div>
-  </div>
-  <!-- ── BODY ── -->
-  <div class="body" id="main-body">
-    <div class="loading" id="loading-state">
-      <div class="spinner"></div>
-      <div>دکانیں لوڈ ہو رہی ہیں...</div>
-    </div>
-    <div id="shops-container" style="display:none">
-      <!-- Stats banner -->
-      <div class="stats-banner">
-        <div class="banner-stat"><div class="banner-val" id="b-open">0</div><div class="banner-lbl">کھلی دکانیں</div></div>
-        <div class="banner-stat"><div class="banner-val" id="b-total">0</div><div class="banner-lbl">کل دکانیں</div></div>
-        <div class="banner-stat"><div class="banner-val" id="b-tokens">0</div><div class="banner-lbl">قطار میں</div></div>
-      </div>
-      <div class="sec-lbl" id="shops-section-label">تمام دکانیں</div>
-      <div class="shop-list" id="shop-list"></div>
-    </div>
-    <div class="empty-state" id="empty-state" style="display:none">
-      <div class="empty-icon">🔍</div>
-      <div class="empty-txt" data-en="No shops found" data-ur="کوئی دکان نہیں ملی">No shops found</div>
-    </div>
-
-    <!-- Related shops — shown when arriving via shared link -->
-    <div id="related-shops-section" style="display:none;margin-top:24px;padding:0 4px">
-      <div class="sec-lbl" style="margin-bottom:10px">🏪 قریبی دکانیں</div>
-      <div id="related-shops-list" class="shop-list"></div>
-    </div>
-  </div>
-
 </div>
 
-<!-- ── TOKEN MODAL (bottom sheet) ── -->
-<div class="modal-overlay" id="token-modal" onclick="handleOverlayClick(event)">
-  <div class="modal-sheet" id="modal-sheet">
+<!-- ── TRUST BAR ── -->
+<div class="trust-bar">
+  <span class="trust-item"><span class="trust-dot"></span><span id="t-open">—</span> <span id="t-open-lbl">open now</span></span>
+  <span class="trust-sep">·</span>
+  <span class="trust-item"><span id="t-tokens">—</span> <span id="t-tokens-lbl">tokens today</span></span>
+  <span class="trust-sep">·</span>
+  <span class="trust-item"><span id="t-shops">—</span> <span id="t-shops-lbl">shops</span></span>
+</div>
+
+<!-- ── SEARCH + FILTERS ── -->
+<div class="search-section">
+  <div class="search-row">
+    <input class="search-input" id="search-input" type="text" placeholder="Search shops or areas..." oninput="onSearch()"/>
+    <button class="btn-search" onclick="loadShops()">🔍</button>
+  </div>
+
+  <!-- City chips -->
+  <div class="chips-row" id="city-row" style="margin-bottom:7px">
+    <button class="chip active" data-city="" data-en="All Cities" data-ur="سب شہر" onclick="filterCity('')">All Cities</button>
+    <button class="chip" data-city="Islamabad"  data-en="📍 Islamabad"  data-ur="📍 اسلام آباد" onclick="filterCity('Islamabad')">📍 Islamabad</button>
+    <button class="chip" data-city="Rawalpindi" data-en="📍 Rawalpindi" data-ur="📍 راولپنڈی"  onclick="filterCity('Rawalpindi')">📍 Rawalpindi</button>
+    <button class="chip" data-city="Lahore"     data-en="📍 Lahore"     data-ur="📍 لاہور"      onclick="filterCity('Lahore')">📍 Lahore</button>
+    <button class="chip" data-city="Karachi"    data-en="📍 Karachi"    data-ur="📍 کراچی"      onclick="filterCity('Karachi')">📍 Karachi</button>
+  </div>
+
+  <!-- Category chips -->
+  <div class="chips-row" id="cat-row" style="margin-bottom:7px">
+    <button class="chip active" data-cat="" data-en="All" data-ur="سب" onclick="filterCat('')">All</button>
+    <button class="chip" data-cat="barber"   data-en="✂️ Barber"   data-ur="✂️ حجام"    onclick="filterCat('barber')">✂️ Barber</button>
+    <button class="chip" data-cat="clinic"   data-en="🏥 Clinic"   data-ur="🏥 کلینک"   onclick="filterCat('clinic')">🏥 Clinic</button>
+    <button class="chip" data-cat="pharmacy" data-en="💊 Pharmacy" data-ur="💊 فارمیسی" onclick="filterCat('pharmacy')">💊 Pharmacy</button>
+    <button class="chip" data-cat="bank"     data-en="🏦 Bank"     data-ur="🏦 بینک"    onclick="filterCat('bank')">🏦 Bank</button>
+    <button class="chip" data-cat="govt"     data-en="🏛️ Govt"     data-ur="🏛️ سرکاری" onclick="filterCat('govt')">🏛️ Govt</button>
+  </div>
+
+  <!-- Area chips (populated from API) -->
+  <div class="chips-row" id="area-row" style="display:none"></div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="body" id="main-body">
+  <div id="loading-box" class="loading-box">
+    <div class="spinner"></div>
+    <div id="loading-msg">Loading shops...</div>
+  </div>
+
+  <div id="shops-box" style="display:none">
+    <div class="stats-banner">
+      <div class="stat-box"><div class="stat-val" id="b-open">0</div><div class="stat-lbl" id="b-open-lbl">Open</div></div>
+      <div class="stat-box"><div class="stat-val" id="b-total">0</div><div class="stat-lbl" id="b-total-lbl">Total</div></div>
+      <div class="stat-box"><div class="stat-val" id="b-queue">0</div><div class="stat-lbl" id="b-queue-lbl">In Queue</div></div>
+    </div>
+    <div class="sec-label" id="sec-label">All Shops</div>
+    <div class="shop-list" id="shop-list"></div>
+  </div>
+
+  <div id="empty-box" class="empty-box" style="display:none">
+    <div style="font-size:40px;margin-bottom:10px">🔍</div>
+    <div id="empty-msg">No shops found</div>
+    <a href="/register.html" style="display:inline-block;margin-top:14px;padding:9px 20px;border:1px solid var(--gold);border-radius:100px;color:var(--gold);text-decoration:none;font-size:12px;font-weight:600">Register your business free →</a>
+  </div>
+</div>
+
+<!-- ── TOKEN MODAL ── -->
+<div class="modal-overlay" id="token-modal" onclick="handleModalOverlay(event)">
+  <div class="modal-sheet">
     <div class="sheet-handle"></div>
 
-    <!-- Join form -->
+    <!-- JOIN FORM -->
     <div id="join-form-wrap">
       <div class="sheet-shop-name" id="m-shop-name">—</div>
       <div class="sheet-shop-meta" id="m-shop-meta">—</div>
-      <div id="m-shop-address" style="font-size:11px;color:var(--muted);text-align:center;margin-top:2px;display:none">📍 <span id="m-addr-txt"></span></div>
-      <div id="m-shop-hours" style="font-size:11px;color:var(--muted);text-align:center;margin-top:2px;margin-bottom:6px;display:none;font-family:'Orbitron',monospace;font-size:10px">⏰ <span id="m-hours-txt"></span></div>
+      <div class="sheet-shop-hours" id="m-shop-hours" style="display:none"></div>
 
-      <!-- Live stats inside modal -->
-      <div class="sheet-live">
-        <div class="sheet-stat"><div class="sheet-stat-val" id="m-current">—</div><div class="sheet-stat-lbl">ابھی نمبر</div></div>
-        <div class="sheet-stat"><div class="sheet-stat-val" id="m-queue">—</div><div class="sheet-stat-lbl">قطار</div></div>
-        <div class="sheet-stat"><div class="sheet-stat-val" id="m-wait">—</div><div class="sheet-stat-lbl">منٹ</div></div>
+      <div class="sheet-stats">
+        <div class="sheet-stat"><div class="sheet-stat-val" id="m-serving">—</div><div class="sheet-stat-lbl" id="m-serving-lbl">Now Serving</div></div>
+        <div class="sheet-stat"><div class="sheet-stat-val" id="m-queue">—</div><div class="sheet-stat-lbl" id="m-queue-lbl">In Queue</div></div>
+        <div class="sheet-stat"><div class="sheet-stat-val" id="m-wait">—</div><div class="sheet-stat-lbl" id="m-wait-lbl">Min Wait</div></div>
       </div>
 
-      <!-- Token price banner (shown for paid shops) -->
-      <div id="m-token-price-banner" style="display:none;background:rgba(212,175,55,.08);border:1px solid rgba(212,175,55,.3);border-radius:12px;padding:12px 14px;margin-bottom:14px"></div>
-
-      <div class="sheet-field">
-        <label>آپ کا نام *</label>
-        <input id="c-name" type="text" placeholder="نام درج کریں"/>
-      </div>
-      <div class="sheet-field">
-        <label>فون نمبر (اختیاری)</label>
-        <input id="c-phone" type="tel" placeholder="03001234567"/>
+      <div class="price-banner" id="price-banner">
+        <div class="price-amount" id="price-amount">Rs 0</div>
+        <div class="price-note" id="price-note">Pay before getting token · Upload screenshot below</div>
       </div>
 
-      <!-- Paid token section — shown dynamically -->
-      <div id="paid-token-section" style="display:none;margin-top:10px;background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.25);border-radius:14px;padding:14px">
-        <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:4px">💳 ادائیگی ضروری ہے</div>
-        <div id="paid-amount-txt" style="font-size:13px;color:var(--text);margin-bottom:12px;font-weight:600"></div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.5">Easypaisa / JazzCash پر ادائیگی کریں، پھر اسکرین شاٹ یہاں اپلوڈ کریں:</div>
-        <div class="sheet-field" style="margin-bottom:8px">
-          <label style="font-size:11px;color:var(--gold);font-weight:600;margin-bottom:6px;display:block">📸 پیمنٹ اسکرین شاٹ اپلوڈ کریں</label>
-          <input id="c-screenshot-file" type="file" accept="image/*" onchange="previewScreenshot(this)"
-            style="display:none"/>
-          <div onclick="document.getElementById('c-screenshot-file').click()"
-            id="screenshot-drop"
-            style="border:1.5px dashed rgba(212,175,55,.4);border-radius:10px;padding:18px;text-align:center;cursor:pointer;transition:all .2s;background:rgba(212,175,55,.03)"
-            onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='rgba(212,175,55,.4)'">
-            <div style="font-size:24px;margin-bottom:4px">📷</div>
-            <div style="font-size:12px;color:var(--muted)">تصویر منتخب کریں یا یہاں ٹیپ کریں</div>
-          </div>
-          <div id="screenshot-preview" style="display:none;margin-top:8px;position:relative">
-            <img id="screenshot-img" style="width:100%;border-radius:8px;max-height:140px;object-fit:cover;border:1px solid rgba(212,175,55,.2)"/>
-            <button onclick="clearScreenshot()" style="position:absolute;top:4px;right:4px;padding:2px 7px;border:none;border-radius:6px;background:rgba(255,69,96,.8);color:#fff;font-size:11px;cursor:pointer">✕</button>
-          </div>
-        </div>
-        <input type="hidden" id="c-screenshot-data"/>
-        <div style="font-size:10px;color:var(--muted);margin-top:6px">اسکرین شاٹ لگانے کے بعد درخواست دیں — دکان منظور کرے گی تو فوری ٹوکن ملے گا</div>
+      <div class="field">
+        <label id="lbl-name">Your Name *</label>
+        <input id="c-name" type="text" placeholder="Enter your name" autocomplete="name"/>
+      </div>
+      <div class="field">
+        <label id="lbl-phone">Phone <span style="font-weight:400;text-transform:none;color:var(--text3)">(optional)</span></label>
+        <input id="c-phone" type="tel" placeholder="03001234567" autocomplete="tel"/>
       </div>
 
-      <div class="join-form-center" style="margin-top:16px">
-        <button class="big-join-btn" id="join-btn" onclick="submitJoin()">
-          <span class="big-join-btn-icon">🎫</span>
-          <span id="join-btn-label">GET MY TOKEN</span>
-        </button>
-      </div>
+      <button class="btn-join" id="join-btn" onclick="submitJoin()">🎫 Get My Token</button>
       <div class="sheet-err" id="sheet-err"></div>
-      <button class="btn-cancel" onclick="closeModal()">منسوخ کریں</button>
+      <button class="btn-cancel-sheet" onclick="closeModal()">Cancel</button>
     </div>
 
-    <!-- Token result -->
+    <!-- TOKEN RESULT -->
     <div class="result-wrap" id="result-wrap">
-      <div class="result-token-display">
-        <div class="result-label" style="font-size:10px;letter-spacing:2px;margin-bottom:4px">YOUR TOKEN NUMBER</div>
-        <div class="result-token-num" id="r-num">—</div>
-      </div>
-    <div class="countdown-wrap" id="countdown-wrap" style="display:none">
-      <div class="countdown-ring">
-        <svg class="countdown-svg" viewBox="0 0 120 120">
-          <circle class="countdown-track" cx="60" cy="60" r="54"/>
-          <circle class="countdown-progress" id="countdown-circle" cx="60" cy="60" r="54"/>
-        </svg>
-        <div class="countdown-num">
-          <div class="countdown-mins" id="countdown-val">—</div>
-          <div class="countdown-lbl">MINUTES</div>
+      <div class="token-label">YOUR TOKEN NUMBER</div>
+      <div class="token-big" id="r-num">—</div>
+      <div class="token-greeting" id="r-greeting">You're in the queue! 🎉</div>
+
+      <div style="background:rgba(56,189,248,.05);border:1px solid rgba(56,189,248,.18);border-radius:9px;padding:10px 13px;margin-bottom:14px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:18px">🔖</span>
+        <div style="flex:1;text-align:left">
+          <div style="font-size:11px;font-weight:700;color:#38BDF8;margin-bottom:1px">Save this shop's link</div>
+          <div style="font-size:10px;color:var(--text3)">Use it every visit — no scanning needed</div>
         </div>
-      </div>
-    </div>
-      <div class="result-greeting">🎉 <span id="r-greeting">آپ کی باری آئے گی!</span></div>
-      <div style="background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.2);border-radius:10px;padding:10px 14px;margin:10px 0;display:flex;align-items:center;gap:10px;text-align:right">
-        <span style="font-size:18px;flex-shrink:0">🔖</span>
-        <div style="flex:1">
-          <div style="font-size:12px;font-weight:700;color:#38BDF8;margin-bottom:2px" id="save-link-title">Save this shop's link</div>
-          <div style="font-size:10px;color:var(--muted)" id="save-link-sub">Next time, open it directly — no scanning needed</div>
-        </div>
-        <button onclick="shareShopSaveLink()" style="padding:5px 11px;border:1px solid rgba(56,189,248,.3);border-radius:100px;background:transparent;color:#38BDF8;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap" id="save-link-btn">Save →</button>
+        <button onclick="shareShopSaveLink()" style="padding:5px 10px;border:1px solid rgba(56,189,248,.3);border-radius:100px;background:transparent;color:#38BDF8;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit">Share →</button>
       </div>
 
-      <div class="result-stats-row">
-        <div class="rs"><div class="rs-val" id="r-pos">—</div><div class="rs-lbl">نمبر قطار میں</div></div>
-        <div class="rs"><div class="rs-val" id="r-wait-val">—</div><div class="rs-lbl">منٹ انتظار</div></div>
+      <div class="result-stats">
+        <div class="r-stat"><div class="r-stat-val" id="r-pos">—</div><div class="r-stat-lbl" id="r-pos-lbl">Position</div></div>
+        <div class="r-stat"><div class="r-stat-val" id="r-wait">—</div><div class="r-stat-lbl" id="r-wait-lbl">Est. Wait (min)</div></div>
       </div>
 
       <div class="tracker-box">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-          <div class="tracker-hd">LIVE POSITION</div>
-          <button id="mute-btn" onclick="toggleMute()"
-            style="display:flex;align-items:center;gap:5px;padding:5px 10px;border:1px solid rgba(212,175,55,.25);border-radius:20px;background:transparent;cursor:pointer;font-size:11px;font-family:'Sora',sans-serif;transition:all .2s">
-            <span id="mute-icon">🔊</span>
-            <span id="mute-label" style="color:var(--gold)">Alerts On</span>
-          </button>
+        <div class="tracker-label">LIVE STATUS</div>
+        <div class="tracker-badge waiting" id="tracker-badge">
+          <span class="badge-dot" style="width:7px;height:7px;border-radius:50%;background:currentColor;animation:blink 1.5s ease-in-out infinite"></span>
+          <span id="tracker-txt">Waiting in queue</span>
         </div>
-        <div class="tracker-badge waiting" id="tracker-badge">انتظار میں ہیں</div>
-        <div class="tracker-sub" id="tracker-sub">ہر 10 سیکنڈ میں خودبخود اپڈیٹ ہوتا ہے</div>
+        <div class="tracker-sub" id="tracker-sub">Updates every 15 seconds</div>
       </div>
 
-      <!-- Notification prompt -->
-      <div id="notify-prompt" style="display:none;align-items:center;gap:10px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.25);border-radius:12px;padding:12px 14px;margin-bottom:12px">
-        <span style="font-size:20px">🔔</span>
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:600;color:var(--text)">Get Notified</div>
-          <div style="font-size:11px;color:var(--muted)">We'll alert you when it's almost your turn</div>
-        </div>
-        <button onclick="enableNotifications()" style="padding:8px 14px;border:none;border-radius:8px;background:var(--green);color:#050810;font-size:12px;font-weight:700;cursor:pointer">Enable</button>
-        <button onclick="document.getElementById('notify-prompt').style.display='none'" style="padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--muted);font-size:12px;cursor:pointer">✕</button>
+      <!-- Business registration nudge -->
+      <div style="background:rgba(232,184,75,.04);border:1px dashed rgba(232,184,75,.2);border-radius:9px;padding:11px;text-align:center;margin-bottom:10px">
+        <div style="font-size:11px;color:var(--text2);margin-bottom:4px">Own a business with queues?</div>
+        <a href="/register.html" style="font-size:12px;font-weight:700;color:var(--gold);text-decoration:none">Register on WaitMate — Free →</a>
       </div>
 
-      <!-- Grace timer (shown when called) -->
-      <div id="grace-timer" style="display:none;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:12px;padding:12px 16px;margin-bottom:12px;text-align:center;transition:border-color 0.3s">
-        <div style="font-size:11px;color:var(--amber);font-weight:600;letter-spacing:1px;margin-bottom:4px">GRACE PERIOD</div>
-        <div style="font-family:'Orbitron',monospace;font-size:28px;font-weight:700;color:var(--gold2)" class="grace-time">2:00</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:3px">Please arrive before time runs out</div>
-      </div>
-
-      <button class="btn-gold" onclick="closeModal(true)">Got it — Back to List</button>
-
-      <!-- Share after join — one tap -->
-      <div id="share-after-join" style="display:none;margin-top:14px;background:rgba(37,211,102,0.07);border:1px solid rgba(37,211,102,0.25);border-radius:14px;padding:14px 16px;text-align:center">
-        <div style="font-size:13px;font-weight:600;color:#25d366;margin-bottom:8px">دوستوں کو بھی بتائیں 👇</div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:10px">وہ بھی گھر سے ٹوکن لے سکتے ہیں</div>
-        <button onclick="shareShopLink()" style="width:100%;padding:10px;border:none;border-radius:10px;background:#25d366;color:#fff;font-weight:700;font-size:14px;cursor:pointer">💬 واٹس ایپ پر شیئر کریں</button>
-      </div>
-
-      <!-- Rating prompt (shows after service complete) -->
-      <div class="rating-prompt" id="rating-prompt">
-        <div class="rating-title">How was your experience?</div>
-        <div class="rating-sub">Rate your visit at <span id="rating-shop-name"></span></div>
-        <div class="stars-row" id="stars-row">
-          <button class="star-btn" onclick="submitRating(1)">⭐</button>
-          <button class="star-btn" onclick="submitRating(2)">⭐</button>
-          <button class="star-btn" onclick="submitRating(3)">⭐</button>
-          <button class="star-btn" onclick="submitRating(4)">⭐</button>
-          <button class="star-btn" onclick="submitRating(5)">⭐</button>
-        </div>
-        <div class="rating-done" id="rating-done">✅ Thanks for your feedback!</div>
-      </div>
-
-      <!-- Business recruitment nudge (shown after token) -->
-      <div style="background:rgba(232,184,75,.05);border:1px dashed rgba(232,184,75,.25);border-radius:10px;padding:12px 14px;margin-top:8px;text-align:center">
-        <div style="font-size:12px;color:#94A3B8;margin-bottom:5px">Do you own a business with queues?</div>
-        <a href="/register.html" style="font-size:13px;font-weight:700;color:#E8B84B;text-decoration:none">Register on WaitMate — Free →</a>
-      </div>
-
-      <button id="cancel-token-btn" onclick="cancelMyToken()" style="width:100%;margin-top:10px;padding:12px;border:1px solid rgba(248,113,113,0.3);border-radius:12px;background:rgba(248,113,113,0.06);color:var(--red);font-family:'Sora',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s">
-        Cancel my token
-      </button>
+      <button class="btn-share-link" onclick="shareShopSaveLink()">🔗 Share this shop's link</button>
+      <button class="btn-cancel-token" id="cancel-token-btn" onclick="cancelMyToken()">Cancel my token</button>
     </div>
   </div>
 </div>
 
 <script>
-// ── Particles ──────────────────────────────────────────────
-const canvas=document.getElementById('particle-canvas'),ctx=canvas.getContext('2d');
-let W,H,pts=[];
-function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
-function mkPt(){return{x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.3+.3,vy:-(Math.random()*.4+.1),vx:(Math.random()-.5)*.2,a:Math.random()*.35+.1,c:Math.random()>.6?'#D4AF37':'#00D4FF'};}
-function draw(){ctx.clearRect(0,0,W,H);pts.forEach((p,i)=>{p.x+=p.vx;p.y+=p.vy;if(p.y<-5){pts[i]=mkPt();pts[i].y=H+5;}ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=p.c;ctx.globalAlpha=p.a;ctx.fill();});ctx.globalAlpha=1;requestAnimationFrame(draw);}
-resize();pts=Array.from({length:70},mkPt);draw();window.addEventListener('resize',resize);
+// ── CONSTANTS ─────────────────────────────────────────────────
+const WORKER      = 'https://saf-queue-worker.byker-software.workers.dev';
+const params      = new URLSearchParams(window.location.search);
+const HIGHLIGHT   = params.get('shop') || '';
 
-// ── State ──────────────────────────────────────────────────
-const WORKER = 'https://saf-queue-worker.byker-software.workers.dev';
-const params  = new URLSearchParams(window.location.search);
-const HIGHLIGHT_SHOP = params.get('shop'); // shared link via ?shop=id
-const HIGHLIGHT_SLUG = params.get('slug'); // shared link via /s/slug
+// ── STATE ─────────────────────────────────────────────────────
+let allShops      = [];
+let filteredShops = [];
+let activeCity    = '';
+let activeCategory= '';
+let activeArea    = '';
+let searchQuery   = '';
+let selectedShop  = null;
+let myTokenId     = null;
+let myTokenNum    = null;
+let trackerTimer  = null;
 
-let allShops        = [];
-let filteredShops   = [];
-let activeCategory  = '';
-let activeArea      = '';
-let activeCity      = '';
-let searchQuery     = '';
-let selectedShop    = null;
-let myTokenId       = null;
-let myTokenNum      = null;
-let trackerTimer    = null;
-let _resolvedShopId = null; // slug resolved to shop id
+// ── LANGUAGE ──────────────────────────────────────────────────
+function getLang()  { return localStorage.getItem('sq_lang') || 'en'; }
+function isUrdu()   { return getLang() === 'ur'; }
 
-
-// ── FEATURED SHOP (poster scan mode) ──────────────────────
-
-async function loadFeaturedShop(shopId) {
-  try {
-    const res    = await fetch(`${WORKER}/public/shop/${shopId}`);
-    const {data} = await res.json();
-    if (!data) return;
-
-    // Update page title
-    document.title = `${data.name} — ویٹ میٹ`;
-    document.querySelector('.topbar-sub').textContent = data.name;
-
-    renderFeaturedHero(data);
-    renderSuggestions(data);
-
-    // Show featured section, show list divider
-    document.getElementById('featured-section').style.display = 'block';
-    document.getElementById('list-divider').style.display     = 'flex';
-
-    return data;
-  } catch(e) {
-    console.error('Featured shop load failed', e);
-  }
+function toggleLangAndReload() {
+  localStorage.setItem('sq_lang', isUrdu() ? 'en' : 'ur');
+  location.reload();
 }
 
-function renderFeaturedHero(shop) {
-  const isOpen  = shop.is_open;
-  const isBusy  = shop.is_busy;
-  const qLen    = shop.queue_length || 0;
-  const maxQ    = 20;
-  const pct     = Math.min((qLen / maxQ) * 100, 100);
-  const fillCls = pct > 75 ? 'high' : pct > 40 ? 'mid' : 'low';
+function applyLang() {
+  const ur  = isUrdu();
+  const key = ur ? 'ur' : 'en';
+  document.getElementById('html-root').lang = ur ? 'ur' : 'en';
+  document.getElementById('html-root').dir  = ur ? 'rtl' : 'ltr';
+  document.body.style.fontFamily = ur ? "'Noto Nastaliq Urdu',serif" : "'Sora',sans-serif";
 
-  let statusBadge;
-  if (!isOpen)       statusBadge = `<span class="status-badge closed"><span class="s-dot"></span>ابھی بند</span>`;
-  else if (isBusy)   statusBadge = `<span class="status-badge busy"><span class="s-dot"></span>مصروف</span>`;
-  else               statusBadge = `<span class="status-badge open"><span class="s-dot"></span>کھلی ہے</span>`;
+  document.getElementById('lang-btn').textContent    = ur ? '🌐 English' : '🌐 اردو';
+  document.getElementById('back-btn').textContent    = ur ? '← واپس'   : '← Back';
+  document.getElementById('topbar-tag').textContent  = ur ? 'لائن سے بچیں' : 'Skip the line';
+  document.getElementById('search-input').placeholder= ur ? 'دکان یا علاقہ...' : 'Search shops or areas...';
+  document.getElementById('loading-msg').textContent = ur ? 'دکانیں لوڈ ہو رہی ہیں...' : 'Loading shops...';
+  document.getElementById('empty-msg').textContent   = ur ? 'کوئی دکان نہیں ملی' : 'No shops found';
+  document.getElementById('b-open-lbl').textContent  = ur ? 'کھلی' : 'Open';
+  document.getElementById('b-total-lbl').textContent = ur ? 'کل' : 'Total';
+  document.getElementById('b-queue-lbl').textContent = ur ? 'قطار' : 'In Queue';
+  document.getElementById('t-open-lbl').textContent  = ur ? 'ابھی کھلی' : 'open now';
+  document.getElementById('t-tokens-lbl').textContent= ur ? 'ٹوکن آج' : 'tokens today';
+  document.getElementById('t-shops-lbl').textContent = ur ? 'دکانیں' : 'shops';
+  document.getElementById('sec-label').textContent   = ur ? 'تمام دکانیں' : 'All Shops';
+  document.getElementById('lbl-name').textContent    = ur ? 'آپ کا نام *' : 'Your Name *';
+  document.getElementById('lbl-phone').innerHTML     = ur ? 'فون <span style="font-weight:400;text-transform:none;color:var(--text3)">(اختیاری)</span>' : 'Phone <span style="font-weight:400;text-transform:none;color:var(--text3)">(optional)</span>';
+  document.getElementById('m-serving-lbl').textContent= ur ? 'ابھی نمبر' : 'Now Serving';
+  document.getElementById('m-queue-lbl').textContent  = ur ? 'قطار میں' : 'In Queue';
+  document.getElementById('m-wait-lbl').textContent   = ur ? 'انتظار (منٹ)' : 'Min Wait';
+  document.getElementById('r-pos-lbl').textContent    = ur ? 'نمبر' : 'Position';
+  document.getElementById('r-wait-lbl').textContent   = ur ? 'انتظار (منٹ)' : 'Est. Wait (min)';
 
-  let heroBody;
-  if (isOpen) {
-    heroBody = `
-      <div class="featured-bar-wrap">
-        <div class="featured-bar-labels">
-          <span>قطار: ${qLen} لوگ</span>
-          <span>~${shop.estimated_wait} منٹ انتظار</span>
-        </div>
-        <div class="featured-bar-track">
-          <div class="featured-bar-fill ${fillCls}" style="width:${pct}%"></div>
-        </div>
-      </div>
-      <div class="featured-stats">
-        <div class="featured-stat">
-          <div class="featured-stat-val">${shop.current_serving ?? '—'}</div>
-          <div class="featured-stat-lbl">ابھی نمبر</div>
-        </div>
-        <div class="featured-stat">
-          <div class="featured-stat-val">${qLen}</div>
-          <div class="featured-stat-lbl">قطار میں</div>
-        </div>
-        <div class="featured-stat">
-          <div class="featured-stat-val">${shop.estimated_wait}m</div>
-          <div class="featured-stat-lbl">انتظار</div>
-        </div>
-      </div>
-      <button class="featured-btn" onclick="openShop('${shop.id}')">
-        <span class="featured-btn-arrow">←</span>
-        ٹوکن لیں — ابھی قطار میں شامل ہوں
-      </button>`;
-  } else {
-    heroBody = `
-      <div class="featured-closed-banner">
-        <div class="featured-closed-title">🔒 دکان ابھی بند ہے</div>
-        <div class="featured-closed-sub">کھلنے پر دوبارہ آئیں اور ٹوکن لیں</div>
-        <div class="featured-closed-hours">
-          ⏰ عام طور پر صبح کھلتی ہے
-        </div>
-      </div>
-      <button class="featured-btn" disabled>
-        ابھی ٹوکن نہیں لیا جا سکتا
-      </button>`;
-  }
-
-  document.getElementById('featured-hero').innerHTML = `
-    <div class="featured-badge">⭐ آپ کی دکان</div>
-    <div class="featured-top">
-      <div class="featured-icon">${catIcon(shop.category)}</div>
-      <div class="featured-info">
-        <div class="featured-name">${esc(shop.name)}</div>
-        <div class="featured-meta">📍 ${esc(shop.area || '—')} &nbsp;·&nbsp; ${catLabel(shop.category)}</div>
-      </div>
-    </div>
-    <div class="featured-status-row">
-      ${statusBadge}
-      <span style="font-size:10px;color:var(--muted)">لائیو اعداد و شمار</span>
-    </div>
-    ${heroBody}
-  `;
+  // Chip labels
+  document.querySelectorAll('[data-en][data-ur]').forEach(el => {
+    el.textContent = el.dataset[key];
+  });
 }
 
-function renderSuggestions(featuredShop) {
-  // Find same-category shops (excluding featured)
-  const sameCat = allShops.filter(s =>
-    s.id !== featuredShop.id &&
-    s.category === featuredShop.category
-  ).slice(0, 6);
-
-  // Find same-area shops (excluding featured and already in sameCat)
-  const sameArea = allShops.filter(s =>
-    s.id !== featuredShop.id &&
-    s.category !== featuredShop.category &&
-    s.area && featuredShop.area &&
-    s.area.toLowerCase() === featuredShop.area.toLowerCase()
-  ).slice(0, 3);
-
-  const suggestions = [...sameCat, ...sameArea];
-  if (!suggestions.length) return;
-
-  const label = featuredShop.is_open
-    ? `دیگر ${catLabel(featuredShop.category)} دکانیں`
-    : `متبادل ${catLabel(featuredShop.category)} دکانیں`;
-
-  document.getElementById('suggest-label').textContent = label;
-  document.getElementById('suggestions-strip').style.display = 'block';
-
-  const isSameCatId = new Set(sameCat.map(s => s.id));
-
-  document.getElementById('suggestions-scroll').innerHTML = suggestions.map((s, i) => {
-    const isOpen = s.is_open;
-    const tag = isSameCatId.has(s.id)
-      ? `<span class="suggest-tag-chip same-cat">${catLabel(s.category)}</span>`
-      : `<span class="suggest-tag-chip near">قریبی</span>`;
-
-    let queueTxt, queueCls, clickable;
-    if (!isOpen) {
-      queueTxt = 'بند'; queueCls = 'closed-txt'; clickable = false;
-    } else if (s.is_busy) {
-      queueTxt = `${s.queue_length} لوگ — مصروف`; queueCls = 'busy'; clickable = true;
-    } else {
-      queueTxt = s.queue_length ? `${s.queue_length} لوگ قطار میں` : 'ابھی خالی ✓'; queueCls = 'open'; clickable = true;
-    }
-
-    return `<div class="suggest-card ${isOpen ? '' : 'closed'}" 
-              style="animation-delay:${i*0.06}s"
-              ${clickable ? `onclick="openShop('${s.id}')"` : ''}>
-      <div class="suggest-icon">${catIcon(s.category)}</div>
-      <div class="suggest-name">${esc(s.name)}</div>
-      <div class="suggest-area">📍 ${esc(s.area || '—')}</div>
-      <div class="suggest-queue ${queueCls}">${queueTxt}</div>
-      ${tag}
-    </div>`;
-  }).join('');
-}
-
-// ── LOAD SHOPS ─────────────────────────────────────────────
+// ── LOAD SHOPS ────────────────────────────────────────────────
 async function loadShops() {
-  document.getElementById('loading-state').style.display = 'block';
-  document.getElementById('shops-container').style.display = 'none';
-  document.getElementById('empty-state').style.display   = 'none';
+  document.getElementById('loading-box').style.display = 'block';
+  document.getElementById('loading-box').innerHTML = '<div class="spinner"></div><div id="loading-msg">' + (isUrdu() ? 'دکانیں لوڈ ہو رہی ہیں...' : 'Loading shops...') + '</div>';
+  document.getElementById('shops-box').style.display  = 'none';
+  document.getElementById('empty-box').style.display  = 'none';
 
   try {
-    let url = `${WORKER}/public/shops`;
     const qp = [];
-    if (activeArea)     qp.push(`area=${encodeURIComponent(activeArea)}`);
-    if (activeCategory) qp.push(`category=${activeCategory}`);
     if (activeCity)     qp.push(`area=${encodeURIComponent(activeCity)}`);
+    if (activeArea)     qp.push(`area=${encodeURIComponent(activeArea)}`);
+    if (activeCategory) qp.push(`category=${encodeURIComponent(activeCategory)}`);
     if (searchQuery)    qp.push(`search=${encodeURIComponent(searchQuery)}`);
-    if (qp.length)      url += '?' + qp.join('&');
-
-    const res  = await fetch(url);
-    const json = await res.json();
+    const qs  = qp.length ? '?' + qp.join('&') : '';
+    const res = await fetch(`${WORKER}/public/shops${qs}`);
+    const json= await res.json();
 
     if (!json.success) throw new Error(json.error || 'Server error');
 
-    allShops      = json.data?.shops || [];
+    allShops      = json.data?.shops  || [];
     filteredShops = allShops;
 
-    renderAreaChips(json.data?.areas || []);
+    buildAreaChips(json.data?.areas || []);
     renderShops();
 
-    // Auto-open highlighted shop (from shared link)
-    // Featured shop: scroll to it but don't click (openShop is called from boot)
-    if (HIGHLIGHT_SHOP || _resolvedShopId) {
-      const targetId = _resolvedShopId || HIGHLIGHT_SHOP;
-      setTimeout(() => {
-        const card = document.getElementById(`shop-${targetId}`);
-        if (card) card.scrollIntoView({behavior:'smooth', block:'center'});
-      }, 400);
-    }
-
-  } catch (e) {
-    console.error('loadShops failed:', e);
-    document.getElementById('loading-state').innerHTML =
-      `<div style="color:var(--red);padding:40px;text-align:center">
-        <div style="font-size:20px;margin-bottom:8px">⚠️</div>
-        <div>لوڈ نہیں ہو سکا</div>
-        <div style="font-size:10px;opacity:.5;direction:ltr">${e.name === 'AbortError' ? 'Timeout - server took too long' : e.message}</div>
-        <div style="font-size:11px;opacity:0.6;margin-top:6px;direction:ltr">${e.message}</div>
-        <button onclick="location.reload()" style="margin-top:16px;padding:8px 20px;border:1px solid var(--gold);border-radius:20px;background:transparent;color:var(--gold);font-family:inherit;cursor:pointer;">دوبارہ کوشش کریں</button>
+  } catch(e) {
+    document.getElementById('loading-box').innerHTML =
+      `<div style="color:var(--red);padding:32px;text-align:center">
+        <div style="font-size:32px;margin-bottom:10px">⚠️</div>
+        <div style="font-weight:700;margin-bottom:8px">${isUrdu() ? 'لوڈ نہیں ہو سکا' : 'Failed to load'}</div>
+        <div style="font-size:11px;opacity:.6;direction:ltr">${e.message}</div>
+        <button onclick="loadShops()" style="margin-top:14px;padding:9px 20px;border:1px solid var(--gold);border-radius:100px;background:transparent;color:var(--gold);font-family:inherit;cursor:pointer;font-size:13px">${isUrdu() ? 'دوبارہ کوشش' : 'Retry'}</button>
       </div>`;
   }
 }
 
 function renderShops() {
-  document.getElementById('loading-state').style.display = 'none';
+  document.getElementById('loading-box').style.display = 'none';
 
   if (!filteredShops.length) {
-    document.getElementById('shops-container').style.display = 'none';
-    document.getElementById('empty-state').style.display   = 'block';
+    document.getElementById('shops-box').style.display = 'none';
+    document.getElementById('empty-box').style.display = 'block';
     return;
   }
 
-  document.getElementById('shops-container').style.display = 'block';
-  document.getElementById('empty-state').style.display     = 'none';
+  document.getElementById('shops-box').style.display = 'block';
+  document.getElementById('empty-box').style.display = 'none';
 
-  // Stats banner
-  const openCount  = filteredShops.filter(s => s.is_open).length;
-  const totalQueue = filteredShops.reduce((a,s) => a + (s.queue_length||0), 0);
-  document.getElementById('b-open').textContent   = openCount;
-  document.getElementById('b-total').textContent  = filteredShops.length;
-  document.getElementById('b-tokens').textContent = totalQueue;
+  const openCount = filteredShops.filter(s => s.is_open).length;
+  const queueSum  = filteredShops.reduce((a, s) => a + (s.queue_length || 0), 0);
+  document.getElementById('b-open').textContent  = openCount;
+  document.getElementById('b-total').textContent = filteredShops.length;
+  document.getElementById('b-queue').textContent = queueSum;
 
-  // Label
-  const label = activeCategory ? catLabel(activeCategory) : activeArea ? activeArea : 'تمام دکانیں';
-  const labelEl = document.getElementById('shops-section-label') || document.getElementById('shops-label');
-  if (labelEl) labelEl.textContent = label;
-
-  // Sort: open first, then by queue length ascending
-  // Exclude the featured shop from main list (it's already shown at top)
-  const listShops = HIGHLIGHT_SHOP
-    ? filteredShops.filter(s => s.id !== HIGHLIGHT_SHOP)
-    : filteredShops;
-
-  const sorted = [...listShops].sort((a,b) => {
+  const sorted = [...filteredShops].sort((a, b) => {
     if (a.is_open !== b.is_open) return b.is_open - a.is_open;
-    return (a.queue_length||0) - (b.queue_length||0);
+    return (a.queue_length || 0) - (b.queue_length || 0);
   });
 
-  // Build shop list with mid-list CTA after 3rd card
-  const cards = sorted.map((s, i) => buildShopCard(s, i));
-  const midCta = `
-    <div onclick="window.location.href='/register.html'" style="cursor:pointer;background:linear-gradient(135deg,rgba(232,184,75,.1),rgba(232,184,75,.04));border:1px dashed rgba(232,184,75,.35);border-radius:16px;padding:18px;text-align:center;transition:all .25s" onmouseover="this.style.borderColor='rgba(232,184,75,.7)'" onmouseout="this.style.borderColor='rgba(232,184,75,.35)'">
-      <div style="font-size:22px;margin-bottom:8px">🏪</div>
-      <div style="font-size:14px;font-weight:700;color:#E8B84B;margin-bottom:4px">Own a shop? Join WaitMate Free</div>
-      <div style="font-size:11px;color:#94A3B8">Register in 2 minutes. Get your QR poster instantly.</div>
-    </div>`;
-  if (cards.length > 3) cards.splice(3, 0, midCta);
-  else if (cards.length > 0) cards.push(midCta);
+  const cards = sorted.map((s, i) => buildCard(s, i));
+
+  // Mid-list business CTA after 3rd card
+  const cta = `<div class="biz-cta" onclick="window.location.href='/register.html'">
+    <div style="font-size:20px;margin-bottom:7px">🏪</div>
+    <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:3px">${isUrdu() ? 'اپنا کاروبار شامل کریں — مفت' : 'Add your business — Free'}</div>
+    <div style="font-size:11px;color:var(--text2)">${isUrdu() ? '2 منٹ میں رجسٹر کریں' : 'Register in 2 minutes. Get your QR poster instantly.'}</div>
+  </div>`;
+  if (cards.length >= 3) cards.splice(3, 0, cta);
+  else cards.push(cta);
+
   document.getElementById('shop-list').innerHTML = cards.join('');
 }
 
-function buildShopCard(s, i) {
-  const isOpen   = s.is_open;
-  const isBusy   = s.is_busy;
-  const qLen     = s.queue_length || 0;
-  const maxQ     = 20;
-  const fillPct  = Math.min((qLen / maxQ) * 100, 100);
-  const fillClass = fillPct > 75 ? 'full' : fillPct > 40 ? 'busy' : '';
+function buildCard(s, i) {
+  const ur     = isUrdu();
+  const isOpen = s.is_open;
+  const isBusy = s.is_busy;
+  const qLen   = s.queue_length || 0;
+  const pct    = Math.min((qLen / 20) * 100, 100);
+  const fillCls= pct > 75 ? 'high' : pct > 40 ? 'mid' : '';
 
-  let statusBadge, cardClass;
-  if (!isOpen) {
-    statusBadge = `<span class="status-badge closed"><span class="s-dot"></span>بند</span>`;
-    cardClass   = 'closed';
-  } else if (isBusy) {
-    statusBadge = `<span class="status-badge busy"><span class="s-dot"></span>مصروف</span>`;
-    cardClass   = 'open busy';
-  } else {
-    statusBadge = `<span class="status-badge open"><span class="s-dot"></span>کھلی</span>`;
-    cardClass   = 'open';
-  }
+  const badgeHtml = !isOpen
+    ? `<span class="badge badge-closed"><span class="badge-dot"></span>${ur ? 'بند' : 'Closed'}</span>`
+    : isBusy
+      ? `<span class="badge badge-busy"><span class="badge-dot"></span>${ur ? 'مصروف' : 'Busy'}</span>`
+      : `<span class="badge badge-open"><span class="badge-dot"></span>${ur ? 'کھلی' : 'Open'}</span>`;
 
-  const highlighted = s.id === HIGHLIGHT_SHOP ? ' highlighted' : '';
+  const icons  = {barber:'✂️',clinic:'🏥',pharmacy:'💊',bank:'🏦',govt:'🏛️',tailor:'🧵'};
+  const icon   = icons[s.category] || '🏪';
+  const catMap = {barber:ur?'حجام':'Barber',clinic:ur?'کلینک':'Clinic',pharmacy:ur?'فارمیسی':'Pharmacy',bank:ur?'بینک':'Bank',govt:ur?'سرکاری':'Govt',tailor:ur?'درزی':'Tailor'};
+  const catLbl = catMap[s.category] || s.category || (ur ? 'دیگر' : 'Other');
 
-  // Suggestions
-  let suggestion = '';
-  if (!isOpen) {
-    // Find open alternative in same category
+  let tagHtml = '';
+  if (isOpen && !isBusy)  tagHtml = `<div class="tag tag-go">✅ ${ur ? 'ابھی ٹوکن لینے کا اچھا وقت' : 'Good time to visit'}</div>`;
+  else if (isOpen && isBusy) tagHtml = `<div class="tag tag-wait">⚠️ ${ur ? 'قطار لمبی ہے' : 'Long queue'}</div>`;
+  else {
     const alt = allShops.find(a => a.id !== s.id && a.category === s.category && a.is_open);
-    if (alt) {
-      suggestion = `<div class="suggestion-tag alt">💡 متبادل: ${esc(alt.name)} کھلی ہے</div>`;
-    }
-    suggestion += `<div class="timing-info">⏰ <strong>اگلی بار:</strong> دکان کھلنے پر دوبارہ چیک کریں</div>`;
-  } else if (isBusy) {
-    const quieter = allShops.find(a => a.id !== s.id && a.category === s.category && a.is_open && !a.is_busy);
-    if (quieter) {
-      suggestion = `<div class="suggestion-tag alt">💡 کم قطار: ${esc(quieter.name)} — ${quieter.queue_length} لوگ</div>`;
-    } else {
-      suggestion = `<div class="suggestion-tag warn">⚠️ قطار لمبی ہے — انتظار ہو سکتا ہے</div>`;
-    }
-  } else {
-    suggestion = `<div class="suggestion-tag go">✅ ابھی ٹوکن لینے کا اچھا وقت ہے</div>`;
+    tagHtml = alt
+      ? `<div class="tag tag-alt">💡 ${ur ? `متبادل: ${alt.name}` : `Try: ${alt.name}`}</div>`
+      : `<div class="tag tag-alt">⏰ ${s.opening_time || (ur ? 'بعد میں کھلے گی' : 'Opens later')}</div>`;
   }
 
-  const clickHandler = isOpen ? `onclick="openShop('${s.id}')"` : '';
+  const feeHtml = (s.token_mode === 'paid' && s.token_price > 0)
+    ? `<div class="c-stat c-stat-fee"><div class="c-stat-val">Rs ${s.token_price}</div><div class="c-stat-lbl">Fee</div></div>` : '';
 
-  return `
-  <div class="shop-card ${cardClass}${highlighted}" id="shop-${s.id}" ${clickHandler} style="animation-delay:${i*0.05}s">
+  const clickAttr = isOpen ? `onclick="openShop('${s.id}')"` : '';
+
+  return `<div class="shop-card ${isOpen ? '' : 'closed'}" id="shop-${s.id}" ${clickAttr} style="animation-delay:${i*0.05}s">
     <div class="card-top">
-      <div class="shop-icon">${catIcon(s.category)}</div>
+      <div class="shop-icon">${icon}</div>
       <div class="shop-info">
-        <div class="shop-title">${esc(s.name)}</div>
-        <div class="shop-area">📍 ${esc(s.area||'')}${s.city ? ' · ' + esc(s.city) : ''} &nbsp;·&nbsp; ${catLabel(s.category)}</div>
-        ${s.address ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">🏠 ${esc(s.address)}</div>` : ''}
-        ${s.owner_phone ? `<div style="font-size:10px;color:var(--muted);margin-top:1px">📞 ${esc(s.owner_phone)}</div>` : ''}
+        <div class="shop-name">${esc(s.name)}</div>
+        <div class="shop-meta">📍 ${esc(s.area || '—')} · ${catLbl}</div>
       </div>
-      ${statusBadge}
+      ${badgeHtml}
     </div>
-
     ${isOpen ? `
-    <div class="queue-bar-wrap">
-      <div class="queue-bar-labels">
-        <span>قطار: ${qLen} لوگ</span>
-        <span>~${s.estimated_wait} منٹ</span>
-      </div>
-      <div class="queue-bar-track">
-        <div class="queue-bar-fill ${fillClass}" style="width:${fillPct}%"></div>
-      </div>
-    </div>
+    <div class="queue-bar-track"><div class="queue-bar-fill ${fillCls}" style="width:${pct}%"></div></div>
     <div class="card-stats">
-      <div class="c-stat"><div class="c-stat-val">${s.current_serving??'—'}</div><div class="c-stat-lbl">ابھی نمبر</div></div>
-      <div class="c-stat"><div class="c-stat-val">${qLen}</div><div class="c-stat-lbl">قطار میں</div></div>
-      <div class="c-stat"><div class="c-stat-val">${s.estimated_wait}m</div><div class="c-stat-lbl">انتظار</div></div>
-      ${s.token_mode==='paid'&&s.token_price>0?`<div class="c-stat" style="border-color:rgba(232,184,75,.35);background:rgba(232,184,75,.07)"><div class="c-stat-val" style="color:var(--gold)">Rs ${s.token_price}</div><div class="c-stat-lbl" style="color:var(--gold);opacity:.8">Fee</div></div>`:''}
+      <div class="c-stat"><div class="c-stat-val">${s.current_serving ?? '—'}</div><div class="c-stat-lbl">${ur ? 'ابھی نمبر' : 'Now'}</div></div>
+      <div class="c-stat"><div class="c-stat-val">${qLen}</div><div class="c-stat-lbl">${ur ? 'قطار' : 'Queue'}</div></div>
+      <div class="c-stat"><div class="c-stat-val">${s.estimated_wait || 0}m</div><div class="c-stat-lbl">${ur ? 'انتظار' : 'Wait'}</div></div>
+      ${feeHtml}
     </div>` : ''}
-
-    ${suggestion}
+    ${tagHtml}
   </div>`;
 }
 
-// ── OPEN SHOP MODAL ────────────────────────────────────────
-async function openShop(shopId) {
-  selectedShop = allShops.find(s => s.id === shopId);
+function buildAreaChips(areas) {
+  if (!areas.length) return;
+  const row = document.getElementById('area-row');
+  row.style.display = 'flex';
+  const ur = isUrdu();
+  row.innerHTML = `<button class="area-chip active" data-area="" onclick="filterArea('')">${ur ? 'سب علاقے' : 'All Areas'}</button>` +
+    areas.map(a => `<button class="area-chip" data-area="${esc(a)}" onclick="filterArea('${esc(a)}')">${esc(a)}</button>`).join('');
+}
 
-  // If shop not in allShops yet (e.g. arrived via shared link before list loaded),
-  // fetch it directly from the public API
+// ── FILTERS ───────────────────────────────────────────────────
+function filterCity(city) {
+  activeCity = city;
+  document.querySelectorAll('#city-row .chip').forEach(c => c.classList.toggle('active', c.dataset.city === city));
+  loadShops();
+}
+
+function filterCat(cat) {
+  activeCategory = cat;
+  document.querySelectorAll('#cat-row .chip').forEach(c => c.classList.toggle('active', c.dataset.cat === cat));
+  applyLocalFilter();
+}
+
+function filterArea(area) {
+  activeArea = area;
+  document.querySelectorAll('#area-row .area-chip').forEach(c => c.classList.toggle('active', c.dataset.area === area));
+  applyLocalFilter();
+}
+
+function onSearch() {
+  searchQuery = document.getElementById('search-input').value.trim().toLowerCase();
+  applyLocalFilter();
+}
+
+function applyLocalFilter() {
+  filteredShops = allShops.filter(s => {
+    const catOk  = !activeCategory || s.category === activeCategory;
+    const areaOk = !activeArea     || (s.area || '').toLowerCase().includes(activeArea.toLowerCase());
+    const srchOk = !searchQuery    || s.name.toLowerCase().includes(searchQuery) || (s.area || '').toLowerCase().includes(searchQuery);
+    return catOk && areaOk && srchOk;
+  });
+  renderShops();
+}
+
+// ── OPEN SHOP MODAL ───────────────────────────────────────────
+async function openShop(shopId) {
+  selectedShop = allShops.find(s => s.id === shopId) || null;
+
   if (!selectedShop) {
     try {
       const res = await fetch(`${WORKER}/public/shop/${shopId}`);
@@ -1120,1497 +583,373 @@ async function openShop(shopId) {
       if (data) selectedShop = data;
     } catch(e) {}
   }
-
   if (!selectedShop) return;
 
-  // If customer already has an active token for THIS shop → show tracker, not join form
-  const savedShop = localStorage.getItem('saf_token_shop');
-  const savedId   = localStorage.getItem('saf_token_id');
-  if (savedId && savedShop) {
-    try {
-      const saved = JSON.parse(savedShop);
-      if (saved.id === shopId && myTokenId) {
-        document.getElementById('join-form-wrap').style.display = 'none';
-        document.getElementById('result-wrap').style.display    = 'block';
-        document.getElementById('token-modal').classList.add('show');
-  // Immediately refresh live stats when modal opens
-  fetch(`${WORKER}/public/shop/${shopId}`)
-    .then(r => r.json()).then(({data}) => {
-      if (!data) return;
-      document.getElementById('m-current').textContent = data.current_serving ?? '—';
-      document.getElementById('m-queue').textContent   = data.queue_length;
-      document.getElementById('m-wait').textContent    = `${data.estimated_wait ?? 0}m`;
-      selectedShop = { ...selectedShop, ...data };
-    }).catch(() => {});
-        document.getElementById('r-num').textContent = myTokenNum || '?';
-        document.getElementById('r-greeting').textContent = `${selectedShop.name} — آپ کا ٹوکن`;
-        return;
-      }
-    } catch(e) {}
-  }
-
-  // Reset modal to join form
+  // Reset form
   document.getElementById('join-form-wrap').style.display = 'block';
   document.getElementById('result-wrap').style.display    = 'none';
-  document.getElementById('sheet-err').textContent         = '';
-  document.getElementById('c-name').value                  = '';
-  document.getElementById('c-phone').value                 = '';
-  document.getElementById('join-btn').disabled             = false;
+  document.getElementById('sheet-err').textContent        = '';
+  document.getElementById('c-name').value                 = '';
+  document.getElementById('c-phone').value                = '';
+  document.getElementById('join-btn').disabled            = false;
+  document.getElementById('join-btn').textContent         = isUrdu() ? '🎫 ٹوکن لیں' : '🎫 Get My Token';
 
-  // Paid token mode
-  const isPaid = selectedShop.token_mode === 'paid';
-  document.getElementById('paid-token-section').style.display = isPaid ? 'block' : 'none';
-  if (isPaid) {
-    const amtEl = document.getElementById('paid-amount-txt');
-    if (amtEl) amtEl.innerHTML =
-      `<span style="font-size:20px;color:var(--gold);font-weight:800">Rs ${selectedShop.token_price}</span>` +
-      `<span style="font-size:11px;color:var(--muted);margin-right:6px"> — ${esc(selectedShop.name)} کو ادا کریں</span>`;
-  }
-  document.getElementById('join-btn-label').textContent = isPaid
-    ? `ادائیگی کی درخواست دیں — Rs ${selectedShop.token_price}`
-    : 'ٹوکن لیں';
-
-  // Populate
+  // Fill info
+  const ur = isUrdu();
   document.getElementById('m-shop-name').textContent = selectedShop.name;
-  document.getElementById('m-shop-meta').textContent = `${catLabel(selectedShop.category)} · ${selectedShop.area||''}`;
-
-  // FIX: Show token price prominently if paid mode
-  const priceEl = document.getElementById('m-token-price-banner');
-  if (priceEl) {
-    if (selectedShop.token_mode === 'paid' && selectedShop.token_price > 0) {
-      priceEl.style.display = 'block';
-      priceEl.innerHTML = `
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:2px">Token Fee</div>
-            <div style="font-size:22px;font-weight:800;color:var(--gold)">Rs ${selectedShop.token_price}</div>
-          </div>
-          <div style="text-align:right;font-size:11px;color:var(--muted);line-height:1.5">
-            Pay via Easypaisa / JazzCash<br/>then upload screenshot below
-          </div>
-        </div>`;
-    } else {
-      priceEl.style.display = 'none';
-    }
-  }
-  // FIX #19: Show address
-  if (selectedShop.address) {
-    document.getElementById('m-addr-txt').textContent  = selectedShop.address;
-    document.getElementById('m-shop-address').style.display = 'block';
-  } else {
-    document.getElementById('m-shop-address').style.display = 'none';
-  }
-  // FIX #18: Show hours
+  document.getElementById('m-shop-meta').textContent = `${selectedShop.area || '—'}`;
+  const hoursEl = document.getElementById('m-shop-hours');
   if (selectedShop.opening_time && selectedShop.closing_time) {
-    document.getElementById('m-hours-txt').textContent = `${selectedShop.opening_time} – ${selectedShop.closing_time}`;
-    document.getElementById('m-shop-hours').style.display = 'block';
-  } else {
-    document.getElementById('m-shop-hours').style.display = 'none';
-  }
-  document.getElementById('m-current').textContent   = selectedShop.current_serving ?? '—';
-  document.getElementById('m-queue').textContent     = selectedShop.queue_length;
-  document.getElementById('m-wait').textContent      = `${selectedShop.estimated_wait}m`;
+    hoursEl.textContent = `⏰ ${selectedShop.opening_time} – ${selectedShop.closing_time}`;
+    hoursEl.style.display = 'block';
+  } else { hoursEl.style.display = 'none'; }
 
+  document.getElementById('m-serving').textContent = selectedShop.current_serving ?? '—';
+  document.getElementById('m-queue').textContent   = selectedShop.queue_length    ?? 0;
+  document.getElementById('m-wait').textContent    = (selectedShop.estimated_wait ?? 0) + 'm';
+
+  // Price banner
+  const priceBanner = document.getElementById('price-banner');
+  if (selectedShop.token_mode === 'paid' && selectedShop.token_price > 0) {
+    document.getElementById('price-amount').textContent = `Rs ${selectedShop.token_price}`;
+    document.getElementById('price-note').textContent   = ur ? 'ادائیگی کریں پھر اسکرین شاٹ اپ لوڈ کریں' : 'Pay then upload screenshot below';
+    priceBanner.style.display = 'block';
+  } else {
+    priceBanner.style.display = 'none';
+  }
+
+  // Show modal
   document.getElementById('token-modal').classList.add('show');
   setTimeout(() => document.getElementById('c-name').focus(), 400);
 
   // Refresh live stats
-  try {
-    const res  = await fetch(`${WORKER}/public/shop/${shopId}`);
-    const {data} = await res.json();
-    document.getElementById('m-current').textContent = data.current_serving ?? '—';
-    document.getElementById('m-queue').textContent   = data.queue_length;
-    document.getElementById('m-wait').textContent    = `${data.estimated_wait}m`;
-  } catch(e) {}
+  fetch(`${WORKER}/public/shop/${shopId}`)
+    .then(r => r.json()).then(({ data }) => {
+      if (!data) return;
+      selectedShop = data;
+      document.getElementById('m-serving').textContent = data.current_serving ?? '—';
+      document.getElementById('m-queue').textContent   = data.queue_length    ?? 0;
+      document.getElementById('m-wait').textContent    = (data.estimated_wait ?? 0) + 'm';
+    }).catch(() => {});
 }
 
-function closeModal(keepResult = false) {
-  if (!keepResult) {
-    clearInterval(trackerTimer);
-    myTokenId  = null;
-    myTokenNum = null;
-  }
+function closeModal() {
   document.getElementById('token-modal').classList.remove('show');
 }
 
-function handleOverlayClick(e) {
+function handleModalOverlay(e) {
   if (e.target === document.getElementById('token-modal')) closeModal();
 }
 
-// ── SUBMIT JOIN ────────────────────────────────────────────
-// ── Screenshot upload helpers ─────────────────────────────────
-function previewScreenshot(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const data = e.target.result; // base64 data URL
-    document.getElementById('c-screenshot-data').value = data;
-    document.getElementById('screenshot-img').src = data;
-    document.getElementById('screenshot-preview').style.display = 'block';
-    document.getElementById('screenshot-drop').style.display = 'none';
-  };
-  reader.readAsDataURL(file);
-}
-window.previewScreenshot = previewScreenshot;
-
-function clearScreenshot() {
-  document.getElementById('c-screenshot-data').value = '';
-  document.getElementById('c-screenshot-file').value = '';
-  document.getElementById('screenshot-preview').style.display = 'none';
-  document.getElementById('screenshot-drop').style.display = 'block';
-}
-window.clearScreenshot = clearScreenshot;
-
-// ── Payment approval polling ───────────────────────────────────
-let _payPollTimer = null;
-
-function startPaymentPolling(requestId, customerName, customerPhone) {
-  if (_payPollTimer) clearInterval(_payPollTimer);
-  let attempts = 0;
-  const maxAttempts = 120; // poll for up to 20 mins (10s interval)
-
-  _payPollTimer = setInterval(async () => {
-    attempts++;
-    if (attempts > maxAttempts) {
-      clearInterval(_payPollTimer);
-      const errEl = document.getElementById('sheet-err');
-      if (errEl) { errEl.style.color = ''; errEl.textContent = 'وقت ختم — براہ کرم دوبارہ کوشش کریں'; }
-      const btn = document.getElementById('join-btn');
-      const lbl = document.getElementById('join-btn-label');
-      if (btn) btn.disabled = false;
-      if (lbl) lbl.textContent = 'دوبارہ کوشش کریں';
-      return;
-    }
-
-    try {
-      const res  = await fetch(`${WORKER}/public/payment-status?request_id=${requestId}`);
-      const json = await res.json();
-      if (!json.success) return;
-
-      if (json.data.status === 'approved') { // approved — switch to token card
-        clearInterval(_payPollTimer);
-        localStorage.removeItem('saf_pending_payment');
-
-        // Set state
-        myTokenId  = json.data.token_id  || null;
-        myTokenNum = json.data.token_number || null;
-
-        // Save for refresh restore
-        if (myTokenId) localStorage.setItem('saf_token_id',  myTokenId);
-        if (myTokenNum) localStorage.setItem('saf_token_num', String(myTokenNum));
-        localStorage.setItem('saf_token_shop', JSON.stringify(selectedShop));
-
-        // ── Switch UI to token card ──────────────────────────────────
-        const modal = document.getElementById('token-modal');
-        if (modal) modal.classList.add('show');
-        document.getElementById('join-form-wrap').style.display = 'none';
-        document.getElementById('result-wrap').style.display    = 'block';
-        document.getElementById('r-num').textContent            = myTokenNum || '✓';
-        document.getElementById('r-greeting').textContent       = `🎉 منظور! ${selectedShop?.name || ''} — آپ قطار میں ہیں`;
-
-        // Clear all payment form data so it doesn't show if modal re-opens
-        ['c-name','c-phone','c-screenshot-data'].forEach(id => {
-          const el = document.getElementById(id);
-          if (el) el.value = '';
-        });
-        const prev = document.getElementById('screenshot-preview');
-        if (prev) prev.style.display = 'none';
-        const errEl2 = document.getElementById('sheet-err');
-        if (errEl2) { errEl2.textContent = ''; errEl2.style.color = ''; }
-        const paidSec = document.getElementById('paid-token-section');
-        if (paidSec) paidSec.style.display = 'none';
-
-        // Alert customer
-        try { playAlarm('ready'); } catch(e) {}
-        startTracker();
-
-        // Share prompt
-        setTimeout(() => {
-          const sp = document.getElementById('share-after-join');
-          if (sp) sp.style.display = 'block';
-        }, 2000);
-      } else if (json.data.status === 'rejected') {
-        clearInterval(_payPollTimer);
-        localStorage.removeItem('saf_pending_payment');
-        const errEl = document.getElementById('sheet-err');
-        if (errEl) { errEl.style.color = 'var(--red)'; errEl.textContent = '❌ ادائیگی رد کر دی گئی — براہ کرم دوبارہ کوشش کریں'; }
-        const btn = document.getElementById('join-btn');
-        const lbl = document.getElementById('join-btn-label');
-        if (btn) btn.disabled = false;
-        if (lbl) lbl.textContent = 'دوبارہ کوشش کریں';
-      }
-    } catch(e) { /* silent — keep polling */ }
-  }, 5000); // check every 5 seconds
-}
-window.startPaymentPolling = startPaymentPolling;
-
+// ── SUBMIT JOIN ───────────────────────────────────────────────
 async function submitJoin() {
-  const name  = document.getElementById('c-name').value.trim();
-  const phone = document.getElementById('c-phone').value.trim();
-  const errEl = document.getElementById('sheet-err');
-  const btn   = document.getElementById('join-btn');
+  const name   = document.getElementById('c-name').value.trim();
+  const phone  = document.getElementById('c-phone').value.trim();
+  const errEl  = document.getElementById('sheet-err');
+  const btn    = document.getElementById('join-btn');
+  const ur     = isUrdu();
+
   errEl.textContent = '';
+  if (!name) { errEl.textContent = ur ? 'نام ضروری ہے' : 'Name is required'; return; }
 
-  if (!name) { errEl.textContent = 'نام ضروری ہے'; return; }
-
-  btn.disabled = true;
-  document.getElementById('join-btn-label').textContent = '...';
-
-  // ── Paid mode: submit payment request instead ─────────
-  if (selectedShop.token_mode === 'paid') {
-    const screenshot = document.getElementById('c-screenshot-data')?.value || null;
-    if (!phone) { errEl.textContent = 'ادائیگی کے لیے فون نمبر ضروری ہے'; btn.disabled=false; document.getElementById('join-btn-label').textContent=`ادائیگی کی درخواست دیں — Rs ${selectedShop.token_price}`; return; }
-    try {
-      const res  = await fetch(`${WORKER}/public/payment-request`, {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ shop_id: selectedShop.id, customer_name: name, customer_phone: phone, screenshot_url: screenshot })
-      });
-      const { success, data, error } = await res.json();
-      if (!success) throw new Error(error);
-      errEl.style.color = 'var(--green)';
-      errEl.textContent = '✓ درخواست موصول! دکان منظور کرے گی تو خودبخود ٹوکن ملے گا...';
-      btn.disabled = true;
-      document.getElementById('join-btn-label').textContent = '⏳ منظوری کا انتظار...';
-      // Save so restore works on refresh
-      localStorage.setItem('saf_pending_payment', JSON.stringify({
-        reqId: data.request_id, shopData: selectedShop
-      }));
-      // Start polling for approval
-      startPaymentPolling(data.request_id, name, phone);
-    } catch(e) {
-      errEl.style.color = '';
-      errEl.textContent = e.message;
-      btn.disabled = false;
-      document.getElementById('join-btn-label').textContent = `ادائیگی کی درخواست دیں — Rs ${selectedShop.token_price}`;
-    }
-    return;
-  }
+  btn.disabled    = true;
+  btn.textContent = '...';
 
   try {
     const res  = await fetch(`${WORKER}/public/join`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({shop_id: selectedShop.id, customer_name: name, customer_phone: phone||null})
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ shop_id: selectedShop.id, customer_name: name, customer_phone: phone || null })
     });
-    const {data, success, error} = await res.json();
+    const { data, success, error } = await res.json();
     if (!success) throw new Error(error);
 
     myTokenId  = data.token_id;
     myTokenNum = data.token_number;
 
-    // Persist so tracker survives page refresh
-    localStorage.setItem('saf_token_id',   data.token_id);
-    localStorage.setItem('saf_token_num',  String(data.token_number));
-    localStorage.setItem('saf_token_shop', JSON.stringify(selectedShop));
+    // Save to localStorage
+    localStorage.setItem('saf_token_id',    data.token_id);
+    localStorage.setItem('saf_token_num',   data.token_number);
+    localStorage.setItem('saf_token_shop',  JSON.stringify(selectedShop));
 
-    // Show result
-    document.getElementById('join-form-wrap').style.display = 'none';
-    document.getElementById('result-wrap').style.display    = 'block';
-    document.getElementById('r-num').textContent           = data.token_number;
-    document.getElementById('r-greeting').textContent      = `🎉 ${name}, you're in line!`;
-    document.getElementById('r-pos').textContent           = data.position;
-    document.getElementById('r-wait-val').textContent      = data.estimated_wait + ' min';
-    updateCountdown(data.estimated_wait, data.position);
+    if (navigator.vibrate) navigator.vibrate([80, 30, 80]);
 
-    // Vibrate
-    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-    playAlarm('ready');
-
-    // Show share prompt after 2s
-    setTimeout(() => {
-      document.getElementById('share-after-join').style.display = 'block';
-    }, 2000);
-
+    showResult(data.token_number, name, data.position, data.estimated_wait);
     startTracker();
 
-    // Ask for push permission
-    if ('Notification' in window && Notification.permission !== 'denied') {
-      setTimeout(async () => {
-        const el = document.getElementById('notify-prompt');
-        if (el) el.style.display = 'flex';
-      }, 1500);
-    }
-
   } catch(e) {
-    errEl.textContent = e.message || 'خرابی';
-    btn.disabled = false;
-    document.getElementById('join-btn-label').textContent = 'ٹوکن لیں';
+    errEl.textContent = e.message || (ur ? 'خرابی — دوبارہ کوشش کریں' : 'Error — please try again');
+    btn.disabled    = false;
+    btn.textContent = ur ? '🎫 ٹوکن لیں' : '🎫 Get My Token';
   }
 }
 
-
-// Save shop link
-function shareShopSaveLink() {
-  const shopName = selectedShop?.name || 'this shop';
-  const url      = `${location.origin}/customer.html?shop=${selectedShop?.id}`;
-  const waMsg    = encodeURIComponent(
-    `🏪 I just used WaitMate at *${shopName}*!\n\n` +
-    `No more standing in line — get your token on your phone and come only when it's your turn.\n\n` +
-    `📱 Try it here:\n${url}\n\n` +
-    `_WaitMate — آپ کی باری، آپ کے وقت پر_`
-  );
-  const waUrl = `https://wa.me/?text=${waMsg}`;
-
-  if (navigator.share) {
-    navigator.share({
-      title: `Skip the queue at ${shopName}`,
-      text:  `Get your token at ${shopName} on WaitMate — no waiting in line.`,
-      url
-    }).catch(() => window.open(waUrl, '_blank'));
-  } else {
-    window.open(waUrl, '_blank');
-  }
+function showResult(tokenNum, name, pos, wait) {
+  document.getElementById('join-form-wrap').style.display = 'none';
+  document.getElementById('result-wrap').style.display    = 'block';
+  document.getElementById('r-num').textContent     = tokenNum;
+  document.getElementById('r-greeting').textContent= `${name}, ${isUrdu() ? 'آپ قطار میں ہیں! 🎉' : "you're in the queue! 🎉"}`;
+  document.getElementById('r-pos').textContent     = pos ?? '—';
+  document.getElementById('r-wait').textContent    = (wait ?? 0) + 'm';
 }
 
-// FIX #14: Cancel token
-async function enableNotifications() {
-  if (!myTokenId || !selectedShop) return;
-  const btn = document.querySelector('#notify-prompt button');
-  if (btn) { btn.textContent = '...'; btn.disabled = true; }
-
-  const ok = await requestPushPermission(myTokenId, selectedShop.id);
-
-  const prompt = document.getElementById('notify-prompt');
-  if (ok) {
-    if (prompt) prompt.innerHTML = '<span style="font-size:14px">🔔</span><div style="font-size:13px;color:var(--green)">Notifications enabled! We\'ll alert you when your turn is near.</div>';
-    setTimeout(() => { if (prompt) prompt.style.display = 'none'; }, 3000);
-  } else {
-    if (prompt) prompt.style.display = 'none';
-  }
-}
-
-async function cancelMyToken() {
-  // Get shop_id from memory OR localStorage fallback
-  const shopId = selectedShop?.id || (() => {
-    try { return JSON.parse(localStorage.getItem('saf_token_shop'))?.id; } catch(e) { return null; }
-  })();
-
-  if (!myTokenId) {
-    myTokenId = localStorage.getItem('saf_token_id');
-  }
-
-  if (!myTokenId || !shopId) {
-    alert('ٹوکن کی معلومات نہیں ملی — صفحہ تازہ کریں');
-    return;
-  }
-
-  if (!confirm('کیا آپ واقعی اپنا ٹوکن منسوخ کرنا چاہتے ہیں؟')) return;
-
-  const btn = document.getElementById('cancel-token-btn');
-  if (btn) { btn.disabled = true; btn.textContent = '...'; }
-
-  try {
-    const res  = await fetch(`${WORKER}/public/cancel`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ token_id: myTokenId, shop_id: shopId })
-    });
-    const data = await res.json();
-    if (data.success) {
-      clearInterval(trackerTimer);
-      clearTokenStorage();
-      myTokenId = null; myTokenNum = null;
-      const badge = document.getElementById('tracker-badge');
-      const sub   = document.getElementById('tracker-sub');
-      if (badge) { badge.className = 'tracker-badge done'; badge.textContent = '❌ منسوخ'; }
-      if (sub)   sub.textContent = 'آپ کا ٹوکن منسوخ ہو گیا';
-      if (btn)   btn.style.display = 'none';
-    } else {
-      alert(data.error || 'منسوخ نہیں ہو سکا');
-      if (btn) { btn.disabled = false; btn.textContent = 'ٹوکن منسوخ کریں'; }
-    }
-  } catch(e) {
-    alert('کنکشن کا مسئلہ — دوبارہ کوشش کریں');
-    if (btn) { btn.disabled = false; btn.textContent = 'ٹوکن منسوخ کریں'; }
-  }
-}
-
-
-// ── VAPID PUBLIC KEY ──────────────────────────────────────────
-const VAPID_PUBLIC_KEY = 'BEhHj1q439bpBSggOfW14NI7PjtgL5GQpYX6Zvt4H1imsJgbpi6Aba4ziH4AqoQ9Htr6akwOncK7tkp8yTIaGOw';
-
-// ── WEB PUSH SUBSCRIPTION ─────────────────────────────────────
-async function requestPushPermission(tokenId, shopId) {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-    return false;
-  }
-
-  try {
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') return false;
-
-    const reg = await navigator.serviceWorker.ready;
-    const sub = await reg.pushManager.subscribe({
-      userVisibleOnly:      true,
-      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-    });
-
-    // Send subscription to server
-    await fetch(`${WORKER}/push/subscribe`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ token_id: tokenId, shop_id: shopId, subscription: sub.toJSON() }),
-    });
-
-    // Store locally
-    localStorage.setItem('saf_push_token_id', tokenId);
-    return true;
-  } catch (e) {
-    console.error('Push subscription failed:', e);
-    return false;
-  }
-}
-
-function urlBase64ToUint8Array(base64String) {
-  const padding  = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64   = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData  = atob(base64);
-  const output   = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) output[i] = rawData.charCodeAt(i);
-  return output;
-}
-
-// ── ALARM SOUND (Web Audio API) ──────────────────────────────
-function playAlarm(type = 'called') {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-
-    function beep(freq, startTime, duration, vol, wave) {
-      vol  = vol  || 0.7;
-      wave = wave || 'square';
-      var osc  = ctx.createOscillator();
-      var gain = ctx.createGain();
-      osc.type = wave;
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(vol, startTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(startTime);
-      osc.stop(startTime + duration + 0.01);
-    }
-
-    var t = ctx.currentTime;
-
-    if (type === 'called') {
-      // URGENT loud alarm — double burst
-      beep(880,  t + 0.00, 0.18, 0.9, 'square');
-      beep(1100, t + 0.22, 0.18, 0.9, 'square');
-      beep(880,  t + 0.44, 0.18, 0.9, 'square');
-      beep(1100, t + 0.66, 0.18, 0.9, 'square');
-      beep(1320, t + 0.88, 0.50, 1.0, 'square');
-      beep(880,  t + 1.50, 0.18, 0.9, 'square');
-      beep(1100, t + 1.72, 0.18, 0.9, 'square');
-      beep(1320, t + 1.94, 0.60, 1.0, 'square');
-      if (navigator.vibrate) navigator.vibrate([400,150,400,150,600,200,400,150,600]);
-    } else if (type === 'near') {
-      // 2-tone gentle warning — almost your turn
-      beep(660, t + 0.00, 0.20, 0.6, 'sine');
-      beep(880, t + 0.25, 0.20, 0.6, 'sine');
-      beep(660, t + 0.55, 0.20, 0.6, 'sine');
-      beep(880, t + 0.80, 0.30, 0.7, 'sine');
-      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-    } else {
-      // ready / join confirmation — soft ascending
-      beep(440, t + 0.00, 0.15, 0.5, 'sine');
-      beep(550, t + 0.18, 0.15, 0.5, 'sine');
-      beep(660, t + 0.36, 0.20, 0.5, 'sine');
-    }
-  } catch (e) {}
-}
-
-// ── COUNTDOWN TIMER ───────────────────────────────────────────
-let countdownInterval = null;
-let graceCountdown    = null;
-
-function startGraceCountdown(seconds, onExpire) {
-  let remaining = seconds;
-  const el = document.getElementById('grace-countdown');
-  if (!el) return;
-  el.style.display = 'block';
-
-  graceCountdown = setInterval(() => {
-    remaining--;
-    el.textContent = `${remaining}s`;
-    if (remaining <= 0) {
-      clearInterval(graceCountdown);
-      el.style.display = 'none';
-      if (onExpire) onExpire();
-    }
-  }, 1000);
-}
-
-
-// ── COUNTDOWN RING ─────────────────────────────────────────
-function updateCountdown(minutes, position) {
-  const wrap   = document.getElementById('countdown-wrap');
-  const circle = document.getElementById('countdown-circle');
-  const val    = document.getElementById('countdown-val');
-  if (!wrap || !circle || !val) return;
-
-  wrap.style.display = 'block';
-
-  const maxMin   = 60; // ring fills at 0, empties at 60
-  const pct      = Math.max(0, Math.min(1, 1 - (minutes / maxMin)));
-  const dashArr  = 339.3;
-  const offset   = dashArr * (1 - pct);
-
-  circle.style.strokeDashoffset = offset;
-  val.textContent = minutes;
-
-  const isUrgent = minutes <= 5;
-  circle.classList.toggle('urgent', isUrgent);
-  val.classList.toggle('urgent', isUrgent);
-}
-
-// ── RATING ───────────────────────────────────────────────────
-function showRatingPrompt() {
-  const prompt = document.getElementById('rating-prompt');
-  const shopNameEl = document.getElementById('rating-shop-name');
-  if (prompt && selectedShop) {
-    if (shopNameEl) shopNameEl.textContent = selectedShop.name;
-    prompt.style.display = 'block';
-  }
-}
-
-async function submitRating(stars) {
-  // Highlight selected stars
-  document.querySelectorAll('.star-btn').forEach((btn, i) => {
-    btn.classList.toggle('active', i < stars);
-  });
-  // Store locally (backend endpoint can be added later)
-  try {
-    const key = `rating_${selectedShop?.id}_${new Date().toISOString().split('T')[0]}`;
-    localStorage.setItem(key, stars);
-  } catch(e) {}
-  document.getElementById('stars-row').style.display = 'none';
-  document.getElementById('rating-done').style.display = 'block';
-}
-
-// ── LIVE TRACKER ───────────────────────────────────────────
-// ── ALERT STATE ────────────────────────────────────────────
-// Stages: 5 ahead, 3 ahead, 1 ahead, 0 (called)
-const ALERT_STAGES = new Set(); // tracks which stages already fired this session
-
-let _calledAlarmFired = false;
-
-function resetAlertStages() {
-  ALERT_STAGES.clear();
-  _calledAlarmFired = false;
-}
-
-// ── MUTE SYSTEM ────────────────────────────────────────────
-function isMuted() {
-  return localStorage.getItem('queue_mute') === 'true';
-}
-
-function toggleMute() {
-  const muted = !isMuted();
-  localStorage.setItem('queue_mute', muted ? 'true' : 'false');
-  updateMuteUI();
-  if (!muted) playBeep(660, 0.15); // confirmation beep on unmute
-}
-
-function updateMuteUI() {
-  const muted   = isMuted();
-  const icon    = document.getElementById('mute-icon');
-  const label   = document.getElementById('mute-label');
-  const btn     = document.getElementById('mute-btn');
-  if (!icon) return;
-  icon.textContent  = muted ? '🔇' : '🔊';
-  if (label) label.textContent = muted ? 'Muted' : 'Alerts On';
-  if (label) label.style.color = muted ? 'var(--muted)' : 'var(--gold)';
-  if (btn)   btn.style.opacity = muted ? '0.6' : '1';
-}
-
-// ── VOICE ANNOUNCEMENT ─────────────────────────────────────
-// Uses Azure Neural TTS (ur-PK-UzmaNeural) via Worker proxy.
-// Falls back to Web Speech API if Azure key not configured.
-// Falls back to silence if neither works.
-
-let _webVoices    = [];
-let _wsLoaded     = false;
-let _azureWorks   = null; // null=unknown, true=works, false=unavailable
-let _audioCache   = {};   // cache audio blobs by text
-
-// Pre-load Web Speech voices
-if ('speechSynthesis' in window) {
-  const load = () => { _webVoices = window.speechSynthesis.getVoices(); _wsLoaded = true; };
-  load();
-  window.speechSynthesis.onvoiceschanged = load;
-}
-
-function isMuted() { return localStorage.getItem('sq_muted') === '1'; }
-function toggleMute() {
-  const m = localStorage.getItem('sq_muted') === '1';
-  localStorage.setItem('sq_muted', m ? '0' : '1');
-  const btn = document.getElementById('mute-btn');
-  if (btn) btn.textContent = m ? '🔔' : '🔕';
-}
-
-async function playVoice(textEn, textUr) {
-  if (isMuted()) return;
-  if (document.hidden) return;
-
-  const lang  = localStorage.getItem('sq_lang') || 'en';
-  const isUr  = lang === 'ur';
-  const text  = isUr ? textUr : textEn;
-  const langCode = isUr ? 'ur' : 'en';
-
-  // Try Azure TTS first
-  if (_azureWorks !== false) {
-    const played = await playAzureTTS(text, langCode);
-    if (played) return;
-  }
-
-  // Fallback: Web Speech API
-  playWebSpeech(text, isUr);
-}
-
-async function playAzureTTS(text, lang) {
-  try {
-    // Check cache first
-    const cacheKey = `${lang}:${text}`;
-    let audioUrl   = _audioCache[cacheKey];
-
-    if (!audioUrl) {
-      const res = await fetch(
-        `${WORKER}/tts?text=${encodeURIComponent(text)}&lang=${lang}`,
-        { cache: 'no-store' }
-      );
-
-      // 204 = Azure not configured
-      if (res.status === 204) { _azureWorks = false; return false; }
-      if (!res.ok)             { _azureWorks = false; return false; }
-
-      _azureWorks = true;
-      const blob  = await res.blob();
-      audioUrl    = URL.createObjectURL(blob);
-      _audioCache[cacheKey] = audioUrl;
-    }
-
-    const audio = new Audio(audioUrl);
-    audio.volume = 1.0;
-    await audio.play();
-    return true;
-  } catch(e) {
-    _azureWorks = false;
-    return false;
-  }
-}
-
-function playWebSpeech(text, isUr) {
-  if (!('speechSynthesis' in window)) return;
-  try {
-    window.speechSynthesis.cancel();
-    const utt  = new SpeechSynthesisUtterance(text);
-
-    if (isUr) {
-      // Find any Urdu or Hindi voice (Hindi sounds close to Urdu)
-      const urVoice = _webVoices.find(v => v.lang === 'ur-PK')
-                   || _webVoices.find(v => v.lang === 'ur')
-                   || _webVoices.find(v => v.lang.startsWith('hi')); // Hindi fallback
-      if (urVoice) utt.voice = urVoice;
-      utt.lang  = 'ur-PK';
-      utt.rate  = 0.82;
-      utt.pitch = 1.0;
-    } else {
-      const enVoice = _webVoices.find(v => v.name.includes('Samantha'))
-                   || _webVoices.find(v => v.name.includes('Karen'))
-                   || _webVoices.find(v => v.lang === 'en-US' && v.localService)
-                   || _webVoices.find(v => v.lang.startsWith('en'));
-      if (enVoice) utt.voice = enVoice;
-      utt.lang  = 'en-US';
-      utt.rate  = 0.88;
-      utt.pitch = 1.05;
-    }
-    utt.volume = 1.0;
-    window.speechSynthesis.speak(utt);
-  } catch(e) {}
-}
-
-// ── RATING ───────────────────────────────────────────────────
-function showRatingPrompt() {
-  const prompt = document.getElementById('rating-prompt');
-  const shopNameEl = document.getElementById('rating-shop-name');
-  if (prompt && selectedShop) {
-    if (shopNameEl) shopNameEl.textContent = selectedShop.name;
-    prompt.style.display = 'block';
-  }
-}
-
-async function submitRating(stars) {
-  // Highlight selected stars
-  document.querySelectorAll('.star-btn').forEach((btn, i) => {
-    btn.classList.toggle('active', i < stars);
-  });
-  // Store locally (backend endpoint can be added later)
-  try {
-    const key = `rating_${selectedShop?.id}_${new Date().toISOString().split('T')[0]}`;
-    localStorage.setItem(key, stars);
-  } catch(e) {}
-  document.getElementById('stars-row').style.display = 'none';
-  document.getElementById('rating-done').style.display = 'block';
-}
-
-// ── LIVE TRACKER ───────────────────────────────────────────
-// ── ALERT STATE ────────────────────────────────────────────
-// Stages: 5 ahead, 3 ahead, 1 ahead, 0 (called)
-const ALERT_STAGES = new Set(); // tracks which stages already fired this session
-
-let _calledAlarmFired = false;
-
-function resetAlertStages() {
-  ALERT_STAGES.clear();
-  _calledAlarmFired = false;
-}
-
-// ── MUTE SYSTEM ────────────────────────────────────────────
-function isMuted() {
-  return localStorage.getItem('queue_mute') === 'true';
-}
-
-function toggleMute() {
-  const muted = !isMuted();
-  localStorage.setItem('queue_mute', muted ? 'true' : 'false');
-  updateMuteUI();
-  if (!muted) playBeep(660, 0.15); // confirmation beep on unmute
-}
-
-function updateMuteUI() {
-  const muted   = isMuted();
-  const icon    = document.getElementById('mute-icon');
-  const label   = document.getElementById('mute-label');
-  const btn     = document.getElementById('mute-btn');
-  if (!icon) return;
-  icon.textContent  = muted ? '🔇' : '🔊';
-  if (label) label.textContent = muted ? 'Muted' : 'Alerts On';
-  if (label) label.style.color = muted ? 'var(--muted)' : 'var(--gold)';
-  if (btn)   btn.style.opacity = muted ? '0.6' : '1';
-}
-
-// ── VOICE ANNOUNCEMENT ─────────────────────────────────────
-let _voiceList = [];
-let _urduVoice = null;
-let _engVoice  = null;
-
-function _loadVoices() {
-  _voiceList  = window.speechSynthesis.getVoices();
-  // Find best Urdu voice
-  _urduVoice  = _voiceList.find(v => v.lang === 'ur-PK')
-             || _voiceList.find(v => v.lang === 'ur');
-  // Find best English voice (natural, not robotic)
-  _engVoice   = _voiceList.find(v => v.name.includes('Samantha'))
-             || _voiceList.find(v => v.name.includes('Karen'))
-             || _voiceList.find(v => v.name.includes('Daniel'))
-             || _voiceList.find(v => v.lang === 'en-US' && v.localService)
-             || _voiceList.find(v => v.lang.startsWith('en') && v.localService)
-             || _voiceList.find(v => v.lang.startsWith('en'));
-}
-
-if ('speechSynthesis' in window) {
-  _loadVoices();
-  window.speechSynthesis.onvoiceschanged = _loadVoices;
-}
-
-function playVoice(textEn, textUr) {
-  if (isMuted()) return;
-  if (!('speechSynthesis' in window)) return;
-  if (document.hidden) return;
-  const useUrdu = (localStorage.getItem('sq_lang') || 'ur') === 'ur';
-  try {
-    window.speechSynthesis.cancel();
-    if (useUrdu && _urduVoice && textUr) {
-      // Urdu voice with Urdu text
-      const utt   = new SpeechSynthesisUtterance(textUr);
-      utt.voice   = _urduVoice;
-      utt.lang    = 'ur-PK';
-      utt.rate    = 0.82;   // slower = clearer for Urdu
-      utt.pitch   = 1.0;
-      utt.volume  = 1.0;
-      window.speechSynthesis.speak(utt);
-    } else {
-      // English voice with English text
-      const utt   = new SpeechSynthesisUtterance(textEn);
-      if (_engVoice) utt.voice = _engVoice;
-      utt.lang    = _engVoice?.lang || 'en-US';
-      utt.rate    = 0.88;
-      utt.pitch   = 1.05;
-      utt.volume  = 1.0;
-      window.speechSynthesis.speak(utt);
-    }
-  } catch(e) {}
-}
-
-// ── SOUND BEEP ─────────────────────────────────────────────
-function playBeep(freq, duration, vol) {
-  if (isMuted()) return;
-  if (document.hidden) return;
-  freq     = freq     || 880;
-  duration = duration || 0.2;
-  vol      = vol      || 0.5;
-  try {
-    const ctx  = new (window.AudioContext || window.webkitAudioContext)();
-    const osc  = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.value = freq;
-    gain.gain.setValueAtTime(vol, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + duration + 0.01);
-  } catch(e) {}
-}
-
-// ── TRIGGER ALERT (voice + sound) ─────────────────────────
-function triggerAlert(stage) {
-  if (ALERT_STAGES.has(stage)) return; // already fired
-  ALERT_STAGES.add(stage);
-
-  // Each entry: [English, Urdu]
-  const messages = {
-    5: ['5 people ahead of you. Please be ready soon.',
-        'آپ سے پہلے 5 لوگ ہیں۔ تیار رہیں۔'],
-    3: ['3 people remaining. Please start making your way.',
-        'صرف 3 لوگ باقی ہیں۔ آنا شروع کریں۔'],
-    1: ['Only 1 person left. Your turn is coming right now.',
-        'صرف ایک شخص باقی ہے۔ آپ کی باری آنے والی ہے۔'],
-    0: ['It is your turn now. Please come to the counter immediately.',
-        'آپ کی باری آ گئی۔ ابھی کاؤنٹر پر آئیں۔'],
-  };
-
-  const beeps = {
-    5: [660, 0.2, 0.4],
-    3: [880, 0.2, 0.5],
-    1: [1100, 0.25, 0.6],
-    0: null, // playAlarm('called') handles this
-  };
-
-  if (stage === 0) {
-    // Final call — use existing loud alarm
-    playAlarm('called');
-    playVoice(messages[0][0], messages[0][1]);
-    if (navigator.vibrate) navigator.vibrate([400, 150, 400, 150, 600]);
-  } else {
-    const [freq, dur, vol] = beeps[stage];
-    playBeep(freq, dur, vol);
-    // Small delay so beep finishes before voice
-    setTimeout(() => playVoice(messages[stage][0], messages[stage][1]), 600);
-    if (navigator.vibrate) navigator.vibrate([stage === 1 ? 300 : 150]);
-  }
-}
-
-// ── TRACKER ────────────────────────────────────────────────
+// ── LIVE TRACKER ──────────────────────────────────────────────
 function startTracker() {
-  resetAlertStages();
-  if (trackerTimer) clearInterval(trackerTimer);
-  updateMuteUI();
   updateTracker();
-  trackerTimer = setInterval(updateTracker, 8000);
+  trackerTimer = setInterval(updateTracker, 15000);
 }
 
 async function updateTracker() {
   if (!myTokenId || !selectedShop) return;
   try {
     const res  = await fetch(`${WORKER}/public/position?shop_id=${selectedShop.id}&token_id=${myTokenId}`);
-    const json = await res.json();
-    const data = json.data;
-    if (!data) return;
-
+    const { data } = await res.json();
     const badge  = document.getElementById('tracker-badge');
+    const txt    = document.getElementById('tracker-txt');
     const sub    = document.getElementById('tracker-sub');
-    const posEl  = document.getElementById('r-pos');
-    const waitEl = document.getElementById('r-wait-val');
+    const ur     = isUrdu();
+    const cancel = document.getElementById('cancel-token-btn');
 
     if (data.status === 'called') {
       badge.className   = 'tracker-badge called';
-      badge.textContent = '🔔 آپ کی باری آ گئی!';
-      sub.textContent   = 'ابھی کاؤنٹر پر آئیں!';
-      if (posEl)  posEl.textContent  = '🎯';
-      if (waitEl) waitEl.textContent = '0 min';
+      txt.textContent   = ur ? '🔔 آپ کی باری آ گئی!' : "🔔 It's your turn!";
+      sub.textContent   = ur ? 'ابھی آئیں!' : 'Come to the counter now!';
       clearInterval(trackerTimer);
-      if (!_calledAlarmFired) {
-        _calledAlarmFired = true;
-        triggerAlert(0);
-        setTimeout(() => { if (!isMuted()) playAlarm('called'); }, 9000);
-        if (Notification.permission === 'granted') {
-          new Notification('آپ کی باری آ گئی! 🔔', { body: 'ابھی کاؤنٹر پر آئیں!', icon: '/icons/icon-192.png', tag: 'saf-called' });
-        }
-      }
-      const graceEl = document.getElementById('grace-timer');
-      if (graceEl && graceEl.style.display === 'none') {
-        graceEl.style.display = 'block';
-        let rem = 120;
-        const gi = setInterval(() => {
-          rem--;
-          const m = Math.floor(rem/60), s = rem%60;
-          const gt = graceEl.querySelector('.grace-time');
-          if (gt) gt.textContent = m + ':' + String(s).padStart(2,'0');
-          if (rem <= 30) graceEl.style.borderColor = 'var(--red)';
-          if (rem <= 0) clearInterval(gi);
-        }, 1000);
-      }
-
-    } else if (data.status === 'shop_closed') {
-      badge.className   = 'tracker-badge done';
-      badge.textContent = '🔒 دکان بند ہو گئی';
-      sub.textContent   = 'آپ کا ٹوکن منسوخ ہو گیا';
+      localStorage.removeItem('saf_token_id');
+      if (cancel) cancel.style.display = 'none';
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
+      playVoice('It is your turn. Please come to the counter now.', 'آپ کی باری آ گئی۔ ابھی آئیں۔');
+    } else if (['completed','no_show','expired','cancelled','shop_closed'].includes(data.status)) {
+      badge.className = 'tracker-badge done';
+      txt.textContent = data.status === 'shop_closed' ? (ur ? '🔒 دکان بند ہو گئی' : '🔒 Shop closed') : (ur ? '✅ مکمل' : '✅ Done');
+      sub.textContent = ur ? 'سروس ہو گئی' : 'Service complete';
       clearInterval(trackerTimer);
-      clearTokenStorage();
-      const cb = document.getElementById('cancel-token-btn');
-      if (cb) cb.style.display = 'none';
-
-    } else if (['cancelled','no_show','expired'].includes(data.status)) {
-      badge.className   = 'tracker-badge done';
-      badge.textContent = '❌ منسوخ';
-      sub.textContent   = 'آپ کا ٹوکن منسوخ ہو گیا';
-      clearInterval(trackerTimer);
-      clearTokenStorage();
-
-    } else if (data.status === 'completed') {
-      badge.className   = 'tracker-badge done';
-      badge.textContent = '✅ مکمل';
-      sub.textContent   = 'آپ کی سروس ہو گئی';
-      clearInterval(trackerTimer);
-      clearTokenStorage();
-
+      localStorage.removeItem('saf_token_id');
+      if (cancel) cancel.style.display = 'none';
     } else if (data.status === 'waiting') {
-      const pos   = data.position       || 0;
-      const ahead = data.people_ahead   || 0;
-      const wait  = data.estimated_wait || 0;
+      badge.className = 'tracker-badge waiting';
+      const pos   = data.position ?? '?';
+      const ahead = data.people_ahead ?? 0;
+      txt.textContent = ahead === 0
+        ? (ur ? 'آپ اگلے ہیں!' : "You're next!")
+        : (ur ? `قطار میں نمبر ${pos} — ${ahead} آگے` : `Position ${pos} — ${ahead} ahead`);
+      sub.textContent = ur ? 'ہر 15 سیکنڈ میں اپڈیٹ' : 'Updates every 15 seconds';
+      document.getElementById('r-pos').textContent  = pos;
+      document.getElementById('r-wait').textContent = (data.estimated_wait ?? 0) + 'm';
 
-      badge.className   = 'tracker-badge waiting';
-      badge.textContent = 'انتظار — نمبر #' + pos;
-      sub.textContent   = ahead + ' لوگ آگے · ~' + wait + ' منٹ • 10 سیکنڈ میں اپڈیٹ';
-      if (posEl)  posEl.textContent  = pos;
-      if (waitEl) waitEl.textContent = wait + ' min';
-      updateCountdown(wait, pos);
-
-      // ── Smart staged alerts ────────────────────────────
-      // Stage 5: 5 people ahead
-      if (ahead === 5) triggerAlert(5);
-      // Stage 3: 3 people ahead
-      if (ahead === 3) triggerAlert(3);
-      // Stage 1: 1 person ahead
-      if (ahead === 1) triggerAlert(1);
-      // Stage 0 (position 1 = next up) — softer pre-warning
-      if (pos === 1 && !ALERT_STAGES.has(0)) triggerAlert(0); // final call — you're next
+      // Voice alerts
+      if (ahead <= 5 && ahead > 0) {
+        const msgs = {
+          5: ['5 people ahead — get ready', 'آپ سے 5 لوگ آگے ہیں — تیار ہوں'],
+          3: ['3 people left — start making your way', '3 لوگ باقی — آنا شروع کریں'],
+          1: ['Only 1 person left — your turn is very soon', 'صرف 1 شخص باقی — باری آنے والی ہے'],
+        };
+        const msg = msgs[ahead];
+        if (msg) playVoice(msg[0], msg[1]);
+      }
+      if (ahead === 0) playVoice('You are next. Please come to the counter.', 'آپ اگلے ہیں۔ کاؤنٹر پر آئیں۔');
     }
-  } catch(e) { console.error('tracker:', e); }
-}
-
-function clearTokenStorage() {
-  localStorage.removeItem('saf_token_id');
-  localStorage.removeItem('saf_token_num');
-  localStorage.removeItem('saf_token_shop');
-}
-
-// ── RELATED SHOPS (Growth Loop) ────────────────────────────
-async function loadRelatedShops(shopId) {
-  try {
-    const res  = await fetch(`${WORKER}/shops/related?shop_id=${shopId}`);
-    const json = await res.json();
-    const shops = json.data?.shops || [];
-    if (!shops.length) return;
-
-    const container = document.getElementById('related-shops-section');
-    if (!container) return;
-
-    container.style.display = 'block';
-    const list = document.getElementById('related-shops-list');
-    list.innerHTML = shops.map(s => `
-      <div class="shop-card" onclick="openShop('${s.id}')" style="cursor:pointer">
-        <div style="font-weight:700;font-size:14px;color:var(--gold)">${s.name}</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px">${s.category || ''} · ${s.area || ''}</div>
-        <div style="margin-top:6px;display:flex;gap:8px;align-items:center">
-          <span style="font-size:11px;color:${s.is_open ? 'var(--green)' : 'var(--red)'}">
-            ${s.is_open ? '🟢 کھلی' : '🔴 بند'}
-          </span>
-          <span style="font-size:11px;color:var(--muted)">ٹوکن: ${s.current_token || 0}</span>
-        </div>
-      </div>`).join('');
   } catch(e) {}
 }
 
-// ── SHARE SHOP LINK (one tap after join) ──────────────────
-async function shareShopLink() {
-  if (!selectedShop) return;
-  try {
-    const res  = await fetch(`${WORKER}/shops/${selectedShop.id}/share-link`);
-    const json = await res.json();
-    const msg  = json.data?.message;
-    const waUrl = json.data?.whatsapp_url;
-    if (waUrl) {
-      window.open(waUrl, '_blank');
-    } else if (navigator.share) {
-      await navigator.share({ title: selectedShop.name, url: json.data?.link || location.href });
-    }
-  } catch(e) {
-    // Fallback: share current URL
-    const link = `${location.origin}/s/${selectedShop.slug || ''}?shop=${selectedShop.id}`;
-    if (navigator.share) navigator.share({ title: selectedShop.name, url: link });
-    else window.open(`https://wa.me/?text=${encodeURIComponent(link)}`, '_blank');
-  }
-}
+// ── CANCEL TOKEN ──────────────────────────────────────────────
+async function cancelMyToken() {
+  const shopId = selectedShop?.id || (() => {
+    try { return JSON.parse(localStorage.getItem('saf_token_shop'))?.id; } catch(e) { return null; }
+  })();
+  const tokenId = myTokenId || localStorage.getItem('saf_token_id');
 
-// ── POLL PAYMENT APPROVAL ──────────────────────────────────
-// ── FILTERS ────────────────────────────────────────────────
-function filterCity(city) {
-  if (city) {
-    // Navigate to SEO area page for indexability
-    window.location.href = `/area.html?area=${encodeURIComponent(city)}`;
+  if (!tokenId || !shopId) {
+    alert(isUrdu() ? 'ٹوکن کی معلومات نہیں ملی' : 'Token info not found — please refresh');
     return;
   }
-  activeCity = '';
-  document.querySelectorAll('#city-filter-row .cat-chip').forEach(c =>
-    c.classList.toggle('active', c.dataset.city === '')
-  );
-  loadShops();
-}
+  if (!confirm(isUrdu() ? 'کیا واقعی ٹوکن منسوخ کریں؟' : 'Cancel your token?')) return;
 
-function filterCat(cat) {
-  activeCategory = cat;
-  document.querySelectorAll('#cat-row .cat-chip').forEach(c =>
-    c.classList.toggle('active', c.dataset.cat === cat)
-  );
-  applyFilters();
-}
+  const btn = document.getElementById('cancel-token-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '...'; }
 
-function filterArea(area) {
-  activeArea = area;
-  document.querySelectorAll('.area-chip').forEach(c => c.classList.toggle('active', c.dataset.area === area));
-  applyFilters();
-}
-
-function onSearch() {
-  searchQuery = document.getElementById('search-input').value.trim().toLowerCase();
-  applyFilters();
-}
-
-function applyFilters() {
-  filteredShops = allShops.filter(s => {
-    const catOk  = !activeCategory || s.category === activeCategory;
-    const areaOk = !activeArea     || (s.area||'').toLowerCase().includes(activeArea.toLowerCase());
-    const srchOk = !searchQuery    ||
-      s.name.toLowerCase().includes(searchQuery) ||
-      (s.area||'').toLowerCase().includes(searchQuery) ||
-      (s.category||'').toLowerCase().includes(searchQuery);
-    return catOk && areaOk && srchOk;
-  });
-  renderShops();
-}
-
-function renderAreaChips(areas) {
-  if (!areas.length) return;
-  const row = document.getElementById('area-row');
-  row.style.display = 'flex';
-  row.innerHTML = `<button class="area-chip active" onclick="filterArea('')" data-area="" id="area-all-btn">${(localStorage.getItem("sq_lang")||"ur")==="ur"?"سب علاقے":"All Areas"}</button>` +
-    areas.map(a => `<button class="area-chip" onclick="filterArea('${esc(a)}')" data-area="${esc(a)}">${esc(a)}</button>`).join('');
-}
-
-// ── HELPERS ────────────────────────────────────────────────
-function catIcon(cat) {
-  const icons = {barber:'✂️',clinic:'🏥',pharmacy:'💊',bank:'🏦',govt:'🏛️',tailor:'🧵'};
-  return icons[cat] || '🏪';
-}
-
-function catLabel(cat) {
-  const labels = {barber:'حجام',clinic:'کلینک',pharmacy:'فارمیسی',bank:'بینک',govt:'سرکاری',tailor:'درزی'};
-  return labels[cat] || cat || 'دیگر';
-}
-
-function esc(s) {
-  return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
-// Enter key on name field
-document.getElementById('c-name').addEventListener('keydown', e => { if(e.key==='Enter') submitJoin(); });
-
-// ── BOOT ───────────────────────────────────────────────────
-// ── LANGUAGE SYSTEM ──────────────────────────────────────────
-function toggleLangAndReload() {
-  const cur = localStorage.getItem('sq_lang') || 'ur';
-  localStorage.setItem('sq_lang', cur === 'en' ? 'ur' : 'en');
-  window.location.reload();
-}
-
-function applyPageLanguage() {
-  const lang = localStorage.getItem('sq_lang') || 'ur';
-  const isUr = lang === 'ur';
-  const key  = isUr ? 'ur' : 'en';
-
-  // Direction + font
-  const html = document.getElementById('html-root');
-  if (html) { html.lang = lang; html.dir = isUr ? 'rtl' : 'ltr'; }
-  document.body.style.fontFamily = isUr ? "'Noto Nastaliq Urdu', serif" : "'Sora', sans-serif";
-
-  // Lang toggle button label (shows what you SWITCH TO)
-  const label = document.getElementById('lang-label');
-  if (label) label.textContent = isUr ? 'English' : 'اردو';
-
-  // All elements with data-en / data-ur attributes get updated automatically
-  document.querySelectorAll('[data-en][data-ur]').forEach(el => {
-    el.textContent = el.dataset[key];
-  });
-
-  // Search placeholder
-  const si = document.getElementById('search-input');
-  if (si) si.placeholder = isUr ? 'دکان یا علاقہ تلاش کریں...' : 'Search shops or areas...';
-}
-
-// Apply immediately on load
-applyPageLanguage();
-
-(async function boot() {
-  updateMuteUI(); // init mute button state from localStorage
-  // Restore active token from previous session
-  const savedTokenId  = localStorage.getItem('saf_token_id');
-  const savedTokenNum = localStorage.getItem('saf_token_num');
-  const savedShop     = localStorage.getItem('saf_token_shop');
-
-  // Restore pending payment poll if customer refreshed while waiting for approval
-  const pendingPayment = localStorage.getItem('saf_pending_payment');
-  if (pendingPayment && !savedTokenId) {
-    try {
-      const { reqId, shopData } = JSON.parse(pendingPayment);
-      if (reqId && shopData) {
-        selectedShop = shopData;
-        // Show modal directly in waiting state — do NOT call openShop (it resets the form)
-        const modal = document.getElementById('token-modal');
-        if (modal) modal.classList.add('show');
-        document.getElementById('join-form-wrap').style.display  = 'block';
-        document.getElementById('result-wrap').style.display     = 'none';
-        // Show paid section in waiting mode
-        const paidSec = document.getElementById('paid-token-section');
-        if (paidSec) paidSec.style.display = 'block';
-        const btn = document.getElementById('join-btn');
-        const lbl = document.getElementById('join-btn-label');
-        if (btn) btn.disabled = true;
-        if (lbl) lbl.textContent = '⏳ منظوری کا انتظار...';
-        const errEl = document.getElementById('sheet-err');
-        if (errEl) { errEl.style.color = 'var(--green)'; errEl.textContent = '✓ درخواست موصول! ہر 5 سیکنڈ میں چیک ہو رہا ہے...'; }
-        startPaymentPolling(reqId, '', '');
-      }
-    } catch(e) { localStorage.removeItem('saf_pending_payment'); }
+  try {
+    const res  = await fetch(`${WORKER}/public/cancel`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token_id: tokenId, shop_id: shopId })
+    });
+    const { success, error } = await res.json();
+    if (success) {
+      clearInterval(trackerTimer);
+      localStorage.removeItem('saf_token_id');
+      myTokenId = null;
+      const badge = document.getElementById('tracker-badge');
+      const txt   = document.getElementById('tracker-txt');
+      if (badge) badge.className = 'tracker-badge done';
+      if (txt)   txt.textContent = isUrdu() ? '❌ منسوخ' : '❌ Cancelled';
+      if (btn)   btn.style.display = 'none';
+    } else {
+      alert(error || (isUrdu() ? 'منسوخ نہیں ہو سکا' : 'Could not cancel'));
+      if (btn) { btn.disabled = false; btn.textContent = isUrdu() ? 'ٹوکن منسوخ کریں' : 'Cancel my token'; }
+    }
+  } catch(e) {
+    alert(isUrdu() ? 'کنکشن مسئلہ' : 'Connection error — try again');
+    if (btn) { btn.disabled = false; btn.textContent = isUrdu() ? 'ٹوکن منسوخ کریں' : 'Cancel my token'; }
   }
+}
 
-  if (savedTokenId && savedShop) {
+// ── SHARE ─────────────────────────────────────────────────────
+function shareShopSaveLink() {
+  const shopName = selectedShop?.name || 'this shop';
+  const url      = `${location.origin}/customer.html?shop=${selectedShop?.id}`;
+  const msg      = encodeURIComponent(
+    `🏪 I just used WaitMate at *${shopName}*!\n\n` +
+    `No more standing in line — get your token and come only when it's your turn.\n\n` +
+    `📱 ${url}\n\n_آپ کی باری، آپ کے وقت پر — WaitMate_`
+  );
+  if (navigator.share) {
+    navigator.share({ title: `Skip the queue at ${shopName}`, url }).catch(() => window.open(`https://wa.me/?text=${msg}`, '_blank'));
+  } else {
+    window.open(`https://wa.me/?text=${msg}`, '_blank');
+  }
+}
+
+// ── VOICE ─────────────────────────────────────────────────────
+let _lastVoiceText = '';
+let _audioCache    = {};
+
+async function playVoice(textEn, textUr) {
+  const text = isUrdu() ? textUr : textEn;
+  if (!text || text === _lastVoiceText) return;
+  _lastVoiceText = text;
+  const lang = isUrdu() ? 'ur' : 'en';
+
+  // Try Worker TTS proxy (Google Translate)
+  try {
+    const cacheKey = `${lang}:${text}`;
+    let audioUrl = _audioCache[cacheKey];
+    if (!audioUrl) {
+      const res = await fetch(`${WORKER}/tts?text=${encodeURIComponent(text)}&lang=${lang}`);
+      if (res.ok && res.status !== 204) {
+        const blob = await res.blob();
+        audioUrl   = URL.createObjectURL(blob);
+        _audioCache[cacheKey] = audioUrl;
+      }
+    }
+    if (audioUrl) { new Audio(audioUrl).play(); return; }
+  } catch(e) {}
+
+  // Fallback: Web Speech API
+  if ('speechSynthesis' in window) {
     try {
-      myTokenId    = savedTokenId;
-      myTokenNum   = parseInt(savedTokenNum) || null;
-      selectedShop = JSON.parse(savedShop);
+      window.speechSynthesis.cancel();
+      const utt = new SpeechSynthesisUtterance(text);
+      utt.lang  = isUrdu() ? 'ur-PK' : 'en-US';
+      utt.rate  = isUrdu() ? 0.85 : 0.9;
+      window.speechSynthesis.speak(utt);
+    } catch(e) {}
+  }
+}
 
+// ── TRUST STATS ───────────────────────────────────────────────
+function loadTrustStats() {
+  fetch(`${WORKER}/public/stats`)
+    .then(r => r.json()).then(({ data }) => {
+      if (!data) return;
+      const el = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = v ?? '—'; };
+      el('t-open',   data.open_shops);
+      el('t-tokens', data.tokens_today);
+      el('t-shops',  data.total_shops);
+    }).catch(() => {});
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ── BOOT ──────────────────────────────────────────────────────
+(async function boot() {
+  applyLang();
+  loadTrustStats();
+
+  // Restore active token if exists
+  const savedId   = localStorage.getItem('saf_token_id');
+  const savedShop = localStorage.getItem('saf_token_shop');
+  if (savedId && savedShop) {
+    try {
+      selectedShop = JSON.parse(savedShop);
+      myTokenId    = savedId;
+      myTokenNum   = parseInt(localStorage.getItem('saf_token_num')) || null;
+      // Check if still active
       const res  = await fetch(`${WORKER}/public/position?shop_id=${selectedShop.id}&token_id=${myTokenId}`);
       const json = await res.json();
       const st   = json.data?.status;
-
-      if (st && !['completed','cancelled','expired','no_show','shop_closed'].includes(st)) {
-        // Restore directly into result/tracker view — skip join form
-        document.getElementById('r-num').textContent           = myTokenNum || '?';
-        document.getElementById('r-greeting').textContent      = `${selectedShop.name} — ٹوکن بحال`;
-        document.getElementById('join-form-wrap').style.display = 'none';
-        document.getElementById('result-wrap').style.display    = 'block';
-        // Show modal and overlay
-        const modal = document.getElementById('token-modal');
-        const overlay = document.getElementById('modal-overlay') || document.querySelector('.modal-overlay');
-        if (modal) modal.classList.add('show');
-        if (overlay) overlay.classList.add('show');
-        if (Notification.permission === 'default') Notification.requestPermission();
-        startTracker();
+      if (st && ['waiting','called'].includes(st)) {
+        openShop(selectedShop.id);
+        setTimeout(() => {
+          document.getElementById('join-form-wrap').style.display = 'none';
+          document.getElementById('result-wrap').style.display    = 'block';
+          showResult(myTokenNum, '', json.data.position, json.data.estimated_wait);
+          startTracker();
+        }, 500);
       } else {
-        clearTokenStorage();
+        localStorage.removeItem('saf_token_id');
+        myTokenId = null; selectedShop = null;
       }
-    } catch(e) { clearTokenStorage(); }
-  }
-
-  // Resolve /s/slug → shop id
-  if (HIGHLIGHT_SLUG && !HIGHLIGHT_SHOP) {
-    try {
-      const res  = await fetch(`${WORKER}/shops/by-slug/${encodeURIComponent(HIGHLIGHT_SLUG)}`);
-      const json = await res.json();
-      if (json.data?.id) _resolvedShopId = json.data.id;
-    } catch(e) {}
-  }
-  const effectiveShop = _resolvedShopId || HIGHLIGHT_SHOP;
-
-  // Load global trust stats
-fetch(`${WORKER}/public/stats`)
-  .then(r => r.json()).then(({data}) => {
-    if (!data) return;
-    document.getElementById('trust-open').textContent   = data.open_shops   ?? '—';
-    document.getElementById('trust-tokens').textContent = data.tokens_today  ?? '—';
-    document.getElementById('trust-shops').textContent  = data.total_shops   ?? '—';
-  }).catch(() => {});
-
-await loadShops();
-
-  // If shop param or slug: load featured shop
-  if (effectiveShop) {
-    await loadFeaturedShop(effectiveShop);
-    document.querySelector('.search-wrap').style.opacity = '0.7';
-    try {
-      const res    = await fetch(`${WORKER}/public/shop/${effectiveShop}`);
-      const {data} = await res.json();
-      if (data?.is_open) setTimeout(() => openShop(effectiveShop), 1500);
-    } catch(e) {}
-
-    // Load related shops (growth loop)
-    loadRelatedShops(effectiveShop);
-  }
-
-  // Refresh every 60s in background
-  setInterval(async () => {
-    if (!myTokenId) {
-      // Show first-visit bar if arriving via shared link and haven't seen it before
-  if (HIGHLIGHT_SHOP && !localStorage.getItem('wm_visited')) {
-    document.getElementById('first-visit-bar').style.display = 'block';
-    localStorage.setItem('wm_visited', '1');
+    } catch(e) { localStorage.removeItem('saf_token_id'); }
   }
 
   await loadShops();
-      if (effectiveShop) await loadFeaturedShop(effectiveShop);
-    }
-  }, 60000);
-})();
 
-// ── PWA INSTALL PROMPT ─────────────────────────────────────
-let _deferredInstall = null;
-const INSTALL_KEY    = 'saf_pwa_installed';
-
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  _deferredInstall = e;
-  if (!localStorage.getItem(INSTALL_KEY)) showInstallBanner();
-});
-
-window.addEventListener('appinstalled', () => {
-  localStorage.setItem(INSTALL_KEY, '1');
-  hideInstallBanner();
-});
-
-function showInstallBanner() {
-  if (localStorage.getItem(INSTALL_KEY)) return;
-  let banner = document.getElementById('install-banner');
-  if (!banner) {
-    banner = document.createElement('div');
-    banner.id = 'install-banner';
-    banner.innerHTML = `
-      <div style="display:flex;align-items:center;gap:12px">
-        <span style="font-size:28px">📲</span>
-        <div style="flex:1">
-          <div style="font-weight:700;font-size:14px;color:var(--gold)">ایپ انسٹال کریں</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:2px">WaitMate — Your Smart Queue Partner</div>
-        </div>
-        <button onclick="doInstall()" style="background:var(--gold);color:#000;border:none;border-radius:20px;padding:8px 18px;font-weight:700;font-size:13px;cursor:pointer;flex-shrink:0">Install</button>
-        <button onclick="hideInstallBanner()" style="background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:0 4px">×</button>
-      </div>`;
-    Object.assign(banner.style, {
-      position:'fixed', bottom:'20px', left:'12px', right:'12px',
-      background:'var(--surface)', border:'1px solid rgba(212,175,55,.35)',
-      borderRadius:'16px', padding:'14px 16px', zIndex:'999',
-      boxShadow:'0 8px 32px rgba(0,0,0,.5)', animation:'sheetUp .4s ease both'
-    });
-    document.body.appendChild(banner);
+  // Featured shop from shared link
+  if (HIGHLIGHT) {
+    await fetch(`${WORKER}/public/shop/${HIGHLIGHT}`)
+      .then(r => r.json()).then(({ data }) => {
+        if (data?.is_open) setTimeout(() => openShop(HIGHLIGHT), 800);
+        // Update OG
+        if (data) {
+          document.title = `${data.name} — WaitMate`;
+          const og = document.getElementById('og-title');
+          if (og) og.content = `${data.name} — Get your token on WaitMate`;
+        }
+      }).catch(() => {});
   }
-  banner.style.display = 'block';
-  // Re-show every 5 minutes if not installed
-  setTimeout(() => {
-    if (!localStorage.getItem(INSTALL_KEY)) showInstallBanner();
-  }, 5 * 60 * 1000);
-}
 
-function hideInstallBanner() {
-  const b = document.getElementById('install-banner');
-  if (b) b.style.display = 'none';
-}
-
-async function doInstall() {
-  if (!_deferredInstall) return;
-  _deferredInstall.prompt();
-  const { outcome } = await _deferredInstall.userChoice;
-  if (outcome === 'accepted') {
-    localStorage.setItem(INSTALL_KEY, '1');
-    hideInstallBanner();
-  }
-  _deferredInstall = null;
-}
-</script>
-
-<!-- ── SUPPORT WIDGET (floating) ── -->
-<div id="support-widget" style="display:none;position:fixed;bottom:80px;right:16px;z-index:200">
-  <div id="support-popup" style="display:none;position:absolute;bottom:56px;right:0;background:#111827;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:16px;width:220px;box-shadow:0 8px 32px rgba(0,0,0,.4)">
-    <div style="font-size:12px;font-weight:700;color:#F1F5F9;margin-bottom:4px" id="sw-message">Need help?</div>
-    <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px">
-      <a id="sw-wa" href="#" target="_blank" rel="noopener" style="display:none;align-items:center;gap:8px;padding:9px 12px;background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);border-radius:8px;text-decoration:none;color:#25D166;font-size:12px;font-weight:600">
-        💬 WhatsApp Support
-      </a>
-      <a id="sw-email" href="#" style="display:none;align-items:center;gap:8px;padding:9px 12px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.2);border-radius:8px;text-decoration:none;color:#38BDF8;font-size:12px;font-weight:600">
-        ✉️ Email Support
-      </a>
-    </div>
-  </div>
-  <button onclick="toggleSupportPopup()" title="Contact Support"
-    style="width:48px;height:48px;border-radius:50%;border:none;background:linear-gradient(135deg,#E8B84B,#F5CC6A);color:#080c14;font-size:20px;cursor:pointer;box-shadow:0 4px 16px rgba(232,184,75,.35);transition:transform .2s"
-    onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
-    💬
-  </button>
-</div>
-<script>
-function toggleSupportPopup() {
-  const p = document.getElementById('support-popup');
-  p.style.display = p.style.display === 'none' ? 'block' : 'none';
-}
-document.addEventListener('click', e => {
-  if (!document.getElementById('support-widget')?.contains(e.target)) {
-    const p = document.getElementById('support-popup');
-    if (p) p.style.display = 'none';
-  }
-});
-(async function loadSupport() {
-  try {
-    const WK  = 'https://saf-queue-worker.byker-software.workers.dev';
-    const res  = await fetch(`${WK}/public/settings`);
-    const {data} = await res.json();
-    if (!data) return;
-    const widget = document.getElementById('support-widget');
-    const hasWa  = data.support_whatsapp?.trim();
-    const hasEm  = data.support_email?.trim();
-    if (!hasWa && !hasEm) return; // hide if not configured
-    widget.style.display = 'block';
-    if (data.support_message) document.getElementById('sw-message').textContent = data.support_message;
-    if (hasWa) {
-      const waEl = document.getElementById('sw-wa');
-      waEl.href = `https://wa.me/${data.support_whatsapp.replace(/\D/g,'')}`;
-      waEl.style.display = 'flex';
-    }
-    if (hasEm) {
-      const emEl = document.getElementById('sw-email');
-      emEl.href = `mailto:${data.support_email}`;
-      emEl.style.display = 'flex';
-    }
-  } catch(e) {}
+  // Auto-refresh every 60s
+  setInterval(() => { if (!myTokenId) loadShops(); }, 60000);
 })();
 </script>
 
-
-<!-- ── PWA INSTALL PROMPT (persistent) ── -->
+<!-- ── PWA INSTALL PROMPT ── -->
 <div id="pwa-install-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:10000;background:linear-gradient(135deg,#0d1422,#111827);border-top:2px solid #E8B84B;padding:14px 16px;box-shadow:0 -8px 32px rgba(0,0,0,.6)">
   <div style="max-width:480px;margin:0 auto;display:flex;align-items:center;gap:12px">
     <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#E8B84B,#F5CC6A);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🏪</div>
-    <div style="flex:1;min-width:0">
+    <div style="flex:1">
       <div style="font-size:13px;font-weight:700;color:#F1F5F9;margin-bottom:2px">Install WaitMate App</div>
-      <div style="font-size:11px;color:#94A3B8">Works offline · Instant access · No app store needed</div>
+      <div style="font-size:11px;color:#94A3B8">Works offline · Instant access · No app store</div>
     </div>
     <div style="display:flex;gap:6px;flex-shrink:0">
-      <button id="pwa-install-btn" onclick="triggerInstall()"
-        style="padding:9px 16px;border:none;border-radius:9px;background:linear-gradient(135deg,#E8B84B,#F5CC6A);color:#080c14;font-family:'Sora',sans-serif;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap">
-        Install
-      </button>
-      <button onclick="dismissInstall()"
-        style="padding:9px 10px;border:1px solid rgba(255,255,255,.1);border-radius:9px;background:transparent;color:#64748B;font-family:'Sora',sans-serif;font-size:12px;cursor:pointer">
-        ✕
-      </button>
+      <button id="pwa-install-btn" onclick="triggerInstall()" style="padding:9px 16px;border:none;border-radius:9px;background:linear-gradient(135deg,#E8B84B,#F5CC6A);color:#080c14;font-family:'Sora',sans-serif;font-size:13px;font-weight:800;cursor:pointer">Install</button>
+      <button onclick="dismissInstall()" style="padding:9px 10px;border:1px solid rgba(255,255,255,.1);border-radius:9px;background:transparent;color:#64748B;cursor:pointer">✕</button>
     </div>
   </div>
-  <!-- iOS manual instruction (shown on iOS) -->
-  <div id="ios-install-hint" style="display:none;margin-top:10px;background:rgba(232,184,75,.08);border:1px solid rgba(232,184,75,.2);border-radius:8px;padding:9px 12px;font-size:11px;color:#94A3B8;text-align:center">
+  <div id="ios-hint" style="display:none;margin-top:10px;background:rgba(232,184,75,.08);border:1px solid rgba(232,184,75,.2);border-radius:8px;padding:9px 12px;font-size:11px;color:#94A3B8;text-align:center">
     📱 On iPhone: tap <strong style="color:#E8B84B">Share ↑</strong> then <strong style="color:#E8B84B">"Add to Home Screen"</strong>
   </div>
 </div>
-
 <script>
-(function initPWAPrompt() {
-  let _deferredPrompt = null;
-  const DISMISS_KEY   = 'pwa_dismissed_until';
-  const INSTALL_KEY   = 'pwa_installed';
-
-  // Don't show if already installed
-  if (window.matchMedia('(display-mode: standalone)').matches ||
-      window.navigator.standalone === true) {
-    localStorage.setItem('pwa_installed', '1');
-    return;
-  }
-  if (localStorage.getItem(INSTALL_KEY)) return;
-
-  function showBanner() {
-    const banner = document.getElementById('pwa-install-banner');
-    if (banner) banner.style.display = 'block';
-    // Push page content up so banner doesn't cover content
-    document.body.style.paddingBottom = '90px';
-  }
-
-  function isIOS() {
-    return /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
-  }
-
-  // Capture install prompt (Android/Chrome)
-  window.addEventListener('beforeinstallprompt', e => {
-    e.preventDefault();
-    _deferredPrompt = e;
-    // Check if dismissed recently (max 1 hour snooze)
-    const until = parseInt(localStorage.getItem(DISMISS_KEY) || '0');
-    if (Date.now() > until) showBanner();
-  });
-
-  // iOS — show manual instructions after 3 seconds
-  if (isIOS()) {
-    const until = parseInt(localStorage.getItem(DISMISS_KEY) || '0');
-    if (Date.now() > until) {
-      setTimeout(() => {
-        showBanner();
-        const hint = document.getElementById('ios-install-hint');
-        if (hint) hint.style.display = 'block';
-      }, 3000);
-    }
-  }
-
-  // App installed event
-  window.addEventListener('appinstalled', () => {
-    localStorage.setItem(INSTALL_KEY, '1');
-    const b = document.getElementById('pwa-install-banner');
-    if (b) b.style.display = 'none';
-    document.body.style.paddingBottom = '';
-  });
-
+(function() {
+  let _prompt = null;
+  if (window.matchMedia('(display-mode:standalone)').matches || navigator.standalone) return;
+  if (localStorage.getItem('pwa_installed')) return;
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const show  = () => { document.getElementById('pwa-install-banner').style.display='block'; document.body.style.paddingBottom='90px'; };
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); _prompt=e; const u=parseInt(localStorage.getItem('pwa_snooze')||0); if(Date.now()>u) show(); });
+  if (isIOS) { const u=parseInt(localStorage.getItem('pwa_snooze')||0); if(Date.now()>u) setTimeout(()=>{ show(); document.getElementById('ios-hint').style.display='block'; }, 4000); }
+  window.addEventListener('appinstalled', () => { localStorage.setItem('pwa_installed','1'); document.getElementById('pwa-install-banner').style.display='none'; document.body.style.paddingBottom=''; });
   window.triggerInstall = async function() {
-    if (_deferredPrompt) {
-      _deferredPrompt.prompt();
-      const { outcome } = await _deferredPrompt.userChoice;
-      _deferredPrompt = null;
-      if (outcome === 'accepted') {
-        localStorage.setItem(INSTALL_KEY, '1');
-        document.getElementById('pwa-install-banner').style.display = 'none';
-        document.body.style.paddingBottom = '';
-      } else {
-        // Dismissed — snooze for 30 minutes then show again
-        localStorage.setItem(DISMISS_KEY, Date.now() + 30 * 60 * 1000);
-      }
-    } else if (isIOS()) {
-      // iOS — show instructions
-      const hint = document.getElementById('ios-install-hint');
-      if (hint) hint.style.display = hint.style.display === 'none' ? 'block' : 'none';
-    }
+    if (_prompt) { _prompt.prompt(); const {outcome}=await _prompt.userChoice; _prompt=null; if(outcome==='accepted'){localStorage.setItem('pwa_installed','1'); document.getElementById('pwa-install-banner').style.display='none'; document.body.style.paddingBottom='';} else {localStorage.setItem('pwa_snooze',Date.now()+30*60*1000);} }
+    else if (isIOS) { const h=document.getElementById('ios-hint'); h.style.display=h.style.display==='none'?'block':'none'; }
   };
-
-  window.dismissInstall = function() {
-    // Only snooze 1 hour — not permanent
-    localStorage.setItem(DISMISS_KEY, Date.now() + 60 * 60 * 1000);
-    document.getElementById('pwa-install-banner').style.display = 'none';
-    document.body.style.paddingBottom = '';
-  };
-
-  // Re-show after snooze expires (check every 5 min)
-  setInterval(() => {
-    if (localStorage.getItem(INSTALL_KEY)) return;
-    const until = parseInt(localStorage.getItem(DISMISS_KEY) || '0');
-    if (Date.now() > until && _deferredPrompt) showBanner();
-  }, 5 * 60 * 1000);
+  window.dismissInstall = function() { localStorage.setItem('pwa_snooze',Date.now()+60*60*1000); document.getElementById('pwa-install-banner').style.display='none'; document.body.style.paddingBottom=''; };
+  setInterval(()=>{ if(localStorage.getItem('pwa_installed')) return; const u=parseInt(localStorage.getItem('pwa_snooze')||0); if(Date.now()>u&&_prompt) show(); }, 5*60*1000);
 })();
 </script>
-
 </body>
 </html>
