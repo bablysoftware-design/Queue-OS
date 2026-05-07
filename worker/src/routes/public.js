@@ -248,15 +248,43 @@ export async function publicCancelToken(request, env) {
 /** GET /public/stats — global platform stats for landing page */
 export async function getGlobalStats(request, env) {
   try {
-    const db = createClient(env);
-    const [shops, tokens] = await Promise.all([
-      db.select('shops', 'is_active=eq.true&select=id,is_open'),
-      db.select('tokens', `created_at=gte.${new Date().toISOString().split('T')[0]}T00:00:00&select=id`),
-    ]);
+    const db    = createClient(env);
+    const today = new Date().toISOString().split('T')[0];
+
+    // shops: small table, need is_open per row — full select is correct
+    const shops = await db.select('shops', 'is_active=eq.true&select=id,is_open');
+
+    // tokens: O(n) SELECT replaced with HEAD + Prefer:count=exact
+    // PostgREST returns count in Content-Range header, zero body bytes transferred
+    // Fallback to 0 on any failure — this is non-critical telemetry
+    let tokensToday = 0;
+    try {
+      const countRes = await fetch(
+        `${env.SUPABASE_URL.trim()}/rest/v1/tokens?created_at=gte.${today}T00:00:00`,
+        {
+          method:  'HEAD',
+          headers: {
+            'apikey':        env.SUPABASE_KEY.trim(),
+            'Authorization': `Bearer ${env.SUPABASE_KEY.trim()}`,
+            'Prefer':        'count=exact',
+          },
+        }
+      );
+      // Content-Range format: "0-49/247" or "*/247"
+      const range = countRes.headers.get('Content-Range');
+      if (range) {
+        const parsed = parseInt(range.split('/')[1], 10);
+        if (!isNaN(parsed)) tokensToday = parsed;
+      }
+    } catch(_) {
+      // Non-critical — leave tokensToday = 0
+    }
+
+    // Response shape preserved exactly
     return ok({
       total_shops:  shops.length,
       open_shops:   shops.filter(s => s.is_open).length,
-      tokens_today: tokens.length,
+      tokens_today: tokensToday,
     });
   } catch(err) { return serverError(err.message); }
 }
