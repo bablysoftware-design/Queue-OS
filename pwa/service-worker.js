@@ -1,5 +1,5 @@
 // service-worker.js v7 - aggressive reset
-const CACHE = 'wm-v7';
+const CACHE = 'wm-v8';
 
 self.addEventListener('install', e => {
   self.skipWaiting();

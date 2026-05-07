@@ -947,7 +947,10 @@ async function loadShops() {
     if (searchQuery)    qp.push(`search=${encodeURIComponent(searchQuery)}`);
     if (qp.length)      url += '?' + qp.join('&');
 
-    const res  = await fetch(url);
+    const controller = new AbortController();
+    const timeout    = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    const res  = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
     const data = await res.json();
 
     if (!res.ok || !data.success) {
@@ -979,6 +982,7 @@ async function loadShops() {
       `<div style="color:var(--red);padding:40px;text-align:center">
         <div style="font-size:20px;margin-bottom:8px">⚠️</div>
         <div>لوڈ نہیں ہو سکا</div>
+        <div style="font-size:10px;opacity:.5;direction:ltr">${e.name === 'AbortError' ? 'Timeout - server took too long' : e.message}</div>
         <div style="font-size:11px;opacity:0.6;margin-top:6px;direction:ltr">${e.message}</div>
         <button onclick="location.reload()" style="margin-top:16px;padding:8px 20px;border:1px solid var(--gold);border-radius:20px;background:transparent;color:var(--gold);font-family:inherit;cursor:pointer;">دوبارہ کوشش کریں</button>
       </div>`;
