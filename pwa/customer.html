@@ -1112,6 +1112,9 @@ async function openShop(shopId) {
   // Reset modal to join form
   document.getElementById('join-form-wrap').style.display = 'block';
   document.getElementById('result-wrap').style.display    = 'none';
+  // Reset share panel — prevents it appearing without delay on re-join
+  const _sap = document.getElementById('share-after-join');
+  if (_sap) _sap.style.display = 'none';
   document.getElementById('sheet-err').textContent         = '';
   document.getElementById('c-name').value                  = '';
   document.getElementById('c-phone').value                 = '';
@@ -1820,24 +1823,9 @@ function clearTokenStorage() {
 
 // ── RELATED SHOPS (Growth Loop) ────────────────────────────
 async function loadRelatedShops(shopId) {
-  try {
-    const res  = await fetch(`${WORKER}/shops/related?shop_id=${shopId}`);
-    const json = await res.json();
-    const shops = json.data?.shops || [];
-    if (!shops.length) return;
-
-    const container = document.getElementById('related-shops-section');
-    if (!container) return;
-
-    container.style.display = 'block';
-    const list = document.getElementById('related-shops-list');
-    list.innerHTML = shops.map(s => `
-      <div class="shop-card" onclick="openShop('${s.id}')" style="cursor:pointer">
-        <div style="font-weight:700;font-size:14px;color:var(--gold)">${s.name}</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px">${s.category || ''} · ${s.area || ''}</div>
-        <div style="margin-top:6px;display:flex;gap:8px;align-items:center">
-          <span style="font-size:11px;color:${s.is_open ? 'var(--green)' : 'var(--red)'}">
-            ${s.is_open ? '🟢 کھلی' : '🔴 بند'}
+  // Endpoint /shops/related not yet implemented — no-op until Phase 4
+  return;
+  // trunk-ignore: unreachable code preserved for when endpoint ships
           </span>
           <span style="font-size:11px;color:var(--muted)">ٹوکن: ${s.current_token || 0}</span>
         </div>
@@ -2035,18 +2023,41 @@ function buildCatChips() {
 
 
 // ── SCAN COUNTING ──────────────────────────────────────────
-// Fire-and-forget. Session-deduplicated via sessionStorage.
-// Called on meaningful customer intent: QR arrival or card tap.
+// Two-layer dedup:
+//   1. sessionStorage: one count per shop per tab session
+//   2. 5s boot guard: absorbs hydration races and rapid reloads
+const BOOT_TIME = Date.now();
+
 function recordScan(shopId, source) {
-  const key = 'scanned_' + shopId;
+  const key        = 'scanned_' + shopId;
   if (sessionStorage.getItem(key)) return; // already counted this session
-  sessionStorage.setItem(key, '1');
-  // Fire-and-forget — never await, never block the queue flow
-  fetch(`${WORKER}/public/scan`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ shop_id: shopId, source }),
-  }).catch(() => {});
+
+  const msFromBoot = Date.now() - BOOT_TIME;
+  const delay      = Math.max(0, 5000 - msFromBoot);
+
+  setTimeout(() => {
+    if (sessionStorage.getItem(key)) return; // another call completed during delay
+    sessionStorage.setItem(key, '1');
+    fetch(`${WORKER}/public/scan`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ shop_id: shopId, source }),
+    }).catch(() => {});
+  }, delay);
+}
+
+
+// ── RETURNING CUSTOMER SCROLL ──────────────────────────────
+// When customer arrives via saved/shared link and shop is not auto-opening,
+// scroll to the shop card in the list so the page feels responsive.
+function scrollToShopCard(shopId) {
+  const card = document.getElementById('shop-' + shopId);
+  if (!card) return;
+  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  // Brief highlight pulse so returning customer sees their shop instantly
+  card.style.transition = 'box-shadow .4s';
+  card.style.boxShadow  = '0 0 0 2px var(--gold)';
+  setTimeout(() => { card.style.boxShadow = ''; }, 1800);
 }
 
 (async function boot() {
@@ -2134,17 +2145,23 @@ function recordScan(shopId, source) {
 
   await loadShops();
 
-  // If shop param or slug: load featured shop
+  // If shop param or slug: load featured shop + scroll to card
   if (effectiveShop) {
     await loadFeaturedShop(effectiveShop);
     document.querySelector('.search-wrap').style.opacity = '0.7';
     try {
       const res    = await fetch(`${WORKER}/public/shop/${effectiveShop}`);
       const {data} = await res.json();
-      if (data?.is_open) setTimeout(() => openShop(effectiveShop), 1500);
-    } catch(e) {}
+      if (data?.is_open) {
+        setTimeout(() => openShop(effectiveShop), 1500);
+      } else {
+        // Shop is closed — scroll to its card so returning customer sees it
+        setTimeout(() => scrollToShopCard(effectiveShop), 800);
+      }
+    } catch(e) {
+      setTimeout(() => scrollToShopCard(effectiveShop), 800);
+    }
 
-    // Load related shops (growth loop)
     loadRelatedShops(effectiveShop);
   }
 
