@@ -36,7 +36,8 @@ self.addEventListener('fetch', e => {
       fetch(e.request, { cache: 'no-cache' })
         .then(res => {
           if (res.ok) {
-            caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+            const clone = res.clone(); // clone synchronously before async chain
+            caches.open(CACHE).then(c => c.put(e.request, clone));
           }
           return res;
         })
