@@ -899,10 +899,16 @@ function renderSuggestions(featuredShop) {
 }
 
 // ── LOAD SHOPS ─────────────────────────────────────────────
+let _shopsEverLoaded = false; // guard: don't blank list on background refresh
+
 async function loadShops() {
-  document.getElementById('loading-state').style.display = 'block';
-  document.getElementById('shops-container').style.display = 'none';
-  document.getElementById('empty-state').style.display   = 'none';
+  // On first load: show loading state and hide stale content
+  // On refresh: keep existing shops visible while new data loads silently
+  if (!_shopsEverLoaded) {
+    document.getElementById('loading-state').style.display = 'block';
+    document.getElementById('shops-container').style.display = 'none';
+    document.getElementById('empty-state').style.display   = 'none';
+  }
 
   try {
     let url = `${WORKER}/public/shops`;
@@ -952,6 +958,7 @@ async function loadShops() {
 }
 
 function renderShops() {
+  _shopsEverLoaded = true; // shops have loaded at least once
   document.getElementById('loading-state').style.display = 'none';
 
   if (!filteredShops.length) {
