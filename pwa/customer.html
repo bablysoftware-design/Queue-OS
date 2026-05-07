@@ -534,15 +534,27 @@ function buildAreaChips(areas) {
   const row = document.getElementById('area-row');
   row.style.display = 'flex';
   const ur = isUrdu();
+
+  // Deduplicate case-insensitively, capitalize properly
+  const seen = new Set();
+  const clean = areas.filter(a => {
+    const key = a.toLowerCase().trim();
+    if (seen.has(key)) return false;
+    seen.add(key); return true;
+  }).map(a => {
+    // Capitalize each word
+    return a.trim().replace(/\b\w/g, c => c.toUpperCase());
+  }).sort();
+
   row.innerHTML = `<button class="area-chip active" data-area="" onclick="filterArea('')">${ur ? 'سب علاقے' : 'All Areas'}</button>` +
-    areas.map(a => `<button class="area-chip" data-area="${esc(a)}" onclick="filterArea('${esc(a)}')">${esc(a)}</button>`).join('');
+    clean.map(a => `<button class="area-chip" data-area="${esc(a)}" onclick="filterArea('${esc(a)}')">${esc(a)}</button>`).join('');
 }
 
 // ── FILTERS ───────────────────────────────────────────────────
 function filterCity(city) {
   activeCity = city;
   document.querySelectorAll('#city-row .chip').forEach(c => c.classList.toggle('active', c.dataset.city === city));
-  loadShops();
+  loadShops(); // city filter goes to server (handles case-insensitive via ilike)
 }
 
 function filterCat(cat) {
@@ -562,11 +574,19 @@ function onSearch() {
   applyLocalFilter();
 }
 
+function normalizeArea(area) {
+  if (!area) return '';
+  // If area contains '/', take everything (for matching purposes)
+  return area.toLowerCase().trim();
+}
+
 function applyLocalFilter() {
   filteredShops = allShops.filter(s => {
     const catOk  = !activeCategory || s.category === activeCategory;
-    const areaOk = !activeArea     || (s.area || '').toLowerCase().includes(activeArea.toLowerCase());
-    const srchOk = !searchQuery    || s.name.toLowerCase().includes(searchQuery) || (s.area || '').toLowerCase().includes(searchQuery);
+    const shopArea = normalizeArea(s.area);
+    // Area matches if the shop's area CONTAINS the filter (handles "Korang Town / Islamabad" matching "Korang Town")
+    const areaOk = !activeArea || shopArea.includes(activeArea.toLowerCase().trim());
+    const srchOk = !searchQuery || s.name.toLowerCase().includes(searchQuery) || shopArea.includes(searchQuery);
     return catOk && areaOk && srchOk;
   });
   renderShops();

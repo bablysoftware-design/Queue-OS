@@ -24,7 +24,21 @@ BEGIN
   SELECT json_build_object(
     'shops', COALESCE(json_agg(row_to_json(d) ORDER BY d.is_open DESC, d.name ASC), '[]'::json),
     'total', COUNT(*) OVER(),
-    'areas', (SELECT json_agg(DISTINCT area ORDER BY area) FROM shops WHERE is_active=TRUE AND area IS NOT NULL)
+    'areas', (
+      SELECT json_agg(canonical ORDER BY canonical)
+      FROM (
+        SELECT DISTINCT
+          INITCAP(TRIM(
+            -- If area contains '/', take the first part (city) only
+            CASE WHEN area LIKE '%/%' THEN SPLIT_PART(area, '/', 1)
+                 WHEN area LIKE '% / %' THEN SPLIT_PART(area, ' / ', 1)
+                 ELSE area
+            END
+          )) AS canonical
+        FROM shops
+        WHERE is_active = TRUE AND area IS NOT NULL AND TRIM(area) != ''
+      ) sub
+    )
   ) INTO v_result
   FROM (
     SELECT s.id, s.name, s.category, s.area, s.address, s.description,

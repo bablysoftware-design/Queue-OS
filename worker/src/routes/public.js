@@ -43,7 +43,7 @@ export async function getPublicShops(request, env) {
     } catch(rpcErr) {
       // RPC not created yet — fast fallback (no N+1)
       let query = `is_active=eq.true&select=id,name,category,area,address,description,opening_time,closing_time,is_open,current_token,avg_service_time_mins,token_mode,token_price&order=is_open.desc,name.asc&limit=${limit}&offset=${offset}`;
-      if (area)     query += `&area=ilike.*${area}*`;
+      if (area)     query += `&area=ilike.*${encodeURIComponent(area)}*`;
       if (category) query += `&category=eq.${category}`;
 
       const rawShops = await db.select('shops', query);
@@ -70,7 +70,14 @@ export async function getPublicShops(request, env) {
         };
       });
 
-      areas = [...new Set(rawShops.map(s => s.area).filter(Boolean))].sort();
+      // Normalize areas: INITCAP, extract city if area contains '/'
+const rawAreas = rawShops.map(s => s.area).filter(Boolean);
+const normAreas = rawAreas.map(a => {
+  let clean = a.includes('/') ? a.split('/')[0] : a;
+  clean = clean.trim();
+  return clean.charAt(0).toUpperCase() + clean.slice(1).toLowerCase();
+});
+areas = [...new Set(normAreas)].sort();
       total = shops.length;
     }
 
