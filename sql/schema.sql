@@ -186,3 +186,63 @@ ALTER TABLE shopkeepers   ENABLE ROW LEVEL SECURITY;
 -- ============================================================
 -- END OF SCHEMA
 -- ============================================================
+
+-- ============================================================
+-- EXTENDED TABLES (defined here for fresh-deploy completeness)
+-- These were originally in migrations/features SQL files.
+-- ============================================================
+
+-- ── shop_registrations ───────────────────────────────────────
+CREATE TABLE IF NOT EXISTS shop_registrations (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name        TEXT NOT NULL,
+  owner_phone TEXT NOT NULL,
+  category    TEXT,
+  area        TEXT,
+  pin         TEXT NOT NULL,          -- stored as SHA-256 hash
+  status      TEXT NOT NULL DEFAULT 'pending',
+  token_mode  TEXT DEFAULT 'free',
+  token_price INTEGER DEFAULT 0,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_shop_registrations_phone
+  ON shop_registrations(owner_phone, status);
+
+-- ── payment_requests ─────────────────────────────────────────
+-- token_id uses ON DELETE SET NULL: payment record persists if token is deleted
+CREATE TABLE IF NOT EXISTS payment_requests (
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  shop_id        UUID NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+  customer_name  TEXT NOT NULL,
+  customer_phone TEXT NOT NULL,
+  amount         INTEGER NOT NULL DEFAULT 0,
+  screenshot_url TEXT,
+  status         TEXT NOT NULL DEFAULT 'pending'
+                   CHECK (status IN ('pending','approved','rejected')),
+  token_id       UUID REFERENCES tokens(id) ON DELETE SET NULL,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  reviewed_at    TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_payment_requests_shop_status
+  ON payment_requests(shop_id, status);
+
+-- ── push_subscriptions ───────────────────────────────────────
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  token_id   UUID NOT NULL REFERENCES tokens(id) ON DELETE CASCADE,
+  shop_id    UUID NOT NULL REFERENCES shops(id)  ON DELETE CASCADE,
+  endpoint   TEXT NOT NULL,
+  p256dh     TEXT NOT NULL,
+  auth       TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(token_id)
+);
+CREATE INDEX IF NOT EXISTS idx_push_token_id ON push_subscriptions(token_id);
+CREATE INDEX IF NOT EXISTS idx_push_shop_id  ON push_subscriptions(shop_id);
+
+-- ── app_settings ─────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS app_settings (
+  key        TEXT PRIMARY KEY,
+  value      TEXT,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
