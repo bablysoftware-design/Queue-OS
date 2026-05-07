@@ -39,13 +39,16 @@ export async function searchLocations(request, env) {
   return ok(filtered.slice(0, 15).map(v => ({ label: v, value: v })));
 }
 
+// Canonical list — must stay in sync with pwa/categories.js CATEGORY_MAP
 const CATEGORIES = [
-  { label:'✂️ Barber / Salon', value:'barber' },
-  { label:'🏥 Clinic / Doctor', value:'clinic' },
-  { label:'💊 Pharmacy',        value:'pharmacy' },
-  { label:'🏦 Bank',            value:'bank' },
-  { label:'🏛️ Govt Office',    value:'govt' },
-  { label:'🧵 Tailor',         value:'tailor' },
+  { label: '✂️ Barber / Salon',  value: 'barber'   },
+  { label: '🏥 Clinic / Doctor', value: 'clinic'   },
+  { label: '💊 Pharmacy',        value: 'pharmacy' },
+  { label: '🏨 Hospital',        value: 'hospital' },
+  { label: '🏦 Bank / Finance',  value: 'bank'     },
+  { label: '🏛️ Govt Office',    value: 'govt'     },
+  { label: '🧵 Tailor',         value: 'tailor'   },
+  { label: '🏪 Other',          value: 'other'    },
 ];
 
 export async function searchCategories(request, env) {

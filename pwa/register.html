@@ -112,7 +112,7 @@ h1{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;background:li
 
     <div class="field" style="position:relative">
       <label>دکان کی قسم</label>
-      <input id="r-cat" type="text" placeholder="مثال: barber, clinic, pharmacy" autocomplete="off" oninput="acCat(this,'ac-catd')"/>
+      <input id="r-cat" type="text" placeholder="مثال: barber, clinic, pharmacy" autocomplete="off" oninput="this.dataset.canonicalValue=''; acCat(this,'ac-catd')"/>
       <div id="ac-catd" class="ac-drop"></div>
     </div>
 
@@ -161,6 +161,7 @@ h1{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;background:li
 
 </div>
 
+<script src="/categories.js"></script>
 <script>
 const canvas=document.getElementById('particle-canvas'),ctx=canvas.getContext('2d');
 let W,H,pts=[];
@@ -215,8 +216,9 @@ function acCat(input,dropId){
       const drop=document.getElementById(dropId);
       if(!items.length){closeAcR(dropId);return;}
       drop.innerHTML=items.map(item=>{
-        const val=item.name||item.label||item;
-        return `<div class="ac-item" onclick="pickAcR('${dropId}','${escR(val)}','${input.id}')">${escR(val)}</div>`;
+        const display   = item.label || item.name || item;
+        const canonical = item.value || (window.normalizeCat ? window.normalizeCat(String(display)) : 'other');
+        return `<div class="ac-item" onclick="pickAcCanonical('${dropId}','${escR(display)}','${escR(canonical)}','${input.id}')">${escR(display)}</div>`;
       }).join('');
       drop.classList.add('open');
     }catch(e){}
@@ -225,6 +227,14 @@ function acCat(input,dropId){
 
 function pickAcR(dropId,val,inputId){
   document.getElementById(inputId).value=val;
+  closeAcR(dropId);
+}
+
+// Category-specific: shows label, stores canonical value
+function pickAcCanonical(dropId, display, canonical, inputId) {
+  const input = document.getElementById(inputId);
+  input.value = display;
+  input.dataset.canonicalValue = canonical;
   closeAcR(dropId);
 }
 
@@ -244,7 +254,9 @@ async function submitReg(){
   const name=document.getElementById('r-name').value.trim();
   const phone=document.getElementById('r-phone').value.trim();
   const pin=document.getElementById('r-pin').value.trim();
-  const cat=document.getElementById('r-cat').value.trim();
+  const catInput = document.getElementById('r-cat');
+  const cat = catInput.dataset.canonicalValue
+    || (window.normalizeCat ? window.normalizeCat(catInput.value.trim()) : catInput.value.trim());
   const area=document.getElementById('r-area').value.trim();
   const country=document.getElementById('r-country').value.trim();
   const city=document.getElementById('r-city').value.trim();

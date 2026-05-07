@@ -481,13 +481,7 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
 
     <!-- Category filter -->
     <div class="cat-row" id="cat-row">
-      <button class="cat-chip active" onclick="filterCat('')" data-cat="" data-en="All" data-ur="سب">All</button>
-      <button class="cat-chip" onclick="filterCat('barber')"   data-cat="barber"   data-en="✂️ Barber"   data-ur="✂️ حجام">✂️ Barber</button>
-      <button class="cat-chip" onclick="filterCat('clinic')"   data-cat="clinic"   data-en="🏥 Clinic"   data-ur="🏥 کلینک">🏥 Clinic</button>
-      <button class="cat-chip" onclick="filterCat('pharmacy')" data-cat="pharmacy" data-en="💊 Pharmacy" data-ur="💊 فارمیسی">💊 Pharmacy</button>
-      <button class="cat-chip" onclick="filterCat('bank')"     data-cat="bank"     data-en="🏦 Bank"     data-ur="🏦 بینک">🏦 Bank</button>
-      <button class="cat-chip" onclick="filterCat('govt')"     data-cat="govt"     data-en="🏛️ Govt"     data-ur="🏛️ سرکاری">🏛️ Govt</button>
-      <button class="cat-chip" onclick="filterCat('tailor')"   data-cat="tailor"   data-en="🧵 Tailor"   data-ur="🧵 درزی">🧵 Tailor</button>
+      <!-- Built dynamically from CATEGORY_MAP in categories.js -->
     </div>
 
     <!-- Area filter (populated dynamically) -->
@@ -692,6 +686,7 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
   </div>
 </div>
 
+<script src="/categories.js"></script>
 <script>
 // ── Particles ──────────────────────────────────────────────
 const canvas=document.getElementById('particle-canvas'),ctx=canvas.getContext('2d');
@@ -1890,13 +1885,15 @@ function renderAreaChips(areas) {
 
 // ── HELPERS ────────────────────────────────────────────────
 function catIcon(cat) {
-  const icons = {barber:'✂️',clinic:'🏥',pharmacy:'💊',bank:'🏦',govt:'🏛️',tailor:'🧵'};
-  return icons[cat] || '🏪';
+  return window.catEmoji ? window.catEmoji(cat) : '🏪';
 }
 
 function catLabel(cat) {
-  const labels = {barber:'حجام',clinic:'کلینک',pharmacy:'فارمیسی',bank:'بینک',govt:'سرکاری',tailor:'درزی'};
-  return labels[cat] || cat || 'دیگر';
+  if (!window.catDisplay) {
+    const fb = {barber:'حجام',clinic:'کلینک',pharmacy:'فارمیسی',bank:'بینک',govt:'سرکاری',tailor:'درزی'};
+    return fb[cat] || cat || 'دیگر';
+  }
+  return window.catDisplay(cat, getLang());
 }
 
 function esc(s) {
@@ -1941,7 +1938,21 @@ function applyPageLanguage() {
 // Apply immediately on load
 applyPageLanguage();
 
+function buildCatChips() {
+  const row = document.getElementById('cat-row');
+  if (!row || !window.CATEGORY_MAP) return;
+  const ur = getLang() === 'ur';
+  let html = `<button class="cat-chip active" onclick="filterCat('')" data-cat="">${ur ? 'سب' : 'All'}</button>`;
+  for (const [key, cfg] of Object.entries(window.CATEGORY_MAP)) {
+    if (key === 'other') continue;
+    const lbl = cfg.emoji + ' ' + (ur ? cfg.label_ur : cfg.label_en);
+    html += `<button class="cat-chip" onclick="filterCat('${key}')" data-cat="${key}">${lbl}</button>`;
+  }
+  row.innerHTML = html;
+}
+
 (async function boot() {
+  buildCatChips();
   updateMuteUI(); // init mute button state from localStorage
   // Restore active token from previous session
   const savedTokenId  = localStorage.getItem('saf_token_id');
