@@ -1,5 +1,5 @@
 // service-worker.js v7 - aggressive reset
-const CACHE = 'wm-v8';
+const CACHE = 'wm-v9'; // bumped to clear stale cache (slug/rendering fixes)
 
 self.addEventListener('install', e => {
   self.skipWaiting();

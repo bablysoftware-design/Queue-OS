@@ -902,12 +902,16 @@ function renderSuggestions(featuredShop) {
 let _shopsEverLoaded = false; // guard: don't blank list on background refresh
 
 async function loadShops() {
-  // On first load: show loading state and hide stale content
-  // On refresh: keep existing shops visible while new data loads silently
+  const _t0 = Date.now();
+  console.log('[WM] loadShops() called. _shopsEverLoaded=', _shopsEverLoaded);
+
   if (!_shopsEverLoaded) {
     document.getElementById('loading-state').style.display = 'block';
     document.getElementById('shops-container').style.display = 'none';
     document.getElementById('empty-state').style.display   = 'none';
+    console.log('[WM] First load — showing spinner, hiding container');
+  } else {
+    console.log('[WM] Refresh load — keeping existing list visible');
   }
 
   try {
@@ -919,8 +923,20 @@ async function loadShops() {
     if (searchQuery)    qp.push(`search=${encodeURIComponent(searchQuery)}`);
     if (qp.length)      url += '?' + qp.join('&');
 
+    console.log('[WM] Fetching:', url);
     const res  = await fetch(url);
-    const data = await res.json();
+    console.log('[WM] Response status:', res.status, res.ok ? 'OK' : 'FAIL');
+
+    const rawText = await res.text();
+    console.log('[WM] Raw response (first 300):', rawText.slice(0, 300));
+
+    let data;
+    try { data = JSON.parse(rawText); }
+    catch(parseErr) {
+      throw new Error(`JSON parse failed: ${parseErr.message} | body: ${rawText.slice(0, 100)}`);
+    }
+
+    console.log('[WM] data.success=', data.success, '| data.error=', data.error);
 
     if (!res.ok || !data.success) {
       throw new Error(data.error || `HTTP ${res.status}`);
@@ -928,25 +944,30 @@ async function loadShops() {
 
     allShops      = data.data?.shops ?? [];
     filteredShops = allShops;
+    console.log('[WM] Shops loaded:', allShops.length, '| First:', allShops[0]?.name);
 
-    // Populate area chips
     const areas = data.data?.areas ?? [];
+    console.log('[WM] Areas:', areas);
     renderAreaChips(areas);
 
+    console.log('[WM] Calling renderShops(). filteredShops.length=', filteredShops.length);
     renderShops();
+    console.log('[WM] renderShops() returned. shops-container display=',
+      document.getElementById('shops-container').style.display);
 
-    // Auto-open highlighted shop (from shared link)
-    // Featured shop: scroll to it but don't click (openShop is called from boot)
     if (HIGHLIGHT_SHOP || _resolvedShopId) {
       const targetId = _resolvedShopId || HIGHLIGHT_SHOP;
       setTimeout(() => {
         const card = document.getElementById(`shop-${targetId}`);
+        console.log('[WM] Scroll to card:', targetId, '| found:', !!card);
         if (card) card.scrollIntoView({behavior:'smooth', block:'center'});
       }, 400);
     }
 
+    console.log('[WM] loadShops() done in', Date.now() - _t0, 'ms');
+
   } catch (e) {
-    console.error('loadShops failed:', e);
+    console.error('[WM] loadShops FAILED:', e.message, e);
     document.getElementById('loading-state').innerHTML =
       `<div style="color:var(--red);padding:40px;text-align:center">
         <div style="font-size:20px;margin-bottom:8px">⚠️</div>
@@ -958,10 +979,13 @@ async function loadShops() {
 }
 
 function renderShops() {
-  _shopsEverLoaded = true; // shops have loaded at least once
+  _shopsEverLoaded = true;
+  console.log('[WM] renderShops(): filteredShops=', filteredShops.length,
+    '| HIGHLIGHT_SHOP=', HIGHLIGHT_SHOP);
   document.getElementById('loading-state').style.display = 'none';
 
   if (!filteredShops.length) {
+    console.log('[WM] renderShops: empty state — no shops');
     document.getElementById('shops-container').style.display = 'none';
     document.getElementById('empty-state').style.display   = 'block';
     return;
@@ -993,7 +1017,14 @@ function renderShops() {
     return (a.queue_length||0) - (b.queue_length||0);
   });
 
-  document.getElementById('shop-list').innerHTML = sorted.map((s, i) => buildShopCard(s, i)).join('');
+  console.log('[WM] Building cards for', sorted.length, 'shops (listShops after HIGHLIGHT filter)');
+  try {
+    const html = sorted.map((s, i) => buildShopCard(s, i)).join('');
+    document.getElementById('shop-list').innerHTML = html;
+    console.log('[WM] Cards appended. shop-list children:', document.getElementById('shop-list').children.length);
+  } catch(cardErr) {
+    console.error('[WM] buildShopCard crashed:', cardErr);
+  }
 }
 
 function buildShopCard(s, i) {
@@ -2150,7 +2181,9 @@ function scrollToShopCard(shopId) {
   }
   const effectiveShop = _resolvedShopId || HIGHLIGHT_SHOP;
 
+  console.log('[WM] boot: calling loadShops()');
   await loadShops();
+  console.log('[WM] boot: loadShops() resolved');
 
   // If shop param or slug: load featured shop + scroll to card
   if (effectiveShop) {
