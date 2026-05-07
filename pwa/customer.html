@@ -1868,11 +1868,14 @@ function applyFilters() {
   filteredShops = allShops.filter(s => {
     const catOk  = !activeCategory || s.category === activeCategory;
     const areaOk = !activeArea     || (s.area||'').toLowerCase().includes(activeArea.toLowerCase());
+    const cityOk = !activeCity     || (s.city||'').toLowerCase().includes(activeCity.toLowerCase())
+                                   || (s.area||'').toLowerCase().includes(activeCity.toLowerCase());
     const srchOk = !searchQuery    ||
       s.name.toLowerCase().includes(searchQuery) ||
       (s.area||'').toLowerCase().includes(searchQuery) ||
+      (s.city||'').toLowerCase().includes(searchQuery) ||
       (s.category||'').toLowerCase().includes(searchQuery);
-    return catOk && areaOk && srchOk;
+    return catOk && areaOk && cityOk && srchOk;
   });
   renderShops();
 }
