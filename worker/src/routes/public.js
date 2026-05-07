@@ -42,7 +42,7 @@ export async function getPublicShops(request, env) {
       }
     } catch(rpcErr) {
       // RPC not created yet — fast fallback (no N+1)
-      let query = `is_active=eq.true&select=id,name,slug,category,area,address,description,opening_time,closing_time,is_open,current_token,avg_service_time_mins,token_mode,token_price&order=is_open.desc,name.asc&limit=${limit}&offset=${offset}`;
+      let query = `is_active=eq.true&select=id,name,category,area,address,description,opening_time,closing_time,is_open,current_token,avg_service_time_mins,token_mode,token_price&order=is_open.desc,name.asc&limit=${limit}&offset=${offset}`;
       if (area)     query += `&area=ilike.*${encodeURIComponent(area)}*`;
       if (category) query += `&category=eq.${category}`;
 
@@ -105,7 +105,7 @@ export async function getPublicShop(request, env) {
     const db     = createClient(env);
 
     const shops = await db.select('shops',
-      `id=eq.${shopId}&select=id,name,slug,category,area,address,description,opening_time,closing_time,is_open,is_active,current_token,avg_service_time_mins,token_mode,token_price`
+      `id=eq.${shopId}&select=id,name,category,area,address,description,opening_time,closing_time,is_open,is_active,current_token,avg_service_time_mins,token_mode,token_price`
     );
     if (!shops.length) return notFound('دکان نہیں ملی');
 
