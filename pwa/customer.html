@@ -1109,9 +1109,9 @@ async function openShop(shopId) {
   recordScan(shopId, 'direct'); // intentional card tap in discovery list
   selectedShop = allShops.find(s => s.id === shopId);
 
-  // If shop not in allShops yet (e.g. arrived via shared link before list loaded),
-  // fetch it directly from the public API
-  if (!selectedShop) {
+  // Fetch fresh if: shop not in allShops, OR allShops entry is missing
+  // token_mode/token_price (happens when RPC omits them — paid flow requires them)
+  if (!selectedShop || selectedShop.token_mode === undefined) {
     try {
       const res = await fetch(`${WORKER}/public/shop/${shopId}`);
       const { data } = await res.json();
