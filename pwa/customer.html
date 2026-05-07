@@ -672,11 +672,18 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
 
       <button class="btn-gold" onclick="closeModal(true)">Got it — Back to List</button>
 
-      <!-- Share after join — one tap -->
-      <div id="share-after-join" style="display:none;margin-top:14px;background:rgba(37,211,102,0.07);border:1px solid rgba(37,211,102,0.25);border-radius:14px;padding:14px 16px;text-align:center">
-        <div style="font-size:13px;font-weight:600;color:#25d366;margin-bottom:8px">دوستوں کو بھی بتائیں 👇</div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:10px">وہ بھی گھر سے ٹوکن لے سکتے ہیں</div>
-        <button onclick="shareShopLink()" style="width:100%;padding:10px;border:none;border-radius:10px;background:#25d366;color:#fff;font-weight:700;font-size:14px;cursor:pointer">💬 واٹس ایپ پر شیئر کریں</button>
+      <!-- Share after join — family coordination, not marketing -->
+      <div id="share-after-join" style="display:none;margin-top:14px;background:rgba(37,211,102,0.07);border:1px solid rgba(37,211,102,0.25);border-radius:14px;padding:14px 16px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span style="font-size:20px">👨‍👩‍👧</span>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#25d366">گھر والوں کو بتائیں</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">وہ آپ کی باری گھر بیٹھے دیکھ سکتے ہیں</div>
+          </div>
+        </div>
+        <button onclick="shareShopLink()" style="width:100%;padding:11px;border:none;border-radius:10px;background:#25d366;color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit">
+          💬 واٹس ایپ پر شیئر کریں
+        </button>
       </div>
 
       <button id="cancel-token-btn" onclick="cancelMyToken()" style="width:100%;margin-top:10px;padding:12px;border:1px solid rgba(248,113,113,0.3);border-radius:12px;background:rgba(248,113,113,0.06);color:var(--red);font-family:'Sora',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s">
@@ -1810,26 +1817,48 @@ async function loadRelatedShops(shopId) {
 }
 
 // ── SHARE SHOP LINK (one tap after join) ──────────────────
-async function shareShopLink() {
+// Uses client-side state so message includes token number + wait time.
+// Reads like a family coordination message, not marketing.
+function shareShopLink() {
   if (!selectedShop) return;
-  try {
-    const res  = await fetch(`${WORKER}/shops/${selectedShop.id}/share-link`);
-    const json = await res.json();
-    const msg  = json.data?.message;
-    const waUrl = json.data?.whatsapp_url;
-    if (waUrl) {
-      window.open(waUrl, '_blank');
-    } else if (navigator.share) {
-      await navigator.share({ title: selectedShop.name, url: json.data?.link || location.href });
-    }
-  } catch(e) {
-    // Fallback: use slug URL if available, otherwise UUID URL (permanent contract)
-    const link = selectedShop?.slug
-      ? `${location.origin}/s/${selectedShop.slug}`
-      : `${location.origin}/customer.html?shop=${selectedShop.id}`;
-    if (navigator.share) navigator.share({ title: selectedShop.name, url: link });
-    else window.open(`https://wa.me/?text=${encodeURIComponent(link)}`, '_blank');
-  }
+
+  const shopName = selectedShop.name || '';
+  const tokenNum = myTokenNum || document.getElementById('r-num')?.textContent || '?';
+  const waitMins = document.getElementById('r-wait-val')?.textContent?.replace(/[^0-9]/g, '') || '';
+  const link     = selectedShop.slug
+    ? `${location.origin}/s/${selectedShop.slug}`
+    : `${location.origin}/customer.html?shop=${selectedShop.id}`;
+
+  const isUr = (localStorage.getItem('sq_lang') || 'ur') === 'ur';
+
+  // Family coordination language — not marketing
+  const msg = isUr
+    ? encodeURIComponent(
+        `میں نے *${shopName}* میں نمبر ${tokenNum} لے لیا ہے۔
+` +
+        (waitMins ? `تقریباً ${waitMins} منٹ میں باری آئے گی۔
+` : '') +
+        `
+آپ کا ٹوکن بھی لینا ہو تو یہاں سے لے سکتے ہیں:
+${link}
+
+` +
+        `_یہ لنک محفوظ رکھیں — اگلی بار بھی کام آئے گا_`
+      )
+    : encodeURIComponent(
+        `I've taken token #${tokenNum} at *${shopName}*.
+` +
+        (waitMins ? `About ${waitMins} mins wait.
+` : '') +
+        `
+You can also get your token here:
+${link}
+
+` +
+        `_Save this link — it works every visit_`
+      );
+
+  window.open(`https://wa.me/?text=${msg}`, '_blank');
 }
 
 // ── POLL PAYMENT APPROVAL ──────────────────────────────────

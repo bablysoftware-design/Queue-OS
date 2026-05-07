@@ -1434,14 +1434,13 @@ window.loadStats = loadStats;
 
 async function shareShopLink() {
   const shopUrl   = `${location.origin}/customer.html?shop=${state.shopId}`;
+  // Practical invitation — sounds like a person, not an app
   const waMessage = encodeURIComponent(
-    `🏪 *${state.shopName}* is now on WaitMate!\n\n` +
-    `✅ No more standing in line\n` +
-    `✅ Get your token on your phone\n` +
-    `✅ Come only when it's your turn\n\n` +
-    `📱 Join the queue:\n${shopUrl}\n\n` +
-    `Save this link — use it every visit, no scanning needed.\n\n` +
-    `_آپ کی باری، آپ کے وقت پر — WaitMate_`
+    `*${state.shopName}* اب WaitMate پر ہے 🏪\n\n` +
+    `گھر بیٹھے ٹوکن لیں — باری آنے پر آئیں\n` +
+    `لائن میں کھڑے ہونے کی ضرورت نہیں\n\n` +
+    `📱 ابھی ٹوکن لیں:\n${shopUrl}\n\n` +
+    `_اس لنک کو محفوظ کریں — ہر بار کام آئے گا_`
   );
   const waUrl = `https://wa.me/?text=${waMessage}`;
 

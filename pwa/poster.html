@@ -384,10 +384,11 @@ function shareToWhatsApp() {
   const url  = document.getElementById('cfg-url').value.trim();
   if (!url) { alert('Please generate the poster first'); return; }
   const msg = encodeURIComponent(
-    `🏪 *${name}* is now on WaitMate!\n\n` +
-    `Skip the wait — get your token on your phone and come only when it's your turn.\n\n` +
-    `📱 Join the queue here:\n${url}\n\n` +
-    `_آپ کی باری، آپ کے وقت پر — WaitMate_`
+    `*${name}* اب WaitMate پر ہے 🏪\n\n` +
+    `گھر بیٹھے ٹوکن لیں — باری آنے پر آئیں\n` +
+    `لائن میں کھڑے ہونے کی ضرورت نہیں\n\n` +
+    `📱 ٹوکن لینے کے لیے:\n${url}\n\n` +
+    `_یہ لنک محفوظ رکھیں — ہر بار کام آئے گا_`
   );
   window.open(`https://wa.me/?text=${msg}`, '_blank');
 }
