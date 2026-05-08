@@ -157,15 +157,15 @@ export async function updateShopSettingsHandler(request, env) {
       if (isNaN(t) || t < 1 || t > 120) return badRequest('Service time must be 1-120 minutes');
       update.avg_service_time_mins = t;
     }
+    if (update.token_mode && !['free','paid'].includes(update.token_mode)) {
+      return badRequest('Invalid token mode');
+    }
     if (update.token_price !== undefined) {
       const p = parseInt(update.token_price, 10);
-      if (isNaN(p) || p < 0) {
+      if (isNaN(p) || p < 0 || p > 100000) {
         return badRequest('Invalid token price');
       }
       update.token_price = p;
-    }
-    if (update.token_mode !== undefined) {
-      if (!['free','paid'].includes(update.token_mode)) return badRequest('token_mode must be free or paid');
     }
     await db.update('shops', `id=eq.${shopId}`, update);
     return ok({ message: 'Settings saved', updated: update });
