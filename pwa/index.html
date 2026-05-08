@@ -1303,7 +1303,8 @@ function refreshQueue() {
               style="margin-left:auto;padding:3px 10px;border:1px solid rgba(248,113,113,.4);border-radius:20px;background:transparent;color:var(--red);font-size:11px;cursor:pointer;font-family:inherit">
               ✗ Cancel
             </button>
-            ${item.customer_note ? `<div style="width:100%;margin-top:3px;font-size:11px;color:rgba(237,232,208,.55);padding-left:2px">📝 \${esc(item.customer_note)}</div>` : ''}
+            ${item.customer_note ? '<div style="width:100%;margin-top:3px;font-size:11px;color:rgba(237,232,208,.55);padding-left:2px">📝 ' + esc(item.customer_note) + '</div>' : ''}
+            ${item.voice_note_url ? '<div style="width:100%;margin-top:4px"><button onclick="playVoiceNote(\'' + item.voice_note_url + '\',this)" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border:1px solid rgba(212,175,55,.3);border-radius:20px;background:rgba(212,175,55,.06);color:var(--gold);font-size:11px;cursor:pointer;font-family:inherit">🎤 Voice ' + (item.voice_note_duration ? '(' + item.voice_note_duration + 's) ' : '') + '&#9654;</button></div>' : ''}
           </div>`).join('');
       }
     })
@@ -2068,6 +2069,26 @@ function downloadQRPoster(shopId, shopName) {
   window.open(`/poster.html?shop=${shopId}`, '_blank');
 }
 window.downloadQRPoster = downloadQRPoster;
+
+// ── Voice Note Playback ──────────────────────────────────────
+async function playVoiceNote(path, btn) {
+  try {
+    btn.textContent = '⏳';
+    btn.disabled = true;
+    const { data } = await api('GET', `/public/voice-note?path=${encodeURIComponent(path)}`);
+    const audio = new Audio(data.url);
+    audio.onended = () => { btn.innerHTML = '🎤 &#9654;'; btn.disabled = false; };
+    audio.onerror = () => { btn.textContent = '✕ Error'; btn.disabled = false; };
+    btn.textContent = '⏹';
+    btn.onclick = () => { audio.pause(); audio.currentTime = 0; btn.innerHTML = '🎤 &#9654;'; btn.onclick = null; btn.onclick = () => playVoiceNote(path, btn); };
+    btn.disabled = false;
+    await audio.play();
+  } catch(e) {
+    btn.textContent = '✕';
+    btn.disabled = false;
+  }
+}
+window.playVoiceNote = playVoiceNote;
 
 // ── Boot ──────────────────────────────────────────────────────
 (function boot() {

@@ -1,4 +1,5 @@
 import { triggerPositionNotifications, notifyTokenCalled } from './pushService.js';
+import { deleteVoiceNote } from '../routes/voice_notes.js';
 // ============================================================
 // services/tokenService.js — Queue token management
 // Fixes: #1/#26 (atomic), #5 (reset), #6 (dedup), #8 (name), #14 (cancel), #22 (close notify)
@@ -27,7 +28,7 @@ async function countWaitingTokens(db, shopId) {
  * FIX #8: Store customer_name.
  * FIX #6: Prevent same customer getting multiple tokens per day.
  */
-export async function createToken(db, shopId, customerPhone, customerName = null, env = null, opts = {}, customerNote = null) {
+export async function createToken(db, shopId, customerPhone, customerName = null, env = null, opts = {}, customerNote = null, voiceNotePath = null, voiceNoteDuration = null) {
   const shops = await db.select('shops', `id=eq.${shopId}`);
   if (!shops.length) throw new Error('دکان نہیں ملی۔');
 
@@ -78,12 +79,14 @@ export async function createToken(db, shopId, customerPhone, customerName = null
 
   // Insert token with customer_name (FIX #8)
   const [token] = await db.insert('tokens', {
-    shop_id:        shopId,
-    customer_phone: customerPhone,
-    customer_name:  customerName || null,
-    customer_note:  customerNote  || null,
-    token_number:   nextNumber,
-    status:         'waiting',
+    shop_id:           shopId,
+    customer_phone:    customerPhone,
+    customer_name:     customerName     || null,
+    customer_note:     customerNote      || null,
+    voice_note_url:    voiceNotePath     || null,
+    voice_note_duration: voiceNoteDuration || null,
+    token_number:      nextNumber,
+    status:            'waiting',
   });
 
   const estimatedWaitMins = waitingCount * shop.avg_service_time_mins;
@@ -108,9 +111,14 @@ export async function createToken(db, shopId, customerPhone, customerName = null
 export async function advanceQueue(db, shopId, env) {
   const called = await db.select('tokens', `shop_id=eq.${shopId}&status=eq.called&limit=1`);
   if (called.length) {
-    await db.update('tokens', `id=eq.${called[0].id}`, {
-      status:       'completed',
-      completed_at: new Date().toISOString(),
+    const _ct = called[0];
+    if (_ct.voice_note_url && env) deleteVoiceNote(env.SUPABASE_URL?.trim(), env.SUPABASE_KEY?.trim(), _ct.voice_note_url);
+    await db.update('tokens', `id=eq.${_ct.id}`, {
+      status:           'completed',
+      completed_at:     new Date().toISOString(),
+      customer_note:    null,
+      voice_note_url:   null,
+      voice_note_duration: null,
     });
   }
 
@@ -171,7 +179,7 @@ export async function markNoShow(db, shopId, env) {
  * FIX #14: Cancel a token by token_id.
  * Only waiting tokens can be cancelled.
  */
-export async function cancelToken(db, tokenId, shopId) {
+export async function cancelToken(db, tokenId, shopId, env = null) {
   const tokens = await db.select('tokens', `id=eq.${tokenId}&shop_id=eq.${shopId}`);
   if (!tokens.length) throw new Error('ٹوکن نہیں ملا');
 
@@ -180,9 +188,13 @@ export async function cancelToken(db, tokenId, shopId) {
     throw new Error('صرف انتظار والے ٹوکن منسوخ ہو سکتے ہیں');
   }
 
+  if (token.voice_note_url && env) deleteVoiceNote(env.SUPABASE_URL?.trim(), env.SUPABASE_KEY?.trim(), token.voice_note_url);
   await db.update('tokens', `id=eq.${tokenId}`, {
-    status:       'cancelled',
-    cancelled_at: new Date().toISOString(),
+    status:              'cancelled',
+    cancelled_at:        new Date().toISOString(),
+    customer_note:       null,
+    voice_note_url:      null,
+    voice_note_duration: null,
   });
 
   return { cancelled: true, token_number: token.token_number };
@@ -229,7 +241,7 @@ export async function notifyShopClosed(db, shopId, env) {
 export async function getQueueState(db, shopId) {
   const [shops, waiting, called] = await Promise.all([
     db.select('shops', `id=eq.${shopId}`),
-    db.select('tokens', `shop_id=eq.${shopId}&status=eq.waiting&order=token_number.asc&select=id,token_number,customer_phone,customer_name,customer_note,created_at`),
+    db.select('tokens', `shop_id=eq.${shopId}&status=eq.waiting&order=token_number.asc&select=id,token_number,customer_phone,customer_name,customer_note,voice_note_url,voice_note_duration,created_at`),
     db.select('tokens', `shop_id=eq.${shopId}&status=eq.called&limit=1`),
   ]);
 

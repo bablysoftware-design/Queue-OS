@@ -114,7 +114,7 @@ export async function cancelTokenHandler(request, env) {
     if (!isValidUUID(token_id)) return badRequest('Invalid token_id');
     if (!isValidUUID(shop_id))  return badRequest('Invalid shop_id');
     const db     = createClient(env);
-    const result = await cancelToken(db, token_id, shop_id);
+    const result = await cancelToken(db, token_id, shop_id, env);
     return ok(result);
   } catch (err) { return badRequest(err.message); }
 }

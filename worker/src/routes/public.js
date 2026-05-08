@@ -136,8 +136,13 @@ export async function joinQueue(request, env) {
     const customer_name  = sanitizeName(body.customer_name);
     const customer_phone = sanitizeParam(body.customer_phone);
     // customer_note: optional, max 200 chars, strip tags
-    const raw_note       = typeof body.customer_note === 'string' ? body.customer_note : '';
-    const customer_note  = raw_note.trim().replace(/<[^>]*>/g, '').slice(0, 200) || null;
+    const raw_note          = typeof body.customer_note === 'string' ? body.customer_note : '';
+    const customer_note     = raw_note.trim().replace(/<[^>]*>/g, '').slice(0, 200) || null;
+    // Voice note — path is a filename from /public/voice-note upload, validated server-side
+    const voice_note_path   = typeof body.voice_note_path === 'string' && /^[a-zA-Z0-9_.-]+$/.test(body.voice_note_path.trim())
+                              ? body.voice_note_path.trim() : null;
+    const voice_note_dur    = typeof body.voice_note_duration === 'number'
+                              ? Math.min(Math.max(0, body.voice_note_duration), 15) : null;
 
     if (!shop_id)                          return badRequest('shop_id ضروری ہے');
     if (!customer_name && !customer_phone) return badRequest('نام یا نمبر ضروری ہے');
@@ -168,7 +173,7 @@ export async function joinQueue(request, env) {
       );
     }
 
-    const result = await createToken(db, shop_id, phone, customer_name, env, {}, customer_note);
+    const result = await createToken(db, shop_id, phone, customer_name, env, {}, customer_note, voice_note_path, voice_note_dur);
 
     return ok({
       token_number:   result.token.token_number,

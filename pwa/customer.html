@@ -592,6 +592,27 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
         <div style="font-size:10px;color:var(--text3);text-align:right;margin-top:2px">0/200</div>
       </div>
 
+      <!-- Voice note — optional recording, max 15s -->
+      <div class="sheet-field" id="voice-note-field">
+        <label style="display:flex;align-items:center;justify-content:space-between">
+          <span>🎤 <span id="lbl-voice">Voice Note (optional, max 15s)</span></span>
+          <span id="voice-timer" style="font-size:10px;color:var(--gold);display:none;font-family:'JetBrains Mono',monospace">0s</span>
+        </label>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
+          <button id="voice-record-btn" type="button" onclick="toggleVoiceRecord()"
+            style="flex:1;padding:10px;border:1px dashed rgba(212,175,55,.3);border-radius:10px;background:transparent;color:var(--text3);font-family:inherit;font-size:12px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px">
+            <span id="voice-btn-icon">🎤</span>
+            <span id="voice-btn-txt">Tap to record</span>
+          </button>
+          <button id="voice-clear-btn" onclick="clearVoiceNote()" type="button"
+            style="display:none;padding:10px 12px;border:1px solid rgba(248,113,113,.3);border-radius:10px;background:transparent;color:var(--red);font-size:12px;cursor:pointer">✕</button>
+        </div>
+        <div id="voice-status" style="font-size:10px;color:var(--text3);margin-top:4px;text-align:center"></div>
+      </div>
+      <!-- Hidden voice note state -->
+      <input type="hidden" id="c-voice-path"/>
+      <input type="hidden" id="c-voice-duration"/>
+
       <!-- Paid token section — shown dynamically -->
       <div id="paid-token-section" style="display:none;margin-top:10px;background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.25);border-radius:14px;padding:14px">
         <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:4px">💳 ادائیگی ضروری ہے</div>
@@ -741,6 +762,98 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
 
 <script src="/categories.js"></script>
 <script>
+// ── Voice Note Recording ──────────────────────────────────────
+let _mediaRec = null, _audioChunks = [], _recTimer = null, _recSecs = 0, _recStream = null;
+
+async function toggleVoiceRecord() {
+  if (_mediaRec && _mediaRec.state === 'recording') {
+    stopVoiceRecord();
+  } else {
+    await startVoiceRecord();
+  }
+}
+window.toggleVoiceRecord = toggleVoiceRecord;
+
+async function startVoiceRecord() {
+  const btn = document.getElementById('voice-record-btn');
+  const statusEl = document.getElementById('voice-status');
+  try {
+    _recStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mimeType = ['audio/webm;codecs=opus','audio/webm','audio/ogg'].find(m => MediaRecorder.isTypeSupported(m)) || '';
+    _mediaRec = new MediaRecorder(_recStream, mimeType ? { mimeType } : {});
+    _audioChunks = [];
+    _mediaRec.ondataavailable = e => { if (e.data.size > 0) _audioChunks.push(e.data); };
+    _mediaRec.onstop = () => uploadVoiceBlob(new Blob(_audioChunks, { type: _mediaRec.mimeType || 'audio/webm' }));
+    _mediaRec.start(200);
+    _recSecs = 0;
+    // Timer
+    document.getElementById('voice-timer').style.display = '';
+    _recTimer = setInterval(() => {
+      _recSecs++;
+      document.getElementById('voice-timer').textContent = _recSecs + 's';
+      if (_recSecs >= 15) stopVoiceRecord();
+    }, 1000);
+    // UI
+    btn.style.borderColor = 'var(--red)';
+    btn.style.color       = 'var(--red)';
+    document.getElementById('voice-btn-icon').textContent = '⏹';
+    document.getElementById('voice-btn-txt').textContent  = 'Recording... tap to stop';
+    statusEl.textContent = '';
+  } catch(e) {
+    statusEl.textContent = 'Microphone not available';
+  }
+}
+
+function stopVoiceRecord() {
+  clearInterval(_recTimer);
+  if (_mediaRec && _mediaRec.state === 'recording') _mediaRec.stop();
+  if (_recStream) _recStream.getTracks().forEach(t => t.stop());
+  const btn = document.getElementById('voice-record-btn');
+  btn.style.borderColor = 'rgba(212,175,55,.3)';
+  btn.style.color       = 'var(--text3)';
+  document.getElementById('voice-btn-icon').textContent = '⏳';
+  document.getElementById('voice-btn-txt').textContent  = 'Uploading...';
+  document.getElementById('voice-timer').style.display  = 'none';
+}
+
+async function uploadVoiceBlob(blob) {
+  const statusEl = document.getElementById('voice-status');
+  try {
+    const res = await fetch(`${WORKER}/public/voice-note`, {
+      method: 'POST',
+      headers: {
+        'Content-Type':       blob.type || 'audio/webm',
+        'x-audio-duration':   String(_recSecs),
+      },
+      body: blob,
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Upload failed');
+    document.getElementById('c-voice-path').value     = json.data.path;
+    document.getElementById('c-voice-duration').value = json.data.duration;
+    document.getElementById('voice-btn-icon').textContent = '✅';
+    document.getElementById('voice-btn-txt').textContent  = `Recorded (${json.data.duration}s)`;
+    document.getElementById('voice-clear-btn').style.display = '';
+    statusEl.textContent = '';
+  } catch(e) {
+    document.getElementById('voice-btn-icon').textContent = '🎤';
+    document.getElementById('voice-btn-txt').textContent  = 'Tap to record';
+    statusEl.textContent = 'Upload failed — you can still submit without voice note';
+  }
+}
+
+function clearVoiceNote() {
+  document.getElementById('c-voice-path').value     = '';
+  document.getElementById('c-voice-duration').value = '';
+  document.getElementById('voice-btn-icon').textContent = '🎤';
+  document.getElementById('voice-btn-txt').textContent  = 'Tap to record';
+  document.getElementById('voice-clear-btn').style.display = 'none';
+  document.getElementById('voice-status').textContent = '';
+  document.getElementById('voice-timer').style.display = 'none';
+  _audioChunks = []; _recSecs = 0;
+}
+window.clearVoiceNote = clearVoiceNote;
+
 // ── Particles ──────────────────────────────────────────────
 const canvas=document.getElementById('particle-canvas'),ctx=canvas.getContext('2d');
 let W,H,pts=[];
@@ -1166,6 +1279,7 @@ async function openShop(shopId) {
   document.getElementById('c-name').value                  = '';
   document.getElementById('c-phone').value                 = '';
   const noteEl = document.getElementById('c-note'); if(noteEl){ noteEl.value=''; noteEl.nextElementSibling.textContent='0/200'; }
+  clearVoiceNote();
   document.getElementById('join-btn').disabled             = false;
 
   // Paid token mode
@@ -1394,10 +1508,12 @@ async function submitJoin() {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
-          shop_id: selectedShop.id,
-          customer_name: name,
-          customer_phone: phone||null,
-          customer_note: (document.getElementById('c-note')?.value||'').trim().slice(0,200)||null
+          shop_id:              selectedShop.id,
+          customer_name:        name,
+          customer_phone:       phone||null,
+          customer_note:        (document.getElementById('c-note')?.value||'').trim().slice(0,200)||null,
+          voice_note_path:      document.getElementById('c-voice-path')?.value||null,
+          voice_note_duration:  parseInt(document.getElementById('c-voice-duration')?.value||'0',10)||null
         })
     });
     const {data, success, error} = await res.json();

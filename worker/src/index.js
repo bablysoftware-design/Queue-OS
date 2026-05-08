@@ -28,6 +28,7 @@ import { submitPaymentRequest, listPaymentRequests,
          approvePaymentRequest, rejectPaymentRequest,
          checkPaymentStatus } from './routes/payments_manual.js';
 import { ttsHandler }                        from './routes/tts.js';
+import { uploadVoiceNote, getVoiceNoteUrl }   from './routes/voice_notes.js';
 import { getPublicSettings, updateSettings } from './routes/settings.js';
 import { adminResetPinHandler }              from './routes/shops.js';
 import { expireStaleSubscriptions }                   from './services/subscriptionService.js';
@@ -56,6 +57,8 @@ const ROUTES = [
   { method: 'POST',   path: '/push/delay',                       handler: requestDelay },
   { method: 'POST',   path: '/public/cancel',                   handler: publicCancelToken },
   { method: 'GET',    path: '/tts',                                      handler: ttsHandler },
+  { method: 'POST',   path: '/public/voice-note',                        handler: uploadVoiceNote },
+  { method: 'GET',    path: '/public/voice-note',                        handler: getVoiceNoteUrl },
   { method: 'GET',    path: '/public/settings',                  handler: getPublicSettings },
   { method: 'PATCH',  path: '/admin/settings',                    handler: updateSettings },
   { method: 'POST',   path: '/admin/shops/:id/reset-pin',          handler: adminResetPinHandler },
