@@ -132,9 +132,19 @@ export async function updateShopSettingsHandler(request, env) {
   try {
     const db   = createClient(env);
     const auth = await requireShopAuth(request, env);
+
+    // ── DIAGNOSTIC: log auth result type ──────────────────────
+    console.log('AUTH TYPE:', auth instanceof Response ? 'RESPONSE(401)' : 'OK', 'shop_id:', auth?.shop_id);
+
     if (auth instanceof Response) return auth;
 
     const shopId = new URL(request.url).pathname.split('/')[2];
+
+    // ── DIAGNOSTIC: log exact ID values and comparison ────────
+    console.log('URL shopId :', JSON.stringify(shopId),  'len:', shopId?.length);
+    console.log('Auth shop_id:', JSON.stringify(auth.shop_id), 'len:', auth.shop_id?.length);
+    console.log('IDs match?', auth.shop_id === shopId);
+
     if (!isValidUUID(shopId))    return badRequest('Invalid shop_id');
     if (auth.shop_id !== shopId) return unauthorized('این دکان آپ کی نہیں');
 
@@ -150,6 +160,11 @@ export async function updateShopSettingsHandler(request, env) {
     ];
     const update  = {};
     allowed.forEach(k => { if (body[k] !== undefined) update[k] = body[k]; });
+
+    // ── DIAGNOSTIC: log body and built update object ───────────
+    console.log('BODY received:', JSON.stringify(body));
+    console.log('UPDATE object:', JSON.stringify(update));
+    console.log('Filter string:', `id=eq.${shopId}`);
 
     if (!Object.keys(update).length) return badRequest('Nothing to update');
     if (update.avg_service_time_mins) {
@@ -167,11 +182,17 @@ export async function updateShopSettingsHandler(request, env) {
       }
       update.token_price = p;
     }
-    console.log('SHOP UPDATE', shopId, update);
+
+    console.log('FINAL UPDATE to DB:', JSON.stringify(update));
     const updateResult = await db.update('shops', `id=eq.${shopId}`, update);
-    console.log('UPDATE RESULT', JSON.stringify(updateResult));
+    console.log('DB UPDATE RESULT (rows):', JSON.stringify(updateResult));
+    console.log('Rows updated count:', Array.isArray(updateResult) ? updateResult.length : 'not array');
+
     return ok({ message: 'Settings saved', updated: update });
-  } catch (err) { return serverError(err.message); }
+  } catch (err) {
+    console.log('EXCEPTION:', err.message);
+    return serverError(err.message);
+  }
 }
 
 /** POST /shops/:id/change-pin */
