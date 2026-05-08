@@ -241,7 +241,7 @@ export async function notifyShopClosed(db, shopId, env) {
 export async function getQueueState(db, shopId) {
   const [shops, waiting, called] = await Promise.all([
     db.select('shops', `id=eq.${shopId}`),
-    db.select('tokens', `shop_id=eq.${shopId}&status=eq.waiting&order=token_number.asc&select=id,token_number,customer_phone,customer_name,customer_note,voice_note_url,voice_note_duration,created_at`),
+    db.select('tokens', `shop_id=eq.${shopId}&status=eq.waiting&order=token_number.asc&select=*`),
     db.select('tokens', `shop_id=eq.${shopId}&status=eq.called&limit=1`),
   ]);
 

@@ -5,7 +5,7 @@
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-secret, x-session-token',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-secret, x-session-token, x-audio-duration',
 };
 
 /** 200 JSON response */
