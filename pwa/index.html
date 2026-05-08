@@ -1761,7 +1761,9 @@ async function saveSettings() {
     // Always send token_price so DB stays in sync with mode.
     // When switching to free: sends 0, clearing any stale paid price.
     body.token_price = (mode === 'paid' && price > 0) ? price : 0;
-    await api('PATCH', `/shops/${state.shopId}/settings`, body);
+    console.log('SAVE BODY', body);
+    const saveRes = await api('PATCH', `/shops/${state.shopId}/settings`, body);
+    console.log('RESPONSE', saveRes);
     // Update payment tab visibility
     const payBtn = document.getElementById('bar-pay-btn');
     if (payBtn) payBtn.style.display = mode === 'paid' ? 'flex' : 'none';
