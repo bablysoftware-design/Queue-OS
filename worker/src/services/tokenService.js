@@ -78,7 +78,7 @@ export async function createToken(db, shopId, customerPhone, customerName = null
   const nextNumber = await db.rpc('increment_token', { p_shop_id: shopId });
 
   // Insert token with customer_name (FIX #8)
-  const [token] = await db.insert('tokens', {
+  const insertObj = {
     shop_id:           shopId,
     customer_phone:    customerPhone,
     customer_name:     customerName     || null,
@@ -87,7 +87,17 @@ export async function createToken(db, shopId, customerPhone, customerName = null
     voice_note_duration: voiceNoteDuration || null,
     token_number:      nextNumber,
     status:            'waiting',
-  });
+  };
+  console.log('[WM-DEBUG-3] createToken insert object:', JSON.stringify(insertObj));
+
+  const [token] = await db.insert('tokens', insertObj);
+
+  console.log('[WM-DEBUG-4] createToken inserted row:', JSON.stringify({
+    id:                   token?.id,
+    customer_note:        token?.customer_note,
+    voice_note_url:       token?.voice_note_url,
+    voice_note_duration:  token?.voice_note_duration,
+  }));
 
   const estimatedWaitMins = waitingCount * shop.avg_service_time_mins;
 

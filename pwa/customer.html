@@ -1504,17 +1504,23 @@ async function submitJoin() {
   }
 
   try {
+    const _note     = (document.getElementById('c-note')?.value||'').trim().slice(0,200)||null;
+    const _voicePath = document.getElementById('c-voice-path')?.value||null;
+    const _voiceDur  = parseInt(document.getElementById('c-voice-duration')?.value||'0',10)||null;
+    const _payload = {
+      shop_id:             selectedShop.id,
+      customer_name:       name,
+      customer_phone:      phone||null,
+      customer_note:       _note,
+      voice_note_path:     _voicePath,
+      voice_note_duration: _voiceDur
+    };
+    console.log('[WM-DEBUG-1] submitJoin payload:', JSON.stringify(_payload));
+
     const res  = await fetch(`${WORKER}/public/join`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-          shop_id:              selectedShop.id,
-          customer_name:        name,
-          customer_phone:       phone||null,
-          customer_note:        (document.getElementById('c-note')?.value||'').trim().slice(0,200)||null,
-          voice_note_path:      document.getElementById('c-voice-path')?.value||null,
-          voice_note_duration:  parseInt(document.getElementById('c-voice-duration')?.value||'0',10)||null
-        })
+      body: JSON.stringify(_payload)
     });
     const {data, success, error} = await res.json();
     if (!success) throw new Error(error);
