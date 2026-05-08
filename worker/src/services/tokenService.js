@@ -27,7 +27,7 @@ async function countWaitingTokens(db, shopId) {
  * FIX #8: Store customer_name.
  * FIX #6: Prevent same customer getting multiple tokens per day.
  */
-export async function createToken(db, shopId, customerPhone, customerName = null, env = null, opts = {}) {
+export async function createToken(db, shopId, customerPhone, customerName = null, env = null, opts = {}, customerNote = null) {
   const shops = await db.select('shops', `id=eq.${shopId}`);
   if (!shops.length) throw new Error('دکان نہیں ملی۔');
 
@@ -81,6 +81,7 @@ export async function createToken(db, shopId, customerPhone, customerName = null
     shop_id:        shopId,
     customer_phone: customerPhone,
     customer_name:  customerName || null,
+    customer_note:  customerNote  || null,
     token_number:   nextNumber,
     status:         'waiting',
   });
@@ -228,7 +229,7 @@ export async function notifyShopClosed(db, shopId, env) {
 export async function getQueueState(db, shopId) {
   const [shops, waiting, called] = await Promise.all([
     db.select('shops', `id=eq.${shopId}`),
-    db.select('tokens', `shop_id=eq.${shopId}&status=eq.waiting&order=token_number.asc&select=id,token_number,customer_phone,customer_name,created_at`),
+    db.select('tokens', `shop_id=eq.${shopId}&status=eq.waiting&order=token_number.asc&select=id,token_number,customer_phone,customer_name,customer_note,created_at`),
     db.select('tokens', `shop_id=eq.${shopId}&status=eq.called&limit=1`),
   ]);
 

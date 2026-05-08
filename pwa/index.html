@@ -1303,6 +1303,7 @@ function refreshQueue() {
               style="margin-left:auto;padding:3px 10px;border:1px solid rgba(248,113,113,.4);border-radius:20px;background:transparent;color:var(--red);font-size:11px;cursor:pointer;font-family:inherit">
               ✗ Cancel
             </button>
+            ${item.customer_note ? `<div style="width:100%;margin-top:3px;font-size:11px;color:rgba(237,232,208,.55);padding-left:2px">📝 \${esc(item.customer_note)}</div>` : ''}
           </div>`).join('');
       }
     })

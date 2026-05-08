@@ -135,6 +135,9 @@ export async function joinQueue(request, env) {
     // FIX #4: Sanitize inputs
     const customer_name  = sanitizeName(body.customer_name);
     const customer_phone = sanitizeParam(body.customer_phone);
+    // customer_note: optional, max 200 chars, strip tags
+    const raw_note       = typeof body.customer_note === 'string' ? body.customer_note : '';
+    const customer_note  = raw_note.trim().replace(/<[^>]*>/g, '').slice(0, 200) || null;
 
     if (!shop_id)                          return badRequest('shop_id ضروری ہے');
     if (!customer_name && !customer_phone) return badRequest('نام یا نمبر ضروری ہے');
@@ -165,7 +168,7 @@ export async function joinQueue(request, env) {
       );
     }
 
-    const result = await createToken(db, shop_id, phone, customer_name, env);
+    const result = await createToken(db, shop_id, phone, customer_name, env, {}, customer_note);
 
     return ok({
       token_number:   result.token.token_number,

@@ -579,6 +579,19 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
         <input id="c-phone" type="tel" placeholder="03001234567"/>
       </div>
 
+      <!-- Customer note — optional, max 200 chars -->
+      <div class="sheet-field">
+        <label style="display:flex;align-items:center;gap:5px">
+          <span>📝</span>
+          <span id="lbl-note">Note for business (optional)</span>
+        </label>
+        <textarea id="c-note" maxlength="200" rows="2" placeholder="Anything you'd like the business to know?"
+          style="width:100%;background:rgba(5,8,16,.6);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;resize:none;transition:border-color .2s;line-height:1.4"
+          oninput="const r=this;r.nextElementSibling.textContent=r.value.length+'/200'"
+          onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+        <div style="font-size:10px;color:var(--text3);text-align:right;margin-top:2px">0/200</div>
+      </div>
+
       <!-- Paid token section — shown dynamically -->
       <div id="paid-token-section" style="display:none;margin-top:10px;background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.25);border-radius:14px;padding:14px">
         <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:4px">💳 ادائیگی ضروری ہے</div>
@@ -1152,6 +1165,7 @@ async function openShop(shopId) {
   document.getElementById('sheet-err').textContent         = '';
   document.getElementById('c-name').value                  = '';
   document.getElementById('c-phone').value                 = '';
+  const noteEl = document.getElementById('c-note'); if(noteEl){ noteEl.value=''; noteEl.nextElementSibling.textContent='0/200'; }
   document.getElementById('join-btn').disabled             = false;
 
   // Paid token mode
@@ -1379,7 +1393,12 @@ async function submitJoin() {
     const res  = await fetch(`${WORKER}/public/join`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({shop_id: selectedShop.id, customer_name: name, customer_phone: phone||null})
+      body: JSON.stringify({
+          shop_id: selectedShop.id,
+          customer_name: name,
+          customer_phone: phone||null,
+          customer_note: (document.getElementById('c-note')?.value||'').trim().slice(0,200)||null
+        })
     });
     const {data, success, error} = await res.json();
     if (!success) throw new Error(error);
