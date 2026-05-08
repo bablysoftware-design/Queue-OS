@@ -167,7 +167,9 @@ export async function updateShopSettingsHandler(request, env) {
       }
       update.token_price = p;
     }
-    await db.update('shops', `id=eq.${shopId}`, update);
+    console.log('SHOP UPDATE', shopId, update);
+    const updateResult = await db.update('shops', `id=eq.${shopId}`, update);
+    console.log('UPDATE RESULT', JSON.stringify(updateResult));
     return ok({ message: 'Settings saved', updated: update });
   } catch (err) { return serverError(err.message); }
 }
