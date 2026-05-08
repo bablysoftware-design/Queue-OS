@@ -45,6 +45,8 @@ BEGIN
       s.is_active,
       s.current_token,
       s.avg_service_time_mins,
+      s.token_mode,
+      s.token_price,
       COUNT(t.id) FILTER (WHERE t.status = 'waiting')             AS queue_length,
       MAX(t.token_number) FILTER (WHERE t.status = 'called')      AS current_serving,
       COUNT(t.id) FILTER (WHERE t.status = 'waiting') * s.avg_service_time_mins AS estimated_wait,

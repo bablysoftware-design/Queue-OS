@@ -1738,7 +1738,8 @@ function toggleSettings() {
         // Load token mode + price
         const mode = data.token_mode || 'free';
         setShopMode(mode, /*save=*/false);
-        if (data.token_price) {
+        // Use explicit check — 0 is a valid price state (falsy check would leave input blank)
+        if (data.token_price !== undefined && data.token_price !== null) {
           const priceEl = document.getElementById('s-token-price');
           if (priceEl) priceEl.value = data.token_price;
         }
@@ -1757,7 +1758,9 @@ async function saveSettings() {
       avg_service_time_mins: parseInt(document.getElementById('s-avg').value, 10),
       token_mode:            mode,
     };
-    if (mode === 'paid' && price > 0) body.token_price = price;
+    // Always send token_price so DB stays in sync with mode.
+    // When switching to free: sends 0, clearing any stale paid price.
+    body.token_price = (mode === 'paid' && price > 0) ? price : 0;
     await api('PATCH', `/shops/${state.shopId}/settings`, body);
     // Update payment tab visibility
     const payBtn = document.getElementById('bar-pay-btn');
