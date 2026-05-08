@@ -2218,7 +2218,7 @@ function scrollToShopCard(shopId) {
 
 // ── PWA INSTALL PROMPT ─────────────────────────────────────
 let _deferredInstall = null;
-const INSTALL_KEY    = 'saf_pwa_installed';
+const INSTALL_KEY    = 'pwa_installed'; // shared with landing.html to prevent duplicate prompts
 
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
