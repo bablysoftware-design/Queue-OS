@@ -900,35 +900,31 @@ function renderSuggestions(featuredShop) {
 
 // ── LOAD SHOPS ─────────────────────────────────────────────
 let _shopsEverLoaded = false; // guard: don't blank list on background refresh
+let _loadingShops    = false; // guard: prevent concurrent loadShops calls
 
 async function loadShops() {
-  const _t0 = Date.now();
-  console.log('[WM] loadShops() called. _shopsEverLoaded=', _shopsEverLoaded);
+  // B: in-flight guard — prevents concurrent calls from timer + user interaction
+  if (_loadingShops) return;
+  _loadingShops = true;
 
   if (!_shopsEverLoaded) {
     document.getElementById('loading-state').style.display = 'block';
     document.getElementById('shops-container').style.display = 'none';
     document.getElementById('empty-state').style.display   = 'none';
-    console.log('[WM] First load — showing spinner, hiding container');
-  } else {
-    console.log('[WM] Refresh load — keeping existing list visible');
   }
 
   try {
+    // C: city is client-side only — do NOT send to server (Worker ignores it)
+    // area/category/search are server-side params
     let url = `${WORKER}/public/shops`;
     const qp = [];
     if (activeArea)     qp.push(`area=${encodeURIComponent(activeArea)}`);
     if (activeCategory) qp.push(`category=${activeCategory}`);
-    if (activeCity)     qp.push(`city=${encodeURIComponent(activeCity)}`);
     if (searchQuery)    qp.push(`search=${encodeURIComponent(searchQuery)}`);
     if (qp.length)      url += '?' + qp.join('&');
 
-    console.log('[WM] Fetching:', url);
-    const res  = await fetch(url);
-    console.log('[WM] Response status:', res.status, res.ok ? 'OK' : 'FAIL');
-
+    const res     = await fetch(url);
     const rawText = await res.text();
-    console.log('[WM] Raw response (first 300):', rawText.slice(0, 300));
 
     let data;
     try { data = JSON.parse(rawText); }
@@ -936,38 +932,25 @@ async function loadShops() {
       throw new Error(`JSON parse failed: ${parseErr.message} | body: ${rawText.slice(0, 100)}`);
     }
 
-    console.log('[WM] data.success=', data.success, '| data.error=', data.error);
-
     if (!res.ok || !data.success) {
       throw new Error(data.error || `HTTP ${res.status}`);
     }
 
-    allShops      = data.data?.shops ?? [];
-    filteredShops = allShops;
-    console.log('[WM] Shops loaded:', allShops.length, '| First:', allShops[0]?.name);
-
-    const areas = data.data?.areas ?? [];
-    console.log('[WM] Areas:', areas);
-    renderAreaChips(areas);
-
-    console.log('[WM] Calling renderShops(). filteredShops.length=', filteredShops.length);
-    renderShops();
-    console.log('[WM] renderShops() returned. shops-container display=',
-      document.getElementById('shops-container').style.display);
+    // A: update allShops then re-apply active filters (preserves user's filter state)
+    allShops = data.data?.shops ?? [];
+    renderAreaChips(data.data?.areas ?? []);
+    applyFilters(); // applies activeCategory, activeArea, activeCity, searchQuery
 
     if (HIGHLIGHT_SHOP || _resolvedShopId) {
       const targetId = _resolvedShopId || HIGHLIGHT_SHOP;
       setTimeout(() => {
         const card = document.getElementById(`shop-${targetId}`);
-        console.log('[WM] Scroll to card:', targetId, '| found:', !!card);
         if (card) card.scrollIntoView({behavior:'smooth', block:'center'});
       }, 400);
     }
 
-    console.log('[WM] loadShops() done in', Date.now() - _t0, 'ms');
-
   } catch (e) {
-    console.error('[WM] loadShops FAILED:', e.message, e);
+    console.error('[WM] loadShops failed:', e.message);
     document.getElementById('loading-state').innerHTML =
       `<div style="color:var(--red);padding:40px;text-align:center">
         <div style="font-size:20px;margin-bottom:8px">⚠️</div>
@@ -975,6 +958,8 @@ async function loadShops() {
         <div style="font-size:11px;opacity:0.6;margin-top:6px;direction:ltr">${e.message}</div>
         <button onclick="location.reload()" style="margin-top:16px;padding:8px 20px;border:1px solid var(--gold);border-radius:20px;background:transparent;color:var(--gold);font-family:inherit;cursor:pointer;">دوبارہ کوشش کریں</button>
       </div>`;
+  } finally {
+    _loadingShops = false;
   }
 }
 
@@ -1947,7 +1932,8 @@ function filterCity(city) {
   document.querySelectorAll('#city-filter-row .cat-chip').forEach(c =>
     c.classList.toggle('active', c.dataset.city === city)
   );
-  loadShops();
+  // City is client-side only — no server round-trip needed
+  applyFilters();
 }
 
 function filterCat(cat) {
