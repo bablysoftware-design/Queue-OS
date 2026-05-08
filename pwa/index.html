@@ -1293,6 +1293,8 @@ function refreshQueue() {
       if (!queue.length) {
         listEl.innerHTML = `<div class="queue-empty">${t('queueEmpty')}</div>`;
       } else {
+        // DEBUG: log first item to confirm note fields arrive
+        if (queue[0]) console.log('[WM-DEBUG] queue[0] fields:', Object.keys(queue[0]), '| note:', queue[0].customer_note, '| voice:', queue[0].voice_note_url);
         listEl.innerHTML = queue.map((item, i) => `
           <div class="q-item" style="animation-delay:${i * 0.04}s;flex-wrap:wrap;gap:6px">
             <span class="q-num">#${item.token_number}</span>
