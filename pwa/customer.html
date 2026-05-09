@@ -775,17 +775,58 @@ async function toggleVoiceRecord() {
 window.toggleVoiceRecord = toggleVoiceRecord;
 
 async function startVoiceRecord() {
+  console.log('[WM-VOICE] start');
   const btn = document.getElementById('voice-record-btn');
   const statusEl = document.getElementById('voice-status');
   try {
     _recStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const mimeType = ['audio/webm;codecs=opus','audio/webm','audio/ogg'].find(m => MediaRecorder.isTypeSupported(m)) || '';
-    _mediaRec = new MediaRecorder(_recStream, mimeType ? { mimeType } : {});
+
+    // Fix 1: simple MIME detection — avoid codec-specific strings that fail on some browsers
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '';
+    _mediaRec = mimeType
+      ? new MediaRecorder(_recStream, { mimeType })
+      : new MediaRecorder(_recStream);
+
+    // Fix 2: collect chunks with logging
     _audioChunks = [];
-    _mediaRec.ondataavailable = e => { if (e.data.size > 0) _audioChunks.push(e.data); };
-    _mediaRec.onstop = () => uploadVoiceBlob(new Blob(_audioChunks, { type: _mediaRec.mimeType || 'audio/webm' }));
+    _mediaRec.ondataavailable = (e) => {
+      if (e.data && e.data.size > 0) {
+        _audioChunks.push(e.data);
+        console.log('[WM-VOICE] chunk', e.data.size);
+      }
+    };
+
+    // Fix 3: onstop creates blob, guards empty, stops tracks AFTER flush
+    _mediaRec.onstop = async () => {
+      console.log('[WM-VOICE] stopped, chunks:', _audioChunks.length);
+
+      // Fix 5: stop microphone tracks HERE, after MediaRecorder has flushed
+      if (_recStream) _recStream.getTracks().forEach(t => t.stop());
+
+      if (!_audioChunks.length) {
+        alert('No audio captured — please try again');
+        document.getElementById('voice-btn-icon').textContent = '🎤';
+        document.getElementById('voice-btn-txt').textContent  = 'Tap to record';
+        return;
+      }
+
+      const voiceBlob = new Blob(_audioChunks, { type: _mediaRec.mimeType || 'audio/webm' });
+      console.log('[WM-VOICE] blob size', voiceBlob.size);
+
+      if (!voiceBlob.size) {
+        alert('Voice note empty — please try again');
+        document.getElementById('voice-btn-icon').textContent = '🎤';
+        document.getElementById('voice-btn-txt').textContent  = 'Tap to record';
+        return;
+      }
+
+      await uploadVoiceBlob(voiceBlob);
+    };
+
+    // Fix 4: start with timeslice so ondataavailable fires regularly
     _mediaRec.start(200);
     _recSecs = 0;
+
     // Timer
     document.getElementById('voice-timer').style.display = '';
     _recTimer = setInterval(() => {
@@ -793,6 +834,7 @@ async function startVoiceRecord() {
       document.getElementById('voice-timer').textContent = _recSecs + 's';
       if (_recSecs >= 15) stopVoiceRecord();
     }, 1000);
+
     // UI
     btn.style.borderColor = 'var(--red)';
     btn.style.color       = 'var(--red)';
@@ -800,14 +842,17 @@ async function startVoiceRecord() {
     document.getElementById('voice-btn-txt').textContent  = 'Recording... tap to stop';
     statusEl.textContent = '';
   } catch(e) {
+    console.log('[WM-VOICE] error', e.message);
     statusEl.textContent = 'Microphone not available';
   }
 }
 
 function stopVoiceRecord() {
+  console.log('[WM-VOICE] stop clicked');
   clearInterval(_recTimer);
+  // Fix 4: call stop() ONLY — do NOT stop tracks here
+  // Tracks are stopped inside onstop AFTER MediaRecorder has flushed all chunks
   if (_mediaRec && _mediaRec.state === 'recording') _mediaRec.stop();
-  if (_recStream) _recStream.getTracks().forEach(t => t.stop());
   const btn = document.getElementById('voice-record-btn');
   btn.style.borderColor = 'rgba(212,175,55,.3)';
   btn.style.color       = 'var(--text3)';
@@ -817,13 +862,14 @@ function stopVoiceRecord() {
 }
 
 async function uploadVoiceBlob(blob) {
+  console.log('[WM-VOICE] uploading...', blob.size, blob.type);
   const statusEl = document.getElementById('voice-status');
   try {
     const res = await fetch(`${WORKER}/public/voice-note`, {
       method: 'POST',
       headers: {
-        'Content-Type':       blob.type || 'audio/webm',
-        'x-audio-duration':   String(_recSecs),
+        'Content-Type':     blob.type || 'audio/webm',
+        'x-audio-duration': String(_recSecs),
       },
       body: blob,
     });
@@ -835,7 +881,9 @@ async function uploadVoiceBlob(blob) {
     document.getElementById('voice-btn-txt').textContent  = `Recorded (${json.data.duration}s)`;
     document.getElementById('voice-clear-btn').style.display = '';
     statusEl.textContent = '';
+    console.log('[WM-VOICE] upload success', json.data.path);
   } catch(e) {
+    console.log('[WM-VOICE] upload error', e.message);
     document.getElementById('voice-btn-icon').textContent = '🎤';
     document.getElementById('voice-btn-txt').textContent  = 'Tap to record';
     statusEl.textContent = 'Upload failed — you can still submit without voice note';
