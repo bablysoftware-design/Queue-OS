@@ -162,10 +162,16 @@ export async function rejectPaymentRequest(request, env) {
     const url = new URL(request.url);
     const id  = sanitizeParam(url.pathname.split('/')[3]);
     const db  = createClient(env);
+    // Fetch first so we can clean up the voice note
+    const toReject = await db.select('payment_requests', `select=voice_note_path&id=eq.${id}&limit=1`);
     await db.update('payment_requests', `id=eq.${id}`, {
       status:      'rejected',
       reviewed_at: new Date().toISOString(),
     });
+    // Best-effort: delete associated voice note on rejection
+    if (toReject?.[0]?.voice_note_path) {
+      deleteVoiceNote(env.SUPABASE_URL?.trim(), env.SUPABASE_KEY?.trim(), toReject[0].voice_note_path);
+    }
     return ok({ message: 'Payment request reject ho gayi.' });
   } catch(err) { return serverError(err.message); }
 }

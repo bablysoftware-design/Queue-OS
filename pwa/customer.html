@@ -789,6 +789,9 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
 
 <script src="/categories.js"></script>
 <script>
+// ── Debug flag — set true only for local debugging ──────────
+const DEBUG = false;
+
 // ── Voice Note Recording ──────────────────────────────────────
 let _mediaRec = null, _audioChunks = [], _recTimer = null, _recSecs = 0, _recStream = null;
 
@@ -865,7 +868,7 @@ async function startVoiceRecord() {
     document.getElementById('voice-btn-txt').textContent  = 'Recording... tap to stop';
     statusEl.textContent = '';
   } catch(e) {
-    console.log('[WM-VOICE] error', e.message);
+    if (DEBUG) console.log('[WM-VOICE] error', e.message);
     statusEl.textContent = 'Microphone not available';
   }
 }
@@ -902,9 +905,9 @@ async function uploadVoiceBlob(blob) {
     document.getElementById('voice-btn-txt').textContent  = `Recorded (${json.data.duration}s)`;
     document.getElementById('voice-clear-btn').style.display = '';
     statusEl.textContent = '';
-    console.log('[WM-VOICE] upload success', json.data.path);
+    if (DEBUG) console.log('[WM-VOICE] upload success', json.data.path);
   } catch(e) {
-    console.log('[WM-VOICE] upload error', e.message);
+    if (DEBUG) console.log('[WM-VOICE] upload error', e.message);
     document.getElementById('voice-btn-icon').textContent = '🎤';
     document.getElementById('voice-btn-txt').textContent  = 'Tap to record';
     statusEl.textContent = 'Upload failed — you can still submit without voice note';
@@ -933,7 +936,7 @@ resize();pts=Array.from({length:70},mkPt);draw();window.addEventListener('resize
 
 // ── State ──────────────────────────────────────────────────
 const WORKER   = 'https://saf-queue-worker.byker-software.workers.dev';
-const WM_DEBUG = false; // set true temporarily for verbose debugging
+const DEBUG = false; // set true temporarily for verbose debugging
 // ── Support config — change number here only ───────────────
 const SUPPORT_WA = '923338131889';
 function waSupport(msg) {
@@ -1552,7 +1555,7 @@ function startPaymentPolling(requestId, customerName, customerPhone) {
       if (json.data.status === 'approved') { // approved — token was created server-side
         clearInterval(_payPollTimer);
         localStorage.removeItem('saf_pending_payment');
-        console.log('[WM-PAID] payment approved — token_id:', json.data.token_id, 'token_number:', json.data.token_number);
+
 
         // ── CASE 1: backend stored token_id correctly (normal path) ──
         if (json.data.token_id) {
@@ -1568,10 +1571,10 @@ function startPaymentPolling(requestId, customerName, customerPhone) {
           // Token was already created server-side by approvePaymentRequest.
           // We cannot get its ID from payment-status. Call /public/join to get a new token.
           // bypassOpen not available on public route — so we call join directly.
-          console.log('[WM-PAID] token_id missing from payment-status — calling /public/join as fallback');
+
           const name  = document.getElementById('c-name')?.value?.trim()  || '';
           const phone = document.getElementById('c-phone')?.value?.trim() || '';
-          console.log('[WM-PAID] calling final join');
+
           try {
             const joinRes  = await fetch(`${WORKER}/public/join`, {
               method:  'POST',
@@ -1579,7 +1582,7 @@ function startPaymentPolling(requestId, customerName, customerPhone) {
               body:    JSON.stringify({ shop_id: selectedShop.id, customer_name: name, customer_phone: phone || null }),
             });
             const joinJson = await joinRes.json();
-            console.log('[WM-PAID] /public/join response', JSON.stringify(joinJson));
+
             if (joinJson.success) {
               myTokenId  = joinJson.data.token_id;
               myTokenNum = joinJson.data.token_number;
@@ -2033,7 +2036,7 @@ function _checkUrduVoicePrompt() {
   if (!wantsUrdu || _urduVoice) return; // no prompt needed
   if (localStorage.getItem('wm_urdu_tts_prompted')) return; // already shown once
   localStorage.setItem('wm_urdu_tts_prompted', '1');
-  console.log('[WM-VOICE] Urdu voice unavailable on device');
+  if (DEBUG) console.log('[WM-VOICE] Urdu voice unavailable on device');
 
   // Build one-time dismissible banner
   const banner = document.createElement('div');
@@ -2064,16 +2067,16 @@ function _checkUrduVoicePrompt() {
 }
 
 function playVoice(textEn, textUr, force) {
-  if (isMuted()) { if (WM_DEBUG) console.log('[WM-VOICE] muted'); return; }
+  if (isMuted()) { if (DEBUG) console.log('[WM-VOICE] muted'); return; }
   if (!('speechSynthesis' in window)) { return; }
   // Bug 1 fix: allow force=true to bypass document.hidden for critical called alert
   if (!force && document.hidden) { return; }
   const useUrdu   = (localStorage.getItem('sq_lang') || 'en') === 'ur';
   const hasUrduVoice = useUrdu && !!_urduVoice;
   // If Urdu mode is on but no Urdu voice installed, fall back to English text + voice
-  if (useUrdu && !_urduVoice) console.log('[WM-VOICE] Falling back to English voice');
+
   const text = hasUrduVoice && textUr ? textUr : textEn;
-  console.log('[WM-VOICE] Speaking:', text);
+  if (DEBUG) console.log('[WM-VOICE] Speaking:', text);
   try {
     window.speechSynthesis.cancel();
     const utt = new SpeechSynthesisUtterance(text);
@@ -2127,7 +2130,7 @@ let _pendingCalledAlert = false; // Bug 3 fix: replay when tab becomes visible
 function triggerAlert(stage) {
   if (ALERT_STAGES.has(stage)) return;
   ALERT_STAGES.add(stage);
-  if (WM_DEBUG) console.log('[WM-ALERT] stage:', stage, 'hidden:', document.hidden, 'muted:', isMuted());
+  if (DEBUG) console.log('[WM-ALERT] stage:', stage, 'hidden:', document.hidden, 'muted:', isMuted());
 
   // Each entry: [English, Urdu]
   const messages = {
@@ -2159,6 +2162,11 @@ function triggerAlert(stage) {
     playAlarm('one-left');
     setTimeout(() => playVoice(messages[1][0], messages[1][1]), 1200);
     if (navigator.vibrate) navigator.vibrate([250, 120, 250]);
+  } else if (stage === 1) {
+    // Stage 1: soft zigzag tone → 1.7s pause → calm voice announcement
+    playAlarm('zigzag');
+    setTimeout(() => playVoice(messages[1][0], messages[1][1]), 1700);
+    if (navigator.vibrate) navigator.vibrate([120, 80, 120]);
   } else {
     const [freq, dur, vol] = beeps[stage];
     playBeep(freq, dur, vol);
@@ -2201,7 +2209,6 @@ async function updateTracker() {
     const waitEl = document.getElementById('r-wait-val');
 
     if (data.status === 'called') {
-      console.log('[WM-TRACKER] Token status changed to: called');
       badge.className   = 'tracker-badge called';
       badge.textContent = '🔔 آپ کی باری آ گئی!';
       sub.textContent   = 'ابھی کاؤنٹر پر آئیں!';
@@ -2210,11 +2217,9 @@ async function updateTracker() {
       clearInterval(trackerTimer);
       if (!_calledAlarmFired) {
         _calledAlarmFired = true;
-        console.log('[WM-TRACKER] Triggering alert stage 0 (first call)');
         triggerAlert(0);
         setTimeout(() => {
           if (!isMuted()) {
-            console.log('[WM-TRACKER] Replaying alarm at 9s');
             playAlarm('called');
           }
         }, 9000);
@@ -2272,7 +2277,7 @@ async function updateTracker() {
       if (trackerTimer && ahead <= 2) {
         clearInterval(trackerTimer);
         trackerTimer = setInterval(updateTracker, targetInterval);
-        if (WM_DEBUG) console.log('[WM-TRACKER] poll:', ahead, targetInterval/1000+'s');
+        if (DEBUG) console.log('[WM-TRACKER] poll:', ahead, targetInterval/1000+'s');
       }
 
       const intervalLabel = ahead <= 2 ? '3' : '10';

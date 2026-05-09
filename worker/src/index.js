@@ -34,6 +34,7 @@ import { adminAddLocation }                   from './routes/search.js';
 import { adminResetPinHandler }              from './routes/shops.js';
 import { expireStaleSubscriptions }                   from './services/subscriptionService.js';
 import { resetDailyTokens }                           from './services/tokenService.js';
+import { sweepOrphanVoiceNotes }                      from './services/voiceCleanupService.js';
 import { createClient }                               from './utils/db.js';
 import { preflight, notFound, ok, serverError }                        from './utils/response.js';
 
@@ -152,6 +153,7 @@ export default {
     await Promise.all([
       expireStaleSubscriptions(db),
       resetDailyTokens(db),
+      sweepOrphanVoiceNotes(db, env),
     ]);
   },
 };
