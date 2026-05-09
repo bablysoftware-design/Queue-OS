@@ -1249,7 +1249,8 @@ function buildShopCard(s, i) {
         <div class="shop-title">${esc(s.name)}</div>
         <div class="shop-area">📍 ${esc(s.area||'')}${s.city ? ' · ' + esc(s.city) : ''} &nbsp;·&nbsp; ${catLabel(s.category)}</div>
         ${s.address ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">🏠 ${esc(s.address)}</div>` : ''}
-        ${s.owner_phone ? `<div style="font-size:10px;color:var(--muted);margin-top:1px">📞 ${esc(s.owner_phone)}</div>` : ''}
+        ${(s.city || s.country) ? `<div style="font-size:10px;color:var(--muted);margin-top:1px">📍 ${[s.area,s.city,s.country].filter(Boolean).map(esc).join(', ')}</div>` : ''}
+        ${s.owner_phone ? (() => { const p = String(s.owner_phone).replace(/\D/g,''); const href = (p.startsWith('92') || p.startsWith('0092')) ? `https://wa.me/${p}` : `tel:${p}`; return `<a href="${href}" target="_blank" style="font-size:11px;color:var(--gold);margin-top:2px;text-decoration:none;display:inline-flex;align-items:center;gap:4px">📞 ${esc(s.owner_phone)}</a>`; })() : ''}
       </div>
       ${statusBadge}
     </div>
@@ -1864,7 +1865,7 @@ function playVoice(textEn, textUr) {
   if (isMuted()) return;
   if (!('speechSynthesis' in window)) return;
   if (document.hidden) return;
-  const useUrdu = (localStorage.getItem('sq_lang') || 'ur') === 'ur';
+  const useUrdu = (localStorage.getItem('sq_lang') || 'en') === 'ur';
   try {
     window.speechSynthesis.cancel();
     if (useUrdu && _urduVoice && textUr) {
@@ -2093,7 +2094,7 @@ function shareShopLink() {
     ? `${location.origin}/s/${selectedShop.slug}`
     : `${location.origin}/customer.html?shop=${selectedShop.id}`;
 
-  const isUr = (localStorage.getItem('sq_lang') || 'ur') === 'ur';
+  const isUr = (localStorage.getItem('sq_lang') || 'en') === 'ur';
 
   // Family coordination language — not marketing
   const msg = isUr
@@ -2199,7 +2200,7 @@ function catLabel(cat) {
     const fb = {barber:'حجام',clinic:'کلینک',pharmacy:'فارمیسی',bank:'بینک',govt:'سرکاری',tailor:'درزی'};
     return fb[cat] || cat || 'دیگر';
   }
-  return window.catDisplay(cat, localStorage.getItem('sq_lang') || 'ur');
+  return window.catDisplay(cat, localStorage.getItem('sq_lang') || 'en');
 }
 
 function esc(s) {
@@ -2212,13 +2213,13 @@ document.getElementById('c-name').addEventListener('keydown', e => { if(e.key===
 // ── BOOT ───────────────────────────────────────────────────
 // ── LANGUAGE SYSTEM ──────────────────────────────────────────
 function toggleLangAndReload() {
-  const cur = localStorage.getItem('sq_lang') || 'ur';
+  const cur = localStorage.getItem('sq_lang') || 'en';
   localStorage.setItem('sq_lang', cur === 'en' ? 'ur' : 'en');
   window.location.reload();
 }
 
 function applyPageLanguage() {
-  const lang = localStorage.getItem('sq_lang') || 'ur';
+  const lang = localStorage.getItem('sq_lang') || 'en';
   const isUr = lang === 'ur';
   const key  = isUr ? 'ur' : 'en';
 
@@ -2247,7 +2248,7 @@ applyPageLanguage();
 function buildCatChips() {
   const row = document.getElementById('cat-row');
   if (!row || !window.CATEGORY_MAP) return;
-  const ur = (localStorage.getItem('sq_lang') || 'ur') === 'ur';
+  const ur = (localStorage.getItem('sq_lang') || 'en') === 'ur';
   let html = `<button class="cat-chip active" onclick="filterCat('')" data-cat="">${ur ? 'سب' : 'All'}</button>`;
   for (const [key, cfg] of Object.entries(window.CATEGORY_MAP)) {
     if (key === 'other') continue;

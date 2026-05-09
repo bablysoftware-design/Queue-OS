@@ -807,6 +807,7 @@ body::after {
     <div style="margin-top:10px">
       <button onclick="showDirectory()" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:9px;background:transparent;color:var(--text3);font-family:var(--font);font-size:12px;cursor:pointer">🔍 Browse Shops Directory</button>
     </div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:rgba(237,232,208,.35)">Need help? <a href="https://wa.me/923338131889" target="_blank" style="color:var(--gold);text-decoration:none">WhatsApp 03338131889</a></div>
   </div>
 </div>
 
@@ -1983,8 +1984,8 @@ function esc2(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;'
 
 // ── Language toggle (global) ─────────────────────────────────
 function toggleLang() {
-  const cur  = localStorage.getItem('sq_lang') || 'ur';
-  localStorage.setItem('sq_lang', cur === 'en' ? 'ur' : 'en');
+  const cur  = localStorage.getItem('sq_lang') || 'en';
+  localStorage.setItem('sq_lang', cur === 'ur' ? 'en' : 'ur');
   window.location.reload();
 }
 window.toggleLang = toggleLang;

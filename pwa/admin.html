@@ -211,6 +211,23 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
       </div>
     </div>
 
+    <!-- PATCH 5: Quick add city/area -->
+    <div class="section">
+      <div class="section-title">📍 Add City / Area</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div>
+          <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px">City</label>
+          <input id="new-city-input" type="text" placeholder="e.g. Attock" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:inherit;font-size:13px;outline:none;box-sizing:border-box"/>
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px">Area</label>
+          <input id="new-area-input" type="text" placeholder="e.g. Saddar, Rwp" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:inherit;font-size:13px;outline:none;box-sizing:border-box"/>
+        </div>
+      </div>
+      <button onclick="addLocation()" style="padding:8px 20px;background:var(--gold);color:#0d1422;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">+ Add Location</button>
+      <span id="location-msg" style="font-size:12px;margin-left:10px"></span>
+    </div>
+
     <!-- Pending Registrations -->
     <div class="section">
       <div class="section-title" style="display:flex;align-items:center;gap:8px">
@@ -269,6 +286,24 @@ function doLogout() {
   SECRET = '';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('dash').style.display         = 'none';
+}
+
+async function addLocation() {
+  const city = document.getElementById('new-city-input').value.trim();
+  const area = document.getElementById('new-area-input').value.trim();
+  const msg  = document.getElementById('location-msg');
+  if (!city && !area) { msg.style.color='var(--red)'; msg.textContent='Enter at least one field'; return; }
+  try {
+    const res  = await fetch(WORKER + '/admin/locations', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'x-admin-secret': adminSecret },
+      body: JSON.stringify({ city: city||null, area: area||null, country: 'Pakistan' })
+    });
+    const json = await res.json();
+    msg.style.color = json.success ? 'var(--green)' : 'var(--red)';
+    msg.textContent = json.success ? '✓ Added successfully' : (json.error || 'Error');
+    if (json.success) { document.getElementById('new-city-input').value=''; document.getElementById('new-area-input').value=''; }
+  } catch(e) { msg.style.color='var(--red)'; msg.textContent = e.message; }
 }
 
 function loadAll() { loadShops();
