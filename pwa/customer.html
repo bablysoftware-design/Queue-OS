@@ -431,6 +431,7 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
   filter: drop-shadow(0 4px 20px rgba(212,175,55,0.5));
   animation: numPulse 2s ease-in-out infinite;
 }
+.wa-msg-btn{display:block;margin:12px 0;padding:10px;background:#25D366;color:white;border-radius:8px;text-align:center;text-decoration:none;font-weight:600;}
 
 </style>
 </head>
@@ -676,6 +677,7 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
         <div style="margin:12px 0 4px">
           <div style="font-size:9px;letter-spacing:3px;color:var(--text3);text-transform:uppercase;margin-bottom:6px">ٹوکن نمبر</div>
           <div class="result-token-num" id="r-num">—</div>
+          <a id="wa-msg-link" class="wa-msg-btn" style="display:none" target="_blank">💬 Message on WhatsApp</a>
         </div>
         <div class="result-greeting"><span id="r-greeting">آپ کی باری آئے گی!</span> 🎉</div>
 
@@ -941,6 +943,19 @@ let myTokenId       = null;
 let myTokenNum      = null;
 let trackerTimer    = null;
 let _resolvedShopId = null; // slug resolved to shop id
+
+function showWaBtn(shop, tokenNum) {
+  const el = document.getElementById('wa-msg-link');
+  if (!el) return;
+  if (shop && shop.owner_phone) {
+    const phone = shop.owner_phone.replace(/\D/g,'');
+    const text  = encodeURIComponent(`Hi ${shop.name}, I have token ${tokenNum}`);
+    el.href = `https://wa.me/${phone}?text=${text}`;
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+}
 
 
 // ── FEATURED SHOP (poster scan mode) ──────────────────────
@@ -1327,6 +1342,7 @@ async function openShop(shopId) {
     }).catch(() => {});
         document.getElementById('r-num').textContent = myTokenNum || '?';
         document.getElementById('r-greeting').textContent = `${selectedShop.name} — آپ کا ٹوکن`;
+        showWaBtn(selectedShop, myTokenNum || '?');
         return;
       }
     } catch(e) {}
@@ -1508,6 +1524,7 @@ function startPaymentPolling(requestId, customerName, customerPhone) {
         document.getElementById('result-wrap').style.display    = 'block';
         document.getElementById('r-num').textContent            = myTokenNum || '✓';
         document.getElementById('r-greeting').textContent       = `🎉 منظور! ${selectedShop?.name || ''} — آپ قطار میں ہیں`;
+        showWaBtn(selectedShop, myTokenNum || '✓');
 
         // Clear all payment form data so it doesn't show if modal re-opens
         ['c-name','c-phone','c-screenshot-data'].forEach(id => {
@@ -1628,6 +1645,7 @@ async function submitJoin() {
         if (rName && selectedShop) rName.textContent = selectedShop.name || '';
         if (rArea && selectedShop) rArea.textContent = [selectedShop.category ? catLabel(selectedShop.category) : '', selectedShop.area || ''].filter(Boolean).join(' · ');
     document.getElementById('r-greeting').textContent      = `🎉 ${name}, you're in line!`;
+    showWaBtn(selectedShop, data.token_number);
     document.getElementById('r-pos').textContent           = data.position;
     document.getElementById('r-wait-val').textContent      = data.estimated_wait + ' min';
     updateCountdown(data.estimated_wait, data.position);
@@ -2470,6 +2488,7 @@ function scrollToShopCard(shopId) {
         if (rn && selectedShop) rn.textContent = selectedShop.name || '';
         if (ra && selectedShop) ra.textContent = selectedShop.area || '';
         document.getElementById('r-greeting').textContent      = `${selectedShop.name} — ٹوکن بحال`;
+        showWaBtn(selectedShop, myTokenNum || '?');
         document.getElementById('join-form-wrap').style.display = 'none';
         document.getElementById('result-wrap').style.display    = 'block';
         // Show modal and overlay
