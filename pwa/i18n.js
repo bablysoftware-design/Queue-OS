@@ -1,16 +1,16 @@
 // ============================================================
-// i18n.js — Language strings for Saf Queue
+// i18n.js — Language strings for WaitMate
 // Supports: English (en), Urdu (ur)
 // ============================================================
 
 const STRINGS = {
   en: {
     // App
-    appName:        'Saf Queue',
+    appName:        'WaitMate',
     appTagline:     'Your Smart Queue Partner',    langSwitch:     'اردو',
 
     // Login
-    shopLogin:      'Shopkeeper Login',
+    shopLogin:      'Business Login',
     whatsappNum:    'WhatsApp Number',
     phonePlaceholder:'923001234567',
     pin:            '4-Digit PIN',
