@@ -1309,7 +1309,7 @@ function refreshQueue() {
       if (!queue.length) {
         listEl.innerHTML = `<div class="queue-empty">${t('queueEmpty')}</div>`;
       } else {
-        queue.forEach(item => { console.log('[WM-DASHBOARD-TOKEN]', item); console.log('[WM-DASHBOARD-ITEM]', item); });
+        // debug logs removed — data confirmed correct
         listEl.innerHTML = queue.map((item, i) => `
           <div class="q-item" style="animation-delay:${i * 0.04}s;flex-wrap:wrap;gap:6px">
             <span class="q-num">#${item.token_number}</span>
@@ -1541,9 +1541,28 @@ function renderPaymentRequests(pending) {
           <div style="font-weight:700;font-size:13px">${esc(r.customer_name)}</div>
           <div style="font-size:11px;color:var(--muted);margin-top:2px">${esc(r.customer_phone)} · <span style="color:var(--gold);font-weight:700">Rs ${r.amount}</span></div>
           <div style="font-size:10px;color:var(--muted);margin-top:2px">${new Date(r.created_at).toLocaleTimeString('ur-PK',{hour:'2-digit',minute:'2-digit'})}</div>
-          ${r.screenshot_url
+
+          ${r.screenshot_url && r.screenshot_url !== '[screenshot_uploaded]'
             ? `<button onclick="viewScreenshot('${r.screenshot_url}')" style="display:block;margin-top:6px;padding:5px 10px;border:1px solid rgba(212,175,55,.3);border-radius:8px;background:transparent;color:var(--gold);font-size:11px;cursor:pointer">📸 Screenshot دیکھیں</button>`
-            : `<span style="font-size:11px;color:var(--muted)">📷 کوئی screenshot نہیں</span>`}
+            : r.screenshot_url === '[screenshot_uploaded]'
+              ? `<span style="display:block;margin-top:6px;font-size:11px;color:var(--muted)">📸 Screenshot موصول</span>`
+              : ''}
+
+          ${r.customer_note
+            ? `<div style="margin-top:8px;padding:7px 10px;background:rgba(255,255,255,.04);border-radius:8px;border:1px solid rgba(255,255,255,.07)">
+                 <div style="font-size:10px;color:var(--muted);margin-bottom:3px;letter-spacing:.5px">📝 نوٹ</div>
+                 <div style="font-size:12px;color:var(--text)">${esc(r.customer_note)}</div>
+               </div>`
+            : ''}
+
+          ${r.voice_note_path
+            ? `<div style="margin-top:8px;display:flex;align-items:center;gap:8px">
+                 <button onclick="playAdminVoiceNote('${r.voice_note_path}', this)"
+                   style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border:1px solid rgba(212,175,55,.3);border-radius:20px;background:rgba(212,175,55,.06);color:var(--gold);font-size:11px;cursor:pointer;font-family:inherit">
+                   🎤 آواز سنیں${r.voice_note_duration ? ' (' + r.voice_note_duration + 's)' : ''}
+                 </button>
+               </div>`
+            : ''}
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
           <button onclick="approvePayment('${r.id}')"
@@ -1592,6 +1611,29 @@ async function approvePayment(requestId) {
     refreshQueue();        // refresh queue so new token appears
   } catch(e) { showToast(e.message, 'error'); }
 }
+
+async function playAdminVoiceNote(path, btn) {
+  // Fetch signed URL then play inline — same pattern as queue voice notes
+  try {
+    btn.disabled = true;
+    btn.textContent = '⏳ لوڈ ہو رہا ہے...';
+    const res  = await fetch(`${WORKER}/public/voice-note?path=${encodeURIComponent(path)}`, {
+      headers: { 'x-session-token': state.sessionToken }
+    });
+    const json = await res.json();
+    if (!json.success || !json.data?.url) throw new Error('آواز نہیں ملی');
+    const audio = new Audio(json.data.url);
+    audio.play();
+    btn.textContent = '🔊 چل رہا ہے...';
+    audio.onended = () => { btn.disabled = false; btn.innerHTML = '🎤 آواز سنیں'; };
+    audio.onerror = () => { btn.disabled = false; btn.innerHTML = '🎤 آواز سنیں'; showToast('آواز چلانے میں خرابی', 'error'); };
+  } catch(e) {
+    btn.disabled = false;
+    btn.innerHTML = '🎤 آواز سنیں';
+    showToast(e.message, 'error');
+  }
+}
+window.playAdminVoiceNote = playAdminVoiceNote;
 
 async function rejectPayment(requestId) {
   if (!confirm('یہ payment request رد کریں؟')) return;
@@ -1780,9 +1822,7 @@ async function saveSettings() {
     // Always send token_price so DB stays in sync with mode.
     // When switching to free: sends 0, clearing any stale paid price.
     body.token_price = (mode === 'paid' && price > 0) ? price : 0;
-    console.log('SAVE BODY', body);
     const saveRes = await api('PATCH', `/shops/${state.shopId}/settings`, body);
-    console.log('RESPONSE', saveRes);
     // Update payment tab visibility
     const payBtn = document.getElementById('bar-pay-btn');
     if (payBtn) payBtn.style.display = mode === 'paid' ? 'flex' : 'none';

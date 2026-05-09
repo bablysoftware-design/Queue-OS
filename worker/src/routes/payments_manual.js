@@ -88,7 +88,7 @@ export async function listPaymentRequests(request, env) {
       : `${statusFilter ? `status=eq.${statusFilter}&` : ''}order=created_at.desc`;
     const db = createClient(env);
     const rows = await db.select('payment_requests',
-      `select=id,shop_id,customer_name,customer_phone,amount,screenshot_url,status,created_at,reviewed_at,token_id&${filter}&limit=50`
+      `select=id,shop_id,customer_name,customer_phone,amount,screenshot_url,status,created_at,reviewed_at,token_id,customer_note,voice_note_path,voice_note_duration&${filter}&limit=50`
     );
     return ok(rows || []);
   } catch(err) { return serverError(err.message); }

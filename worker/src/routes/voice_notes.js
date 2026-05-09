@@ -121,3 +121,95 @@ export async function deleteVoiceNotePublic(request, env) {
     return ok({});
   } catch (e) { return ok({}); } // always 200 — client doesn't retry on failure
 }
+
+/**
+ * POST /internal/cleanup-voices
+ * Sweeps orphaned tmp_ voice notes older than 2 hours.
+ * Called manually or by a scheduled trigger (Cloudflare Cron).
+ * NEVER deletes files referenced in active tokens (waiting/called).
+ * Admin-secret protected.
+ */
+export async function cleanupOrphanVoiceNotes(request, env) {
+  const secret = request.headers.get('x-admin-secret');
+  if (!secret || secret !== env.ADMIN_SECRET) {
+    return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), { status: 401 });
+  }
+
+  try {
+    const url = env.SUPABASE_URL.trim();
+    const key = env.SUPABASE_KEY.trim();
+
+    // 1. List all files in the voice-notes bucket
+    const listRes = await fetch(`${url}/storage/v1/object/list/${BUCKET}`, {
+      method: 'POST',
+      headers: {
+        'apikey':        key,
+        'Authorization': `Bearer ${key}`,
+        'Content-Type':  'application/json',
+      },
+      body: JSON.stringify({ prefix: 'tmp_', limit: 200 }),
+    });
+    if (!listRes.ok) throw new Error('Failed to list storage objects');
+    const objects = await listRes.json();
+
+    // 2. Get all voice_note_url values from active tokens (waiting + called)
+    //    These files MUST NOT be deleted.
+    const activeRes = await fetch(
+      `${url}/rest/v1/tokens?status=in.(waiting,called)&select=voice_note_url`,
+      {
+        headers: {
+          'apikey':        key,
+          'Authorization': `Bearer ${key}`,
+          'Prefer':        'return=representation',
+        },
+      }
+    );
+    const activeTokens = activeRes.ok ? await activeRes.json() : [];
+    const protectedPaths = new Set(
+      activeTokens.map(t => t.voice_note_url).filter(Boolean)
+    );
+
+    // 3. Also protect files from pending payment_requests
+    const prRes = await fetch(
+      `${url}/rest/v1/payment_requests?status=eq.pending&select=voice_note_path`,
+      {
+        headers: {
+          'apikey':        key,
+          'Authorization': `Bearer ${key}`,
+          'Prefer':        'return=representation',
+        },
+      }
+    );
+    const pendingPRs = prRes.ok ? await prRes.json() : [];
+    pendingPRs.forEach(pr => { if (pr.voice_note_path) protectedPaths.add(pr.voice_note_path); });
+
+    // 4. Delete tmp_ files older than 2 hours that aren't protected
+    const cutoff   = Date.now() - (2 * 60 * 60 * 1000); // 2 hours ago
+    const toDelete = (objects || []).filter(obj => {
+      const name      = obj.name || '';
+      const createdAt = new Date(obj.created_at || 0).getTime();
+      return name.startsWith('tmp_') &&
+             createdAt < cutoff &&
+             !protectedPaths.has(name);
+    });
+
+    let deleted = 0;
+    for (const obj of toDelete) {
+      try {
+        await fetch(`${url}/storage/v1/object/${BUCKET}/${obj.name}`, {
+          method:  'DELETE',
+          headers: { 'apikey': key, 'Authorization': `Bearer ${key}` },
+        });
+        deleted++;
+      } catch (e) { /* best-effort — continue */ }
+    }
+
+    return new Response(JSON.stringify({
+      success: true,
+      data: { scanned: objects?.length || 0, protected: protectedPaths.size, deleted },
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+
+  } catch (err) {
+    return new Response(JSON.stringify({ success: false, error: err.message }), { status: 500 });
+  }
+}

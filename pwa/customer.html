@@ -898,10 +898,6 @@ async function uploadVoiceBlob(blob) {
     if (!json.success) throw new Error(json.error || 'Upload failed');
     document.getElementById('c-voice-path').value     = json.data.path;
     document.getElementById('c-voice-duration').value = json.data.duration;
-    console.log('[WM-UPLOAD-SAVED]', {
-      path:     document.getElementById('c-voice-path')?.value,
-      duration: document.getElementById('c-voice-duration')?.value
-    });
     document.getElementById('voice-btn-icon').textContent = '✅';
     document.getElementById('voice-btn-txt').textContent  = `Recorded (${json.data.duration}s)`;
     document.getElementById('voice-clear-btn').style.display = '';
@@ -936,7 +932,8 @@ function draw(){ctx.clearRect(0,0,W,H);pts.forEach((p,i)=>{p.x+=p.vx;p.y+=p.vy;i
 resize();pts=Array.from({length:70},mkPt);draw();window.addEventListener('resize',resize);
 
 // ── State ──────────────────────────────────────────────────
-const WORKER = 'https://saf-queue-worker.byker-software.workers.dev';
+const WORKER   = 'https://saf-queue-worker.byker-software.workers.dev';
+const WM_DEBUG = false; // set true temporarily for verbose debugging
 // ── Support config — change number here only ───────────────
 const SUPPORT_WA = '923338131889';
 function waSupport(msg) {
@@ -1201,12 +1198,9 @@ async function loadShops() {
 
 function renderShops() {
   _shopsEverLoaded = true;
-  console.log('[WM] renderShops(): filteredShops=', filteredShops.length,
-    '| HIGHLIGHT_SHOP=', HIGHLIGHT_SHOP);
   document.getElementById('loading-state').style.display = 'none';
 
   if (!filteredShops.length) {
-    console.log('[WM] renderShops: empty state — no shops');
     document.getElementById('shops-container').style.display = 'none';
     document.getElementById('empty-state').style.display   = 'block';
     return;
@@ -1238,11 +1232,9 @@ function renderShops() {
     return (a.queue_length||0) - (b.queue_length||0);
   });
 
-  console.log('[WM] Building cards for', sorted.length, 'shops (listShops after HIGHLIGHT filter)');
   try {
     const html = sorted.map((s, i) => buildShopCard(s, i)).join('');
     document.getElementById('shop-list').innerHTML = html;
-    console.log('[WM] Cards appended. shop-list children:', document.getElementById('shop-list').children.length);
   } catch(cardErr) {
     console.error('[WM] buildShopCard crashed:', cardErr);
   }
@@ -1671,10 +1663,6 @@ async function submitJoin() {
   }
 
   try {
-    console.log('[WM-SUBMIT-READ]', {
-      path:     document.getElementById('c-voice-path')?.value,
-      duration: document.getElementById('c-voice-duration')?.value
-    });
     const _note     = (document.getElementById('c-note')?.value||'').trim().slice(0,200)||null;
     const _voicePath = document.getElementById('c-voice-path')?.value||null;
     const _voiceDur  = parseInt(document.getElementById('c-voice-duration')?.value||'0',10)||null;
@@ -1686,8 +1674,6 @@ async function submitJoin() {
       voice_note_path:     _voicePath,
       voice_note_duration: _voiceDur
     };
-    console.log('[WM-JOIN-PAYLOAD]', JSON.stringify(_payload));
-    console.log('[WM-FRONTEND-PAYLOAD]', _payload);
 
     const res  = await fetch(`${WORKER}/public/join`, {
       method: 'POST',
@@ -1887,6 +1873,14 @@ function playAlarm(type = 'called') {
         beep(660, t + 0.55, 0.20, 0.6, 'sine');
         beep(880, t + 0.80, 0.30, 0.7, 'sine');
         if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      } else if (type === 'one-left') {
+        // Soft zigzag — calm but noticeable. Sine wave for warmth.
+        beep(660, t + 0.00, 0.18, 0.45, 'sine');
+        beep(770, t + 0.22, 0.18, 0.50, 'sine');
+        beep(660, t + 0.44, 0.18, 0.45, 'sine');
+        beep(770, t + 0.66, 0.18, 0.50, 'sine');
+        beep(880, t + 0.90, 0.30, 0.55, 'sine');
+        if (navigator.vibrate) navigator.vibrate([250, 120, 250]);
       } else {
         beep(440, t + 0.00, 0.15, 0.5, 'sine');
         beep(550, t + 0.18, 0.15, 0.5, 'sine');
@@ -1970,8 +1964,7 @@ function _unlockAudio() {
     }
     if (window._wmAudioCtx.state === 'suspended') {
       window._wmAudioCtx.resume().then(() => {
-        console.log('[WM-AUDIO] AudioContext unlocked, state:', window._wmAudioCtx.state);
-      }).catch(() => {});
+        }).catch(() => {});
     }
     // Warm up speechSynthesis — prevents first-speak delay on iOS
     if ('speechSynthesis' in window) {
@@ -2071,10 +2064,10 @@ function _checkUrduVoicePrompt() {
 }
 
 function playVoice(textEn, textUr, force) {
-  if (isMuted()) { console.log('[WM-VOICE] playVoice skipped: muted'); return; }
-  if (!('speechSynthesis' in window)) { console.log('[WM-VOICE] playVoice skipped: no speechSynthesis'); return; }
+  if (isMuted()) { if (WM_DEBUG) console.log('[WM-VOICE] muted'); return; }
+  if (!('speechSynthesis' in window)) { return; }
   // Bug 1 fix: allow force=true to bypass document.hidden for critical called alert
-  if (!force && document.hidden) { console.log('[WM-VOICE] playVoice skipped: document.hidden (non-forced)'); return; }
+  if (!force && document.hidden) { return; }
   const useUrdu   = (localStorage.getItem('sq_lang') || 'en') === 'ur';
   const hasUrduVoice = useUrdu && !!_urduVoice;
   // If Urdu mode is on but no Urdu voice installed, fall back to English text + voice
@@ -2132,9 +2125,9 @@ function playBeep(freq, duration, vol) {
 let _pendingCalledAlert = false; // Bug 3 fix: replay when tab becomes visible
 
 function triggerAlert(stage) {
-  if (ALERT_STAGES.has(stage)) { console.log('[WM-ALERT] Stage', stage, 'already fired — skipping'); return; }
+  if (ALERT_STAGES.has(stage)) return;
   ALERT_STAGES.add(stage);
-  console.log('[WM-ALERT] Triggering alert stage:', stage, '| hidden:', document.hidden, '| muted:', isMuted());
+  if (WM_DEBUG) console.log('[WM-ALERT] stage:', stage, 'hidden:', document.hidden, 'muted:', isMuted());
 
   // Each entry: [English, Urdu]
   const messages = {
@@ -2151,33 +2144,32 @@ function triggerAlert(stage) {
   const beeps = {
     5: [660, 0.2, 0.4],
     3: [880, 0.2, 0.5],
-    1: [1100, 0.25, 0.6],
+    1: null, // playAlarm('one-left') handles this with dedicated zigzag
     0: null, // playAlarm('called') handles this
   };
 
   if (stage === 0) {
-    // Final call — Bug 1 fix: force=true bypasses document.hidden
-    console.log('[WM-ALERT] Triggering alert stage 0 — playing alarm + voice (forced)');
+    // Final call — force=true bypasses document.hidden
     playAlarm('called');
-    // Bug 3 fix: if page is hidden, mark pending so we replay on visibility
-    if (document.hidden) {
-      console.log('[WM-ALERT] Page hidden — marking pending called alert for replay on focus');
-      _pendingCalledAlert = true;
-    }
+    if (document.hidden) _pendingCalledAlert = true;
     playVoice(messages[0][0], messages[0][1], true); // force=true
     if (navigator.vibrate) navigator.vibrate([400, 150, 400, 150, 600]);
+  } else if (stage === 1) {
+    // 1 person left — soft zigzag tone, then voice after 1.2s pause
+    playAlarm('one-left');
+    setTimeout(() => playVoice(messages[1][0], messages[1][1]), 1200);
+    if (navigator.vibrate) navigator.vibrate([250, 120, 250]);
   } else {
     const [freq, dur, vol] = beeps[stage];
     playBeep(freq, dur, vol);
     setTimeout(() => playVoice(messages[stage][0], messages[stage][1]), 600);
-    if (navigator.vibrate) navigator.vibrate([stage === 1 ? 300 : 150]);
+    if (navigator.vibrate) navigator.vibrate([150]);
   }
 }
 
-// Bug 3 fix: replay called alert when customer returns to the tab
+// Replay called alert when customer returns to the tab (page was hidden)
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden && _pendingCalledAlert) {
-    console.log('[WM-ALERT] Tab became visible — replaying pending called alert');
     _pendingCalledAlert = false;
     playAlarm('called');
     playVoice('It is your turn now. Please come to the counter immediately.',
@@ -2280,7 +2272,7 @@ async function updateTracker() {
       if (trackerTimer && ahead <= 2) {
         clearInterval(trackerTimer);
         trackerTimer = setInterval(updateTracker, targetInterval);
-        console.log('[WM-TRACKER] Adaptive poll: ahead=' + ahead + ', interval set to ' + (targetInterval/1000) + 's');
+        if (WM_DEBUG) console.log('[WM-TRACKER] poll:', ahead, targetInterval/1000+'s');
       }
 
       const intervalLabel = ahead <= 2 ? '3' : '10';
@@ -2721,9 +2713,7 @@ function scrollToShopCard(shopId) {
   }
   const effectiveShop = _resolvedShopId || HIGHLIGHT_SHOP;
 
-  console.log('[WM] boot: calling loadShops()');
   await loadShops();
-  console.log('[WM] boot: loadShops() resolved');
 
   // If shop param or slug: load featured shop + scroll to card
   if (effectiveShop) {
