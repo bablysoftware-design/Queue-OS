@@ -99,6 +99,7 @@ export async function createToken(
     status:            'waiting',
   };
 
+  console.log('[WM-CREATE-TOKEN-INSERT]', { customer_note: insertObj.customer_note, voice_note_url: insertObj.voice_note_url, voice_note_duration: insertObj.voice_note_duration });
   const [token] = await db.insert('tokens', insertObj);
 
 
