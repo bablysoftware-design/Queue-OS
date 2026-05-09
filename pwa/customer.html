@@ -898,6 +898,10 @@ async function uploadVoiceBlob(blob) {
     if (!json.success) throw new Error(json.error || 'Upload failed');
     document.getElementById('c-voice-path').value     = json.data.path;
     document.getElementById('c-voice-duration').value = json.data.duration;
+    console.log('[WM-UPLOAD-SAVED]', {
+      path:     document.getElementById('c-voice-path')?.value,
+      duration: document.getElementById('c-voice-duration')?.value
+    });
     document.getElementById('voice-btn-icon').textContent = '✅';
     document.getElementById('voice-btn-txt').textContent  = `Recorded (${json.data.duration}s)`;
     document.getElementById('voice-clear-btn').style.display = '';
@@ -1659,6 +1663,10 @@ async function submitJoin() {
   }
 
   try {
+    console.log('[WM-SUBMIT-READ]', {
+      path:     document.getElementById('c-voice-path')?.value,
+      duration: document.getElementById('c-voice-duration')?.value
+    });
     const _note     = (document.getElementById('c-note')?.value||'').trim().slice(0,200)||null;
     const _voicePath = document.getElementById('c-voice-path')?.value||null;
     const _voiceDur  = parseInt(document.getElementById('c-voice-duration')?.value||'0',10)||null;
@@ -1671,7 +1679,7 @@ async function submitJoin() {
       voice_note_duration: _voiceDur
     };
     console.log('[WM-JOIN-PAYLOAD]', JSON.stringify(_payload));
-    console.log('[WM-FRONTEND-PAYLOAD]', { customer_note: _note, voice_note_path: _voicePath, voice_note_dur: _voiceDur });
+    console.log('[WM-FRONTEND-PAYLOAD]', _payload);
 
     const res  = await fetch(`${WORKER}/public/join`, {
       method: 'POST',
