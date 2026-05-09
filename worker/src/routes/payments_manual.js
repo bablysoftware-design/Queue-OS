@@ -13,10 +13,17 @@ import { ok, badRequest, notFound, serverError } from '../utils/response.js';
 export async function submitPaymentRequest(request, env) {
   try {
     const body         = await request.json();
-    const shop_id      = sanitizeParam(body.shop_id || '');
+    const shop_id        = sanitizeParam(body.shop_id || '');
     const customer_name  = sanitizeName(body.customer_name || '');
     const customer_phone = sanitizeParam(body.customer_phone || '');
     const screenshot_url = body.screenshot_url || null;
+    const customer_note  = typeof body.customer_note === 'string'
+      ? body.customer_note.trim().slice(0, 200) || null : null;
+    const voice_note_path = typeof body.voice_note_path === 'string' &&
+      /^[a-zA-Z0-9_.%-]+$/.test(body.voice_note_path.trim())
+      ? body.voice_note_path.trim() : null;
+    const voice_note_duration = typeof body.voice_note_duration === 'number'
+      ? Math.min(Math.max(0, body.voice_note_duration), 15) : null;
 
     if (!shop_id)        return badRequest('shop_id ضروری ہے');
     if (!customer_name)  return badRequest('نام ضروری ہے');
@@ -41,9 +48,12 @@ export async function submitPaymentRequest(request, env) {
       shop_id,
       customer_name,
       customer_phone,
-      amount: shop.token_price || 0,
-      screenshot_url: screenshotStored,
-      status: 'pending',
+      amount:               shop.token_price || 0,
+      screenshot_url:       screenshotStored,
+      status:               'pending',
+      customer_note:        customer_note,
+      voice_note_path:      voice_note_path,
+      voice_note_duration:  voice_note_duration,
     });
 
     // db.insert returns array or single object depending on implementation
@@ -105,7 +115,17 @@ export async function approvePaymentRequest(request, env) {
     // Create token
     // bypassOpenCheck: business explicitly approving the request;
     // they control whether to issue token regardless of shop open state
-    const result = await createToken(db, pr.shop_id, pr.customer_phone, pr.customer_name, env, { bypassOpenCheck: true });
+    const result = await createToken(
+      db,
+      pr.shop_id,
+      pr.customer_phone,
+      pr.customer_name,
+      env,
+      { bypassOpenCheck: true },
+      pr.customer_note      || null,
+      pr.voice_note_path    || null,
+      pr.voice_note_duration || null
+    );
 
     // Update payment request — split into two updates so status change succeeds
     // even if token_id column doesn't exist in older DB schemas
