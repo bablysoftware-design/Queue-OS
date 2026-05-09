@@ -2212,13 +2212,8 @@ async function updateTracker() {
       if (ahead === 3) triggerAlert(3);
       // Stage 1: 1 person ahead
       if (ahead === 1) triggerAlert(1);
-<<<<<<< Updated upstream
-      // Stage 0 (position 1 = next up) — softer pre-warning
-      // stage 0 ('Come to counter') is ONLY fired by status==='called' below, never by position
-=======
       // Stage 0 fires ONLY from status===called branch above, NOT from position
       // (removed: pos===1 trigger caused premature 'come to counter' voice while 1 person still ahead)
->>>>>>> Stashed changes
     }
   } catch(e) { console.error('tracker:', e); }
 }
