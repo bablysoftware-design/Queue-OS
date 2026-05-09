@@ -28,7 +28,17 @@ async function countWaitingTokens(db, shopId) {
  * FIX #8: Store customer_name.
  * FIX #6: Prevent same customer getting multiple tokens per day.
  */
-export async function createToken(db, shopId, customerPhone, customerName = null, env = null, opts = {}, customerNote = null, voiceNotePath = null, voiceNoteDuration = null) {
+export async function createToken(
+  db,
+  shopId,
+  customerPhone,
+  customerName      = null,
+  env               = null,
+  opts              = {},
+  customerNote      = null,
+  voiceNotePath     = null,
+  voiceNoteDuration = null
+) {
   const shops = await db.select('shops', `id=eq.${shopId}`);
   if (!shops.length) throw new Error('دکان نہیں ملی۔');
 

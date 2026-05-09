@@ -143,6 +143,7 @@ export async function joinQueue(request, env) {
                               ? body.voice_note_path.trim() : null;
     const voice_note_dur    = typeof body.voice_note_duration === 'number'
                               ? Math.min(Math.max(0, body.voice_note_duration), 15) : null;
+console.log('[WM-DEBUG-JOIN]', { customer_note, voice_note_path, voice_note_dur });
 
     console.log('[WM-DEBUG-2] joinQueue body:', JSON.stringify({
       raw_customer_note:     body.customer_note,
@@ -182,8 +183,17 @@ export async function joinQueue(request, env) {
       );
     }
 
-    const result = await createToken(db, shop_id, phone, customer_name, env, {}, customer_note, voice_note_path, voice_note_dur);
-
+   const result = await createToken(
+  db,
+  shop_id,
+  customer_phone,
+  customer_name,
+  env,
+  {},              // opts
+  customer_note,
+  voice_note_path,
+  voice_note_dur
+);
     return ok({
       token_number:   result.token.token_number,
       token_id:       result.token.id,
