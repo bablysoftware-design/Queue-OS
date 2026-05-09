@@ -1376,7 +1376,9 @@ async function openShop(shopId) {
   document.getElementById('c-name').value                  = '';
   document.getElementById('c-phone').value                 = '';
   const noteEl = document.getElementById('c-note'); if(noteEl){ noteEl.value=''; noteEl.nextElementSibling.textContent='0/200'; }
-  clearVoiceNote();
+  // NOTE: clearVoiceNote() intentionally NOT called here.
+  // Calling it in openShop() wipes c-voice-path before submitJoin() can read it.
+  // Voice note is cleared in submitJoin() AFTER payload is captured, and on modal close.
   document.getElementById('join-btn').disabled             = false;
 
   // Paid token mode
@@ -1669,6 +1671,7 @@ async function submitJoin() {
       voice_note_duration: _voiceDur
     };
     console.log('[WM-JOIN-PAYLOAD]', JSON.stringify(_payload));
+    console.log('[WM-FRONTEND-PAYLOAD]', { customer_note: _note, voice_note_path: _voicePath, voice_note_dur: _voiceDur });
 
     const res  = await fetch(`${WORKER}/public/join`, {
       method: 'POST',
@@ -1680,6 +1683,9 @@ async function submitJoin() {
 
     myTokenId  = data.token_id;
     myTokenNum = data.token_number;
+
+    // Clear voice note state — payload was captured, no longer needed
+    clearVoiceNote();
 
     // Persist so tracker survives page refresh
     localStorage.setItem('saf_token_id',   data.token_id);
