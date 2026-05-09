@@ -1991,13 +1991,16 @@ function playVoice(textEn, textUr, force) {
   if (!('speechSynthesis' in window)) { console.log('[WM-VOICE] playVoice skipped: no speechSynthesis'); return; }
   // Bug 1 fix: allow force=true to bypass document.hidden for critical called alert
   if (!force && document.hidden) { console.log('[WM-VOICE] playVoice skipped: document.hidden (non-forced)'); return; }
-  const useUrdu = (localStorage.getItem('sq_lang') || 'en') === 'ur';
-  const text = useUrdu && textUr ? textUr : textEn;
+  const useUrdu   = (localStorage.getItem('sq_lang') || 'en') === 'ur';
+  const hasUrduVoice = useUrdu && !!_urduVoice;
+  // If Urdu mode is on but no Urdu voice installed, fall back to English text + voice
+  if (useUrdu && !_urduVoice) console.log('[WM-VOICE] Falling back to English voice');
+  const text = hasUrduVoice && textUr ? textUr : textEn;
   console.log('[WM-VOICE] Speaking:', text);
   try {
     window.speechSynthesis.cancel();
     const utt = new SpeechSynthesisUtterance(text);
-    if (useUrdu && _urduVoice && textUr) {
+    if (hasUrduVoice && textUr) {
       utt.voice   = _urduVoice;
       utt.lang    = 'ur-PK';
       utt.rate    = 0.82;
@@ -2209,8 +2212,13 @@ async function updateTracker() {
       if (ahead === 3) triggerAlert(3);
       // Stage 1: 1 person ahead
       if (ahead === 1) triggerAlert(1);
+<<<<<<< Updated upstream
       // Stage 0 (position 1 = next up) — softer pre-warning
       // stage 0 ('Come to counter') is ONLY fired by status==='called' below, never by position
+=======
+      // Stage 0 fires ONLY from status===called branch above, NOT from position
+      // (removed: pos===1 trigger caused premature 'come to counter' voice while 1 person still ahead)
+>>>>>>> Stashed changes
     }
   } catch(e) { console.error('tracker:', e); }
 }
