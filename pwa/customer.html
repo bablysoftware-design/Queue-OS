@@ -1641,7 +1641,7 @@ async function submitJoin() {
       voice_note_path:     _voicePath,
       voice_note_duration: _voiceDur
     };
-    console.log('[WM-JOIN] payload:', JSON.stringify(_payload));
+    console.log('[WM-JOIN-PAYLOAD]', JSON.stringify(_payload));
 
     const res  = await fetch(`${WORKER}/public/join`, {
       method: 'POST',
