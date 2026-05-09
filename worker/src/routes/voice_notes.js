@@ -31,7 +31,8 @@ export async function uploadVoiceNote(request, env) {
     const duration = Math.min(parseInt(request.headers.get('x-audio-duration') || '0', 10), MAX_SECS);
 
     // Unique filename — no token ID yet (token created after upload)
-    const filename  = `tmp_${Date.now()}_${Math.random().toString(36).slice(2)}.webm`;
+    const ext       = mime === 'audio/mp4' ? 'mp4' : mime === 'audio/ogg' ? 'ogg' : 'webm';
+    const filename  = `tmp_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
     const storagePath = `${BUCKET}/${filename}`;
 
     // Upload to Supabase Storage
@@ -106,4 +107,17 @@ export async function deleteVoiceNote(supabaseUrl, supabaseKey, path) {
       }
     );
   } catch (e) { /* best-effort — don't break queue flow */ }
+}
+
+/** DELETE /public/voice-note?path=xxx — client calls this to clean up orphaned upload if join fails */
+export async function deleteVoiceNotePublic(request, env) {
+  try {
+    const path = new URL(request.url).searchParams.get('path');
+    // Same strict validation as GET endpoint
+    if (!path || path.includes('..') || path.includes('/') || !/^[a-zA-Z0-9_.-]+$/.test(path)) {
+      return ok({}); // silently succeed — best-effort cleanup
+    }
+    await deleteVoiceNote(env.SUPABASE_URL?.trim(), env.SUPABASE_KEY?.trim(), path);
+    return ok({});
+  } catch (e) { return ok({}); } // always 200 — client doesn't retry on failure
 }

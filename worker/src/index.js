@@ -28,7 +28,7 @@ import { submitPaymentRequest, listPaymentRequests,
          approvePaymentRequest, rejectPaymentRequest,
          checkPaymentStatus } from './routes/payments_manual.js';
 import { ttsHandler }                        from './routes/tts.js';
-import { uploadVoiceNote, getVoiceNoteUrl }   from './routes/voice_notes.js';
+import { uploadVoiceNote, getVoiceNoteUrl, deleteVoiceNotePublic } from './routes/voice_notes.js';
 import { getPublicSettings, updateSettings } from './routes/settings.js';
 import { adminAddLocation }                   from './routes/search.js';
 import { adminResetPinHandler }              from './routes/shops.js';
@@ -60,6 +60,7 @@ const ROUTES = [
   { method: 'GET',    path: '/tts',                                      handler: ttsHandler },
   { method: 'POST',   path: '/public/voice-note',                        handler: uploadVoiceNote },
   { method: 'GET',    path: '/public/voice-note',                        handler: getVoiceNoteUrl },
+  { method: 'DELETE', path: '/public/voice-note',                        handler: deleteVoiceNotePublic },
   { method: 'GET',    path: '/public/settings',                  handler: getPublicSettings },
   { method: 'PATCH',  path: '/admin/settings',                    handler: updateSettings },
   { method: 'POST',   path: '/admin/locations',                   handler: adminAddLocation },

@@ -1694,6 +1694,12 @@ async function submitJoin() {
     }
 
   } catch(e) {
+    // Clean up orphaned voice note if join failed after upload
+    const orphanPath = document.getElementById('c-voice-path')?.value;
+    if (orphanPath) {
+      fetch(`${WORKER}/public/voice-note?path=${encodeURIComponent(orphanPath)}`, { method: 'DELETE' })
+        .catch(() => {}); // best-effort, don't block UI
+    }
     const ctx = selectedShop
       ? `Hi WaitMate Support, I couldn't get a token. Shop: ${selectedShop.name} (ID: ${selectedShop.id}), Error: ${e.message || 'unknown'}`
       : `Hi WaitMate Support, I couldn't get a token. Error: ${e.message || 'unknown'}`;
