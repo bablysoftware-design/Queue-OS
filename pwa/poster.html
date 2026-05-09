@@ -158,6 +158,18 @@ body{font-family:'Sora',sans-serif;background:#111827;color:var(--text);min-heig
 .footer-right{font-size:10px;color:#94A3B8;text-align:right;font-family:'Noto Nastaliq Urdu',serif;direction:rtl;}
 .footer-brand{font-size:11px;font-weight:700;color:#E8B84B;letter-spacing:.04em;}
 
+/* ── COMPACT / HALF-SHEET MODE ── */
+.poster.compact .steps-section,
+.poster.compact #p-steps,
+.poster.compact .url-bar,
+.poster.compact .url-label { display:none !important; }
+.poster.compact { width:794px; }
+.poster.compact .poster-body { padding:20px 36px; gap:16px; }
+.poster.compact #qr-code { width:180px!important; height:180px!important; }
+.poster.compact #qr-code img,
+.poster.compact #qr-code canvas { width:180px!important; height:180px!important; }
+.poster.compact .qr-wrap { padding:12px; }
+
 /* ── PRINT STYLES ── */
 @page {
   size: A4 portrait;
@@ -198,6 +210,19 @@ body{font-family:'Sora',sans-serif;background:#111827;color:var(--text);min-heig
   .poster-header { padding: 24px 32px 20px; }
   .poster-body   { padding: 20px 32px; gap: 18px; }
   .poster-footer { padding: 12px 32px; }
+
+  /* Half-sheet print: shrink to half A4 and center */
+  .poster.compact {
+    width: 210mm;
+    height: 148mm;
+    margin: auto;
+  }
+  .poster.compact .poster-body {
+    flex: 1;
+    justify-content: center;
+    gap: 14px;
+    padding: 16px 32px;
+  }
 }
 </style>
 </head>
@@ -227,6 +252,19 @@ body{font-family:'Sora',sans-serif;background:#111827;color:var(--text);min-heig
   <div class="btn-row" style="margin-top:-4px">
     <button class="btn-dl" onclick="shareToWhatsApp()" style="background:rgba(37,211,102,.1);border-color:rgba(37,211,102,.4);color:#25D166;flex:2">💬 Share via WhatsApp</button>
     <button class="btn-print" onclick="window.print()">🖨 Print</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+    <span style="font-size:11px;color:#94A3B8;font-weight:600">Format:</span>
+    <button id="fmt-a4" onclick="setFormat('a4')"
+      style="padding:6px 14px;border:1px solid rgba(232,184,75,.5);border-radius:7px;
+             background:rgba(232,184,75,.15);color:#E8B84B;font-size:11px;font-weight:700;cursor:pointer">
+      A4 Full
+    </button>
+    <button id="fmt-half" onclick="setFormat('half')"
+      style="padding:6px 14px;border:1px solid rgba(255,255,255,.1);border-radius:7px;
+             background:transparent;color:#94A3B8;font-size:11px;font-weight:600;cursor:pointer">
+      Half-Sheet
+    </button>
   </div>
   <div class="status-msg" id="status-msg">Enter your business details and click Generate</div>
 </div>
@@ -266,8 +304,14 @@ body{font-family:'Sora',sans-serif;background:#111827;color:var(--text);min-heig
       <div class="msg-ur">لائن میں کھڑے ہونے کی ضرورت نہیں — گھر بیٹھ کر ٹوکن لیں</div>
     </div>
 
+    <!-- Social proof — dynamic, fetched from live API -->
+    <div id="p-social" style="display:none;text-align:center;padding:6px 14px;
+         background:rgba(232,184,75,.08);border:1px solid rgba(232,184,75,.25);
+         border-radius:20px;font-size:12px;font-weight:600;color:#92400e;
+         font-family:'Noto Nastaliq Urdu',serif;direction:rtl"></div>
+
     <!-- Steps -->
-    <div class="steps-section">
+    <div class="steps-section" id="p-steps">
       <div class="steps-title">How it works</div>
       <div class="steps">
         <div class="step">
@@ -324,31 +368,68 @@ body{font-family:'Sora',sans-serif;background:#111827;color:var(--text);min-heig
 <script>
 const WORKER = 'https://saf-queue-worker.byker-software.workers.dev';
 
-// Auto-load from URL params (called from dashboard)
+// ── Category-specific headlines (converts behaviorally) ─────
+const HEADLINES = {
+  clinic:   { en: 'No waiting room. Get your token from home.',       ur: 'ڈاکٹر سے پہلے گھر بیٹھے ٹوکن لیں' },
+  doctor:   { en: 'No waiting room. Get your token from home.',       ur: 'ڈاکٹر سے پہلے گھر بیٹھے ٹوکن لیں' },
+  hospital: { en: 'Beat the long line. Get your token now.',          ur: 'لمبی لائن سے بچیں — پہلے نمبر لیں' },
+  barber:   { en: 'Come only when it\'s your turn. No waiting.',      ur: 'باری آنے پر آئیں، انتظار نہ کریں' },
+  salon:    { en: 'Come only when it\'s your turn. No waiting.',      ur: 'باری آنے پر آئیں، انتظار نہ کریں' },
+  pharmacy: { en: 'Get your number before you arrive.',               ur: 'دوائی لینے سے پہلے نمبر لے لیں' },
+  bank:     { en: 'No more queuing at the counter.',                  ur: 'کاؤنٹر پر لائن لگانے کی ضرورت نہیں' },
+  govt:     { en: 'Skip the line. Get your official token.',          ur: 'لائن میں وقت ضائع نہ کریں' },
+  tailor:   { en: 'Book your spot. Come when you\'re called.',        ur: 'وقت بتائیں — تیار ہو کر آئیں' },
+};
+
+// ── Format state ─────────────────────────────────────────────
+let _currentFormat = 'a4'; // 'a4' | 'half'
+
+function setFormat(fmt) {
+  _currentFormat = fmt;
+  const poster   = document.getElementById('poster');
+  const btnA4    = document.getElementById('fmt-a4');
+  const btnHalf  = document.getElementById('fmt-half');
+  const steps    = document.getElementById('p-steps');
+  const urlBar   = document.querySelector('.url-bar');
+  const urlLabel = document.querySelector('.url-label');
+
+  if (fmt === 'half') {
+    poster.classList.add('compact');
+    btnA4.style.cssText   = 'padding:6px 14px;border:1px solid rgba(255,255,255,.1);border-radius:7px;background:transparent;color:#94A3B8;font-size:11px;font-weight:600;cursor:pointer';
+    btnHalf.style.cssText = 'padding:6px 14px;border:1px solid rgba(232,184,75,.5);border-radius:7px;background:rgba(232,184,75,.15);color:#E8B84B;font-size:11px;font-weight:700;cursor:pointer';
+  } else {
+    poster.classList.remove('compact');
+    btnA4.style.cssText   = 'padding:6px 14px;border:1px solid rgba(232,184,75,.5);border-radius:7px;background:rgba(232,184,75,.15);color:#E8B84B;font-size:11px;font-weight:700;cursor:pointer';
+    btnHalf.style.cssText = 'padding:6px 14px;border:1px solid rgba(255,255,255,.1);border-radius:7px;background:transparent;color:#94A3B8;font-size:11px;font-weight:600;cursor:pointer';
+  }
+}
+
+// ── Auto-load from URL params (dashboard → poster) ───────────
 const params  = new URLSearchParams(window.location.search);
 const shopId  = params.get('shop');
 const shopUrl = shopId ? `${location.origin}/customer.html?shop=${shopId}` : '';
 
 if (shopId) {
   document.getElementById('cfg-url').value = shopUrl;
-  // Fetch shop name from API
   fetch(`${WORKER}/public/shop/${shopId}`)
     .then(r => r.json())
     .then(({data}) => {
       if (!data) return;
       document.getElementById('cfg-name').value = data.name || '';
-      const cats = {barber:'Barber / Salon',clinic:'Clinic / Doctor',pharmacy:'Pharmacy',
-                    bank:'Bank',govt:'Govt Office',tailor:'Tailor'};
-      document.getElementById('cfg-cat').value  = cats[data.category] || data.category || '';
-      generatePoster();
+      const cats = {
+        barber:'Barber / Salon', clinic:'Clinic / Doctor',
+        pharmacy:'Pharmacy',     bank:'Bank',
+        govt:'Govt Office',      tailor:'Tailor',
+      };
+      document.getElementById('cfg-cat').value = cats[data.category] || data.category || '';
+      generatePoster(data.category, data.queue_length ?? 0);
     })
-    .catch(() => { generatePoster(); });
+    .catch(() => generatePoster());
 } else {
-  // Generate placeholder QR
   generateQR(window.location.origin);
 }
 
-function generatePoster() {
+function generatePoster(categoryKey, queueLength) {
   const name = document.getElementById('cfg-name').value.trim() || 'Your Business';
   const cat  = document.getElementById('cfg-cat').value.trim()  || 'Business';
   const url  = document.getElementById('cfg-url').value.trim();
@@ -363,16 +444,37 @@ function generatePoster() {
   document.getElementById('p-url').textContent  = url.replace('https://', '');
   document.getElementById('status-msg').textContent = '✅ Poster ready — download PNG or print';
 
+  // ── Category-specific headline ──────────────────────────
+  const key = (categoryKey || cat.toLowerCase().split(' ')[0]);
+  const hl  = HEADLINES[key] || {
+    en: 'Skip the wait. Come only when it\'s your turn.',
+    ur: 'لائن میں کھڑے ہونے کی ضرورت نہیں — گھر بیٹھ کر ٹوکن لیں',
+  };
+  document.querySelector('.msg-en').textContent = hl.en;
+  document.querySelector('.msg-ur').textContent = hl.ur;
+
+  // ── Social proof: live queue count ─────────────────────
+  // Rule: never make low activity look bad; always show something positive
+  const social = document.getElementById('p-social');
+  if (queueLength > 0) {
+    social.textContent = `اس وقت ${queueLength} لوگ قطار میں ہیں`;
+    social.style.display = 'block';
+  } else if (queueLength === 0) {
+    social.textContent = 'آرام سے اپنی باری محفوظ کریں — ابھی قطار خالی ہے';
+    social.style.display = 'block';
+  }
+
   generateQR(url);
 }
 
 function generateQR(url) {
   const el = document.getElementById('qr-code');
   el.innerHTML = '';
+  const sz = document.getElementById('poster').classList.contains('compact') ? 180 : 220;
   new QRCode(el, {
     text:         url,
-    width:        220,
-    height:       220,
+    width:        sz,
+    height:       sz,
     colorDark:    '#1e293b',
     colorLight:   '#ffffff',
     correctLevel: QRCode.CorrectLevel.H,
@@ -394,9 +496,12 @@ function shareToWhatsApp() {
 }
 
 async function downloadPNG() {
-  const btn = document.querySelector('.btn-dl');
-  btn.textContent = '⏳ Generating...';
-  btn.disabled = true;
+  // Download whichever format is currently visible
+  const formatLabel = _currentFormat === 'half' ? 'HalfSheet' : 'A4';
+  const dlBtn = event?.target || document.querySelectorAll('.btn-dl')[0];
+  const prevText = dlBtn.textContent;
+  dlBtn.textContent = '⏳ Generating...';
+  dlBtn.disabled = true;
   try {
     const canvas = await html2canvas(document.getElementById('poster'), {
       scale:           2,
@@ -406,15 +511,14 @@ async function downloadPNG() {
     });
     const name = document.getElementById('cfg-name').value.trim().replace(/\s+/g, '-') || 'WaitMate-Poster';
     const link = document.createElement('a');
-    link.download = `${name}-QR-Poster.png`;
+    link.download = `${name}-${formatLabel}-Poster.png`;
     link.href     = canvas.toDataURL('image/png');
     link.click();
-    btn.textContent = '⬇ PNG';
   } catch(e) {
     alert('Download failed — use Print → Save as PDF instead');
   }
-  btn.disabled = false;
-  btn.textContent = '⬇ PNG';
+  dlBtn.disabled = false;
+  dlBtn.textContent = prevText;
 }
 </script>
 </body>
