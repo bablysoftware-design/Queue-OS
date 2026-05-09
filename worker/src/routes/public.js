@@ -178,6 +178,7 @@ export async function joinQueue(request, env) {
     }
 
     console.log('[WM-WORKER-TOKEN-SAVED]', { customer_note, voice_note_url: voice_note_path, voice_note_duration: voice_note_dur });
+   console.log('[WM-WORKER-IN]', { customer_note, voice_note_path, voice_note_dur });
    const result = await createToken(
   db,
   shop_id,

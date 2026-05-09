@@ -100,7 +100,10 @@ export async function createToken(
   };
 
   console.log('[WM-CREATE-TOKEN-INSERT]', { customer_note: insertObj.customer_note, voice_note_url: insertObj.voice_note_url, voice_note_duration: insertObj.voice_note_duration });
-  const [token] = await db.insert('tokens', insertObj);
+  console.log('[WM-INSERT-OBJ]', insertObj);
+  const inserted = await db.insert('tokens', insertObj);
+  const [token] = inserted;
+  console.log('[WM-INSERT-RESULT]', inserted?.[0]);
 
 
 
@@ -260,6 +263,7 @@ export async function getQueueState(db, shopId) {
     db.select('tokens', `shop_id=eq.${shopId}&status=eq.called&limit=1`),
   ]);
 
+  console.log('[WM-QUEUE-FIRST]', waiting?.[0]);
   return {
     shop:             shops[0],
     currentlyServing: called[0] ?? null,
