@@ -1489,6 +1489,35 @@ window.clearScreenshot = clearScreenshot;
 // ── Payment approval polling ───────────────────────────────────
 let _payPollTimer = null;
 
+// ── Paid token: shared UI switch helper ───────────────────
+function _showPaidTokenCard(tokenNum) {
+  const modal = document.getElementById('token-modal');
+  if (modal) modal.classList.add('show');
+  document.getElementById('join-form-wrap').style.display = 'none';
+  document.getElementById('result-wrap').style.display    = 'block';
+  document.getElementById('r-num').textContent            = tokenNum || '✓';
+  document.getElementById('r-greeting').textContent       = `🎉 منظور! ${selectedShop?.name || ''} — آپ قطار میں ہیں`;
+  showWaBtn(selectedShop, tokenNum || '✓');
+
+  // Clear payment form
+  ['c-name','c-phone','c-screenshot-data'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  const prev = document.getElementById('screenshot-preview');
+  if (prev) prev.style.display = 'none';
+  const errEl2 = document.getElementById('sheet-err');
+  if (errEl2) { errEl2.textContent = ''; errEl2.style.color = ''; }
+  const paidSec = document.getElementById('paid-token-section');
+  if (paidSec) paidSec.style.display = 'none';
+
+  try { playAlarm('ready'); } catch(e) {}
+  startTracker();
+  setTimeout(() => {
+    const sp = document.getElementById('share-after-join');
+    if (sp) sp.style.display = 'block';
+  }, 2000);
+}
+
 function startPaymentPolling(requestId, customerName, customerPhone) {
   if (_payPollTimer) clearInterval(_payPollTimer);
   let attempts = 0;
@@ -1522,49 +1551,53 @@ function startPaymentPolling(requestId, customerName, customerPhone) {
         return;
       }
 
-      if (json.data.status === 'approved') { // approved — switch to token card
+      if (json.data.status === 'approved') { // approved — token was created server-side
         clearInterval(_payPollTimer);
         localStorage.removeItem('saf_pending_payment');
+        console.log('[WM-PAID] payment approved — token_id:', json.data.token_id, 'token_number:', json.data.token_number);
 
-        // Set state
-        myTokenId  = json.data.token_id  || null;
-        myTokenNum = json.data.token_number || null;
+        // ── CASE 1: backend stored token_id correctly (normal path) ──
+        if (json.data.token_id) {
+          myTokenId  = json.data.token_id;
+          myTokenNum = json.data.token_number || null;
+          localStorage.setItem('saf_token_id',  myTokenId);
+          if (myTokenNum) localStorage.setItem('saf_token_num', String(myTokenNum));
+          localStorage.setItem('saf_token_shop', JSON.stringify(selectedShop));
+          _showPaidTokenCard(myTokenNum);
 
-        // Save for refresh restore
-        if (myTokenId) localStorage.setItem('saf_token_id',  myTokenId);
-        if (myTokenNum) localStorage.setItem('saf_token_num', String(myTokenNum));
-        localStorage.setItem('saf_token_shop', JSON.stringify(selectedShop));
-
-        // ── Switch UI to token card ──────────────────────────────────
-        const modal = document.getElementById('token-modal');
-        if (modal) modal.classList.add('show');
-        document.getElementById('join-form-wrap').style.display = 'none';
-        document.getElementById('result-wrap').style.display    = 'block';
-        document.getElementById('r-num').textContent            = myTokenNum || '✓';
-        document.getElementById('r-greeting').textContent       = `🎉 منظور! ${selectedShop?.name || ''} — آپ قطار میں ہیں`;
-        showWaBtn(selectedShop, myTokenNum || '✓');
-
-        // Clear all payment form data so it doesn't show if modal re-opens
-        ['c-name','c-phone','c-screenshot-data'].forEach(id => {
-          const el = document.getElementById(id);
-          if (el) el.value = '';
-        });
-        const prev = document.getElementById('screenshot-preview');
-        if (prev) prev.style.display = 'none';
-        const errEl2 = document.getElementById('sheet-err');
-        if (errEl2) { errEl2.textContent = ''; errEl2.style.color = ''; }
-        const paidSec = document.getElementById('paid-token-section');
-        if (paidSec) paidSec.style.display = 'none';
-
-        // Alert customer
-        try { playAlarm('ready'); } catch(e) {}
-        startTracker();
-
-        // Share prompt
-        setTimeout(() => {
-          const sp = document.getElementById('share-after-join');
-          if (sp) sp.style.display = 'block';
-        }, 2000);
+        } else {
+          // ── CASE 2: token_id column missing in payment_requests ──
+          // Token was already created server-side by approvePaymentRequest.
+          // We cannot get its ID from payment-status. Call /public/join to get a new token.
+          // bypassOpen not available on public route — so we call join directly.
+          console.log('[WM-PAID] token_id missing from payment-status — calling /public/join as fallback');
+          const name  = document.getElementById('c-name')?.value?.trim()  || '';
+          const phone = document.getElementById('c-phone')?.value?.trim() || '';
+          console.log('[WM-PAID] calling final join');
+          try {
+            const joinRes  = await fetch(`${WORKER}/public/join`, {
+              method:  'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body:    JSON.stringify({ shop_id: selectedShop.id, customer_name: name, customer_phone: phone || null }),
+            });
+            const joinJson = await joinRes.json();
+            console.log('[WM-PAID] /public/join response', JSON.stringify(joinJson));
+            if (joinJson.success) {
+              myTokenId  = joinJson.data.token_id;
+              myTokenNum = joinJson.data.token_number;
+              localStorage.setItem('saf_token_id',  myTokenId);
+              localStorage.setItem('saf_token_num', String(myTokenNum));
+              localStorage.setItem('saf_token_shop', JSON.stringify(selectedShop));
+              _showPaidTokenCard(myTokenNum);
+            } else {
+              // Join failed but payment was approved — show approved card without tracker
+              _showPaidTokenCard(null);
+            }
+          } catch(joinErr) {
+            console.warn('[WM-PAID] fallback join failed:', joinErr.message);
+            _showPaidTokenCard(null);
+          }
+        }
       } else if (json.data.status === 'rejected') {
         clearInterval(_payPollTimer);
         localStorage.removeItem('saf_pending_payment');
