@@ -802,7 +802,6 @@ async function toggleVoiceRecord() {
 window.toggleVoiceRecord = toggleVoiceRecord;
 
 async function startVoiceRecord() {
-  console.log('[WM-VOICE] start');
   const btn = document.getElementById('voice-record-btn');
   const statusEl = document.getElementById('voice-status');
   try {
@@ -819,13 +818,11 @@ async function startVoiceRecord() {
     _mediaRec.ondataavailable = (e) => {
       if (e.data && e.data.size > 0) {
         _audioChunks.push(e.data);
-        console.log('[WM-VOICE] chunk', e.data.size);
       }
     };
 
     // Fix 3: onstop creates blob, guards empty, stops tracks AFTER flush
     _mediaRec.onstop = async () => {
-      console.log('[WM-VOICE] stopped, chunks:', _audioChunks.length);
 
       // Fix 5: stop microphone tracks HERE, after MediaRecorder has flushed
       if (_recStream) _recStream.getTracks().forEach(t => t.stop());
@@ -838,7 +835,6 @@ async function startVoiceRecord() {
       }
 
       const voiceBlob = new Blob(_audioChunks, { type: _mediaRec.mimeType || 'audio/webm' });
-      console.log('[WM-VOICE] blob size', voiceBlob.size);
 
       if (!voiceBlob.size) {
         alert('Voice note empty — please try again');
@@ -875,7 +871,6 @@ async function startVoiceRecord() {
 }
 
 function stopVoiceRecord() {
-  console.log('[WM-VOICE] stop clicked');
   clearInterval(_recTimer);
   // Fix 4: call stop() ONLY — do NOT stop tracks here
   // Tracks are stopped inside onstop AFTER MediaRecorder has flushed all chunks
@@ -889,7 +884,6 @@ function stopVoiceRecord() {
 }
 
 async function uploadVoiceBlob(blob) {
-  console.log('[WM-VOICE] uploading...', blob.size, blob.type);
   const statusEl = document.getElementById('voice-status');
   try {
     const res = await fetch(`${WORKER}/public/voice-note`, {
@@ -1983,7 +1977,42 @@ function _loadVoices() {
 
 if ('speechSynthesis' in window) {
   _loadVoices();
-  window.speechSynthesis.onvoiceschanged = _loadVoices;
+  window.speechSynthesis.onvoiceschanged = () => { _loadVoices(); _checkUrduVoicePrompt(); };
+}
+
+function _checkUrduVoicePrompt() {
+  const wantsUrdu = (localStorage.getItem('sq_lang') || 'en') === 'ur';
+  if (!wantsUrdu || _urduVoice) return; // no prompt needed
+  if (localStorage.getItem('wm_urdu_tts_prompted')) return; // already shown once
+  localStorage.setItem('wm_urdu_tts_prompted', '1');
+  console.log('[WM-VOICE] Urdu voice unavailable on device');
+
+  // Build one-time dismissible banner
+  const banner = document.createElement('div');
+  banner.id = 'urdu-tts-banner';
+  banner.style.cssText = 'position:fixed;bottom:70px;left:12px;right:12px;z-index:300;background:rgba(13,20,36,.97);border:1px solid rgba(212,175,55,.35);border-radius:12px;padding:12px 14px;font-family:inherit;font-size:12px;color:rgba(237,232,208,.75);display:flex;gap:10px;align-items:flex-start;box-shadow:0 4px 20px rgba(0,0,0,.5)';
+  banner.innerHTML = `
+    <div style="flex:1">
+      <div style="font-weight:600;color:rgba(212,175,55,.9);margin-bottom:4px">🔊 Urdu Voice Not Available</div>
+      <div style="line-height:1.5">Urdu voice announcements need Urdu Text-to-Speech installed on your phone.</div>
+      <button onclick="document.getElementById('urdu-tts-steps').style.display=document.getElementById('urdu-tts-steps').style.display?'':'none'"
+        style="margin-top:6px;padding:4px 10px;border:1px solid rgba(212,175,55,.4);border-radius:20px;background:transparent;color:rgba(212,175,55,.8);font-family:inherit;font-size:11px;cursor:pointer">
+        How to Enable
+      </button>
+      <div id="urdu-tts-steps" style="display:none;margin-top:8px;font-size:11px;line-height:1.8;color:rgba(237,232,208,.6)">
+        1. Open phone Settings<br>
+        2. Search "Text-to-Speech"<br>
+        3. Open Speech Services / Google TTS<br>
+        4. Install Urdu language voice<br>
+        5. Refresh WaitMate
+      </div>
+    </div>
+    <button onclick="this.closest('#urdu-tts-banner').remove()"
+      style="padding:2px 8px;border:none;background:transparent;color:rgba(237,232,208,.4);font-size:16px;cursor:pointer;line-height:1;flex-shrink:0">✕</button>
+  `;
+  document.body.appendChild(banner);
+  // Auto-dismiss after 20 seconds
+  setTimeout(() => { const b = document.getElementById('urdu-tts-banner'); if (b) b.remove(); }, 20000);
 }
 
 function playVoice(textEn, textUr, force) {
