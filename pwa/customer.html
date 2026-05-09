@@ -1799,7 +1799,14 @@ function urlBase64ToUint8Array(base64String) {
 // ── ALARM SOUND (Web Audio API) ──────────────────────────────
 function playAlarm(type = 'called') {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // ── Bug 2 fix: reuse singleton AudioContext, resume before use ──
+    if (!window._wmAudioCtx || window._wmAudioCtx.state === 'closed') {
+      window._wmAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    const ctx = window._wmAudioCtx;
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
 
     function beep(freq, startTime, duration, vol, wave) {
       vol  = vol  || 0.7;
@@ -1842,7 +1849,7 @@ function playAlarm(type = 'called') {
       beep(550, t + 0.18, 0.15, 0.5, 'sine');
       beep(660, t + 0.36, 0.20, 0.5, 'sine');
     }
-  } catch (e) {}
+  } catch (e) { console.warn('[WM-ALARM] playAlarm error:', e.message); }
 }
 
 // ── COUNTDOWN TIMER ───────────────────────────────────────────
@@ -1899,7 +1906,35 @@ let _calledAlarmFired = false;
 function resetAlertStages() {
   ALERT_STAGES.clear();
   _calledAlarmFired = false;
+  _pendingCalledAlert = false;
 }
+
+// ── AudioContext unlock on first user gesture ───────────────
+// Browsers suspend AudioContext until a user gesture. We create and
+// immediately resume it on the first tap anywhere so later alerts work.
+function _unlockAudio() {
+  try {
+    if (!window._wmAudioCtx) {
+      window._wmAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (window._wmAudioCtx.state === 'suspended') {
+      window._wmAudioCtx.resume().then(() => {
+        console.log('[WM-AUDIO] AudioContext unlocked, state:', window._wmAudioCtx.state);
+      }).catch(() => {});
+    }
+    // Warm up speechSynthesis — prevents first-speak delay on iOS
+    if ('speechSynthesis' in window) {
+      const u = new SpeechSynthesisUtterance('');
+      u.volume = 0;
+      window.speechSynthesis.speak(u);
+      window.speechSynthesis.cancel();
+    }
+  } catch(e) {}
+  document.removeEventListener('touchstart', _unlockAudio, true);
+  document.removeEventListener('click',      _unlockAudio, true);
+}
+document.addEventListener('touchstart', _unlockAudio, { once: true, passive: true, capture: true });
+document.addEventListener('click',      _unlockAudio, { once: true, passive: true, capture: true });
 
 // ── MUTE SYSTEM ────────────────────────────────────────────
 function isMuted() {
@@ -1949,33 +1984,32 @@ if ('speechSynthesis' in window) {
   window.speechSynthesis.onvoiceschanged = _loadVoices;
 }
 
-function playVoice(textEn, textUr) {
-  if (isMuted()) return;
-  if (!('speechSynthesis' in window)) return;
-  if (document.hidden) return;
+function playVoice(textEn, textUr, force) {
+  if (isMuted()) { console.log('[WM-VOICE] playVoice skipped: muted'); return; }
+  if (!('speechSynthesis' in window)) { console.log('[WM-VOICE] playVoice skipped: no speechSynthesis'); return; }
+  // Bug 1 fix: allow force=true to bypass document.hidden for critical called alert
+  if (!force && document.hidden) { console.log('[WM-VOICE] playVoice skipped: document.hidden (non-forced)'); return; }
   const useUrdu = (localStorage.getItem('sq_lang') || 'en') === 'ur';
+  const text = useUrdu && textUr ? textUr : textEn;
+  console.log('[WM-VOICE] Speaking:', text);
   try {
     window.speechSynthesis.cancel();
+    const utt = new SpeechSynthesisUtterance(text);
     if (useUrdu && _urduVoice && textUr) {
-      // Urdu voice with Urdu text
-      const utt   = new SpeechSynthesisUtterance(textUr);
       utt.voice   = _urduVoice;
       utt.lang    = 'ur-PK';
-      utt.rate    = 0.82;   // slower = clearer for Urdu
+      utt.rate    = 0.82;
       utt.pitch   = 1.0;
-      utt.volume  = 1.0;
-      window.speechSynthesis.speak(utt);
     } else {
-      // English voice with English text
-      const utt   = new SpeechSynthesisUtterance(textEn);
       if (_engVoice) utt.voice = _engVoice;
       utt.lang    = _engVoice?.lang || 'en-US';
       utt.rate    = 0.88;
       utt.pitch   = 1.05;
-      utt.volume  = 1.0;
-      window.speechSynthesis.speak(utt);
     }
-  } catch(e) {}
+    utt.volume  = 1.0;
+    utt.onerror = (e) => console.warn('[WM-VOICE] SpeechSynthesis error:', e.error);
+    window.speechSynthesis.speak(utt);
+  } catch(e) { console.warn('[WM-VOICE] playVoice exception:', e.message); }
 }
 
 // ── SOUND BEEP ─────────────────────────────────────────────
@@ -1986,7 +2020,12 @@ function playBeep(freq, duration, vol) {
   duration = duration || 0.2;
   vol      = vol      || 0.5;
   try {
-    const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+    // ── Bug 2 fix: reuse singleton, resume before use ──
+    if (!window._wmAudioCtx || window._wmAudioCtx.state === 'closed') {
+      window._wmAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    const ctx = window._wmAudioCtx;
+    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
     const osc  = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = 'sine';
@@ -2001,9 +2040,12 @@ function playBeep(freq, duration, vol) {
 }
 
 // ── TRIGGER ALERT (voice + sound) ─────────────────────────
+let _pendingCalledAlert = false; // Bug 3 fix: replay when tab becomes visible
+
 function triggerAlert(stage) {
-  if (ALERT_STAGES.has(stage)) return; // already fired
+  if (ALERT_STAGES.has(stage)) { console.log('[WM-ALERT] Stage', stage, 'already fired — skipping'); return; }
   ALERT_STAGES.add(stage);
+  console.log('[WM-ALERT] Triggering alert stage:', stage, '| hidden:', document.hidden, '| muted:', isMuted());
 
   // Each entry: [English, Urdu]
   const messages = {
@@ -2025,18 +2067,35 @@ function triggerAlert(stage) {
   };
 
   if (stage === 0) {
-    // Final call — use existing loud alarm
+    // Final call — Bug 1 fix: force=true bypasses document.hidden
+    console.log('[WM-ALERT] Triggering alert stage 0 — playing alarm + voice (forced)');
     playAlarm('called');
-    playVoice(messages[0][0], messages[0][1]);
+    // Bug 3 fix: if page is hidden, mark pending so we replay on visibility
+    if (document.hidden) {
+      console.log('[WM-ALERT] Page hidden — marking pending called alert for replay on focus');
+      _pendingCalledAlert = true;
+    }
+    playVoice(messages[0][0], messages[0][1], true); // force=true
     if (navigator.vibrate) navigator.vibrate([400, 150, 400, 150, 600]);
   } else {
     const [freq, dur, vol] = beeps[stage];
     playBeep(freq, dur, vol);
-    // Small delay so beep finishes before voice
     setTimeout(() => playVoice(messages[stage][0], messages[stage][1]), 600);
     if (navigator.vibrate) navigator.vibrate([stage === 1 ? 300 : 150]);
   }
 }
+
+// Bug 3 fix: replay called alert when customer returns to the tab
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && _pendingCalledAlert) {
+    console.log('[WM-ALERT] Tab became visible — replaying pending called alert');
+    _pendingCalledAlert = false;
+    playAlarm('called');
+    playVoice('It is your turn now. Please come to the counter immediately.',
+              'آپ کی باری آ گئی۔ ابھی کاؤنٹر پر آئیں۔', true);
+    if (navigator.vibrate) navigator.vibrate([400, 150, 400, 150, 600]);
+  }
+});
 
 // ── TRACKER ────────────────────────────────────────────────
 function startTracker() {
@@ -2061,6 +2120,7 @@ async function updateTracker() {
     const waitEl = document.getElementById('r-wait-val');
 
     if (data.status === 'called') {
+      console.log('[WM-TRACKER] Token status changed to: called');
       badge.className   = 'tracker-badge called';
       badge.textContent = '🔔 آپ کی باری آ گئی!';
       sub.textContent   = 'ابھی کاؤنٹر پر آئیں!';
@@ -2069,8 +2129,14 @@ async function updateTracker() {
       clearInterval(trackerTimer);
       if (!_calledAlarmFired) {
         _calledAlarmFired = true;
+        console.log('[WM-TRACKER] Triggering alert stage 0 (first call)');
         triggerAlert(0);
-        setTimeout(() => { if (!isMuted()) playAlarm('called'); }, 9000);
+        setTimeout(() => {
+          if (!isMuted()) {
+            console.log('[WM-TRACKER] Replaying alarm at 9s');
+            playAlarm('called');
+          }
+        }, 9000);
         if (Notification.permission === 'granted') {
           new Notification('آپ کی باری آ گئی! 🔔', { body: 'ابھی کاؤنٹر پر آئیں!', icon: '/icons/icon-192.png', tag: 'saf-called' });
         }
@@ -2119,7 +2185,17 @@ async function updateTracker() {
 
       badge.className   = 'tracker-badge waiting';
       badge.textContent = 'انتظار — نمبر #' + pos;
-      sub.textContent   = ahead + ' لوگ آگے · ~' + wait + ' منٹ • 10 سیکنڈ میں اپڈیٹ';
+
+      // Bug 4 fix: adaptive poll interval — faster when close to front
+      const targetInterval = ahead <= 2 ? 3000 : 8000;
+      if (trackerTimer && ahead <= 2) {
+        clearInterval(trackerTimer);
+        trackerTimer = setInterval(updateTracker, targetInterval);
+        console.log('[WM-TRACKER] Adaptive poll: ahead=' + ahead + ', interval set to ' + (targetInterval/1000) + 's');
+      }
+
+      const intervalLabel = ahead <= 2 ? '3' : '10';
+      sub.textContent   = ahead + ' لوگ آگے · ~' + wait + ' منٹ • ' + intervalLabel + ' سیکنڈ میں اپڈیٹ';
       if (posEl)  posEl.textContent  = pos;
       if (waitEl) waitEl.textContent = wait + ' min';
       updateCountdown(wait, pos);
