@@ -155,7 +155,8 @@ h1{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;background:li
       آپ کی درخواست زیر غور ہے۔<br/>
       ایڈمن جلد منظوری دے گا۔<br/>
       منظوری کے بعد آپ <strong>waitmate.pk</strong> پر لاگ ان کر سکتے ہیں۔<br/><br/>
-      30 دن کا مفت ٹرائل خود بخود شروع ہو گا۔
+      30 دن کا مفت ٹرائل خود بخود شروع ہو گا۔<br/><br/>
+      <a id="success-support-link" href="#" target="_blank" rel="noopener" style="color:#25D366;font-weight:600;text-decoration:none;font-size:13px">💬 کوئی مسئلہ؟ WhatsApp Support</a>
     </p>
   </div>
 
@@ -171,6 +172,11 @@ function draw(){ctx.clearRect(0,0,W,H);pts.forEach((p,i)=>{p.x+=p.vx;p.y+=p.vy;i
 resize();pts=Array.from({length:60},mkPt);draw();window.addEventListener('resize',resize);
 
 const WORKER='https://saf-queue-worker.byker-software.workers.dev';
+// ── Support config — change number here only ───────────────
+const SUPPORT_WA = '923338131889';
+function waSupport(msg) {
+  return 'https://wa.me/' + SUPPORT_WA + '?text=' + encodeURIComponent(msg || 'Hi, I need help with WaitMate.');
+}
 
 // ── Token mode selection ─────────
 function selectMode(mode){
@@ -287,6 +293,8 @@ async function submitReg(){
     if(data.success){
       document.getElementById('form-card').style.display='none';
       document.getElementById('success-box').style.display='block';
+      const suppEl = document.getElementById('success-support-link');
+      if (suppEl) suppEl.href = waSupport(`Hi WaitMate Support, I just registered my business "${name}" and need help.`);
     }else{
       errEl.textContent=data.error||'خرابی';
       btn.disabled=false;btn.textContent='رجسٹریشن درخواست دیں';
@@ -297,6 +305,10 @@ async function submitReg(){
   }
 }
 </script>
-<div style="text-align:center;padding:16px;font-size:12px;color:rgba(237,232,208,.4)">Need help? <a href="https://wa.me/923338131889" target="_blank" style="color:#D4AF37;text-decoration:none;font-weight:600">WhatsApp 03338131889</a></div>
+<div style="text-align:center;padding:16px;font-size:12px;color:rgba(237,232,208,.4)">Need help? <a id="reg-support-link" href="#" target="_blank" rel="noopener" style="color:#D4AF37;text-decoration:none;font-weight:600">💬 WhatsApp Support</a></div>
+<script>
+  const regSuppLink = document.getElementById('reg-support-link');
+  if (regSuppLink) regSuppLink.href = waSupport('Hi WaitMate Support, I need help registering my business on WaitMate.');
+</script>
 </body>
 </html>

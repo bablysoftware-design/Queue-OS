@@ -775,6 +775,9 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
         <a href="/" style="display:inline-block;font-size:10px;color:rgba(212,175,55,0.6);text-decoration:none;border:1px solid rgba(212,175,55,0.2);border-radius:20px;padding:4px 12px;transition:all .2s" onmouseover="this.style.color='#D4AF37'" onmouseout="this.style.color='rgba(212,175,55,0.6)'">
           🏪 Businesses can use WaitMate FREE
         </a>
+        <div style="margin-top:8px">
+          <a id="result-support-link" href="#" target="_blank" rel="noopener" style="font-size:10px;color:rgba(237,232,208,0.3);text-decoration:none;transition:color .2s" onmouseover="this.style.color='#25D366'" onmouseout="this.style.color='rgba(237,232,208,0.3)'">💬 Need help? WhatsApp Support</a>
+        </div>
       </div>
 
       <button id="cancel-token-btn" onclick="cancelMyToken()" style="width:100%;padding:12px;border:1px solid rgba(248,113,113,0.3);border-radius:12px;background:rgba(248,113,113,0.06);color:var(--red);font-family:'Sora',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s">
@@ -936,6 +939,11 @@ resize();pts=Array.from({length:70},mkPt);draw();window.addEventListener('resize
 
 // ── State ──────────────────────────────────────────────────
 const WORKER = 'https://saf-queue-worker.byker-software.workers.dev';
+// ── Support config — change number here only ───────────────
+const SUPPORT_WA = '923338131889';
+function waSupport(msg) {
+  return 'https://wa.me/' + SUPPORT_WA + '?text=' + encodeURIComponent(msg || 'Hi, I need help with WaitMate.');
+}
 const params  = new URLSearchParams(window.location.search);
 const HIGHLIGHT_SHOP = params.get('shop'); // shared link via ?shop=id
 const HIGHLIGHT_SLUG = params.get('slug'); // shared link via /s/slug
@@ -962,6 +970,14 @@ function showWaBtn(shop, tokenNum) {
     el.style.display = 'block';
   } else {
     el.style.display = 'none';
+  }
+  // Wire contextual support link in footer
+  const supp = document.getElementById('result-support-link');
+  if (supp) {
+    const ctx = shop
+      ? `Hi WaitMate Support, I need help. Shop: ${shop.name} (ID: ${shop.id}), Token: ${tokenNum}, Page: customer`
+      : 'Hi WaitMate Support, I need help. Page: customer';
+    supp.href = waSupport(ctx);
   }
 }
 
@@ -1678,7 +1694,11 @@ async function submitJoin() {
     }
 
   } catch(e) {
-    errEl.textContent = e.message || 'خرابی';
+    const ctx = selectedShop
+      ? `Hi WaitMate Support, I couldn't get a token. Shop: ${selectedShop.name} (ID: ${selectedShop.id}), Error: ${e.message || 'unknown'}`
+      : `Hi WaitMate Support, I couldn't get a token. Error: ${e.message || 'unknown'}`;
+    errEl.innerHTML = (e.message || 'خرابی') +
+      ` — <a href="${waSupport(ctx)}" target="_blank" rel="noopener" style="color:#25D366;font-size:11px;white-space:nowrap">💬 Support</a>`;
     btn.disabled = false;
     document.getElementById('join-btn-label').textContent = 'ٹوکن لیں';
   }

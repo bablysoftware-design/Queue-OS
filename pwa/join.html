@@ -490,6 +490,9 @@ body::before {
     <div class="closed-hours" id="closed-hours" style="display:none">
       ⏰ <span id="closed-hours-txt"></span>
     </div>
+    <div style="margin-top:14px;font-size:11px;color:rgba(241,245,249,0.35)">
+      Having an issue? <a id="closed-support-link" href="#" target="_blank" rel="noopener" style="color:#25D366;text-decoration:none;font-weight:600">WhatsApp Support</a>
+    </div>
   </div>
 </div>
 
@@ -551,6 +554,11 @@ body::before {
 
 <script>
 const WORKER   = 'https://saf-queue-worker.byker-software.workers.dev';
+// ── Support config — change number here only ───────────────
+const SUPPORT_WA = '923338131889';
+function waSupport(msg) {
+  return 'https://wa.me/' + SUPPORT_WA + '?text=' + encodeURIComponent(msg || 'Hi, I need help with WaitMate.');
+}
 const params   = new URLSearchParams(window.location.search);
 const SHOP_ID  = params.get('shop');
 
@@ -632,6 +640,8 @@ function showClosedState(data) {
     document.getElementById('closed-hours').style.display = 'inline-flex';
     document.getElementById('closed-hours-txt').textContent = `Opens ${t} – Closes ${c}`;
   }
+  const suppEl = document.getElementById('closed-support-link');
+  if (suppEl) suppEl.href = waSupport(`Hi WaitMate Support, the shop "${data.name || SHOP_ID}" appears closed. I need help.`);
 }
 
 // ── Submit join ──────────────────────────────────────────────
@@ -673,7 +683,11 @@ async function submitJoin() {
     startTracker();
 
   } catch (e) {
-    errEl.textContent = e.message || 'Something went wrong. Please try again.';
+    const ctx = shopData
+      ? `Hi WaitMate Support, I couldn't get a token at "${shopData.name}" (ID: ${SHOP_ID}). Error: ${e.message || 'unknown'}`
+      : `Hi WaitMate Support, I couldn't get a token (Shop: ${SHOP_ID}). Error: ${e.message || 'unknown'}`;
+    errEl.innerHTML = (e.message || 'Something went wrong. Please try again.') +
+      ` — <a href="${waSupport(ctx)}" target="_blank" rel="noopener" style="color:#25D366;white-space:nowrap">💬 Support</a>`;
     btn.disabled = false;
     btn.innerHTML = '<span class="btn-icon">🎫</span> Get My Token';
   }

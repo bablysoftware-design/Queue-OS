@@ -807,7 +807,7 @@ body::after {
     <div style="margin-top:10px">
       <button onclick="showDirectory()" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:9px;background:transparent;color:var(--text3);font-family:var(--font);font-size:12px;cursor:pointer">🔍 Browse Shops Directory</button>
     </div>
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:rgba(237,232,208,.35)">Need help? <a href="https://wa.me/923338131889" target="_blank" style="color:var(--gold);text-decoration:none">WhatsApp 03338131889</a></div>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:rgba(237,232,208,.35)">Need help? <a id="login-support-link" href="#" target="_blank" rel="noopener" style="color:var(--gold);text-decoration:none">WhatsApp Support</a></div>
   </div>
 </div>
 
@@ -1060,6 +1060,16 @@ body::after {
         </div>
         <div class="pin-msg" id="pin-msg"></div>
       </div>
+
+      <!-- Help & Support -->
+      <div class="settings-section" style="margin-bottom:0;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+        <div class="settings-section-title">Help & Support</div>
+        <a id="settings-support-link" href="#" target="_blank" rel="noopener"
+          style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(37,211,102,.07);border:1px solid rgba(37,211,102,.2);border-radius:10px;text-decoration:none;color:#34D399;font-size:13px;font-weight:600;transition:background .2s"
+          onmouseover="this.style.background='rgba(37,211,102,.13)'" onmouseout="this.style.background='rgba(37,211,102,.07)'">
+          💬 <span>WhatsApp Support</span>
+        </a>
+      </div>
     </div>
 
   </div><!-- /dash-body -->
@@ -1116,6 +1126,11 @@ body::after {
 <script>
 
 const WORKER = 'https://saf-queue-worker.byker-software.workers.dev';
+// ── Support config — change number here only ───────────────
+const SUPPORT_WA = '923338131889';
+function waSupport(msg) {
+  return 'https://wa.me/' + SUPPORT_WA + '?text=' + encodeURIComponent(msg || 'Hi, I need help with WaitMate.');
+}
 
 let state = {
   shopId:       null,
@@ -2171,6 +2186,21 @@ document.addEventListener('click', e => {
       emEl.style.display = 'flex';
     }
   } catch(e) {}
+})();
+// Wire static support links using centralized SUPPORT_WA constant
+(function wireStaticSupportLinks() {
+  const loginLink = document.getElementById('login-support-link');
+  if (loginLink) loginLink.href = waSupport('Hi WaitMate Support, I need help logging in to my shopkeeper dashboard.');
+  const settingsLink = document.getElementById('settings-support-link');
+  if (settingsLink) {
+    // Enrich with shop context when settings panel opens (state may not be ready yet)
+    settingsLink.addEventListener('click', function() {
+      const shopName = typeof state !== 'undefined' ? (state.shopName || '') : '';
+      const shopId   = typeof state !== 'undefined' ? (state.shopId   || '') : '';
+      this.href = waSupport(`Hi WaitMate Support, I need help. Shop: ${shopName} (ID: ${shopId}), Page: shopkeeper dashboard.`);
+    }, { passive: true });
+    settingsLink.href = waSupport('Hi WaitMate Support, I need help with my shopkeeper settings.');
+  }
 })();
 </script>
 
