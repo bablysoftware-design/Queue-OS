@@ -2050,7 +2050,7 @@ async function updateTracker() {
       // Stage 1: 1 person ahead
       if (ahead === 1) triggerAlert(1);
       // Stage 0 (position 1 = next up) — softer pre-warning
-      if (pos === 1 && !ALERT_STAGES.has(0)) triggerAlert(0); // final call — you're next
+      // stage 0 ('Come to counter') is ONLY fired by status==='called' below, never by position
     }
   } catch(e) { console.error('tracker:', e); }
 }
