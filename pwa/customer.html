@@ -2120,11 +2120,14 @@ function saveShopLink() {
   const link = selectedShop?.slug
     ? `${location.origin}/s/${selectedShop.slug}`
     : `${location.origin}/customer.html?shop=${selectedShop?.id}`;
+  const shopName = selectedShop?.name || 'WaitMate';
+  const waText   = `🎟️ I'm using WaitMate to skip the line at ${shopName}. Get your token here: ${link}`;
+  const copyText = `🎟️ ${shopName} on WaitMate — Skip the line!\nSave this link: ${link}\nOr get your token now: ${link}`;
   if (navigator.share) {
-    navigator.share({ title: selectedShop?.name || 'WaitMate', url: link })
-      .catch(() => navigator.clipboard?.writeText(link));
+    navigator.share({ title: shopName, text: waText, url: link })
+      .catch(() => navigator.clipboard?.writeText(copyText));
   } else {
-    navigator.clipboard?.writeText(link)
+    navigator.clipboard?.writeText(copyText)
       .then(() => {
         const btn = document.querySelector('[onclick="saveShopLink()"]');
         if (btn) {
