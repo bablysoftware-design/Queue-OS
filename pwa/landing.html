@@ -238,7 +238,46 @@ footer{border-top:1px solid var(--border);padding:28px 24px;
   .btn-hero-primary,.btn-hero-sec{width:100%;text-align:center;}
 }
 </style>
-<script>document.addEventListener("DOMContentLoaded",()=>{const el=document.getElementById("og-url");if(el)el.content=window.location.origin;})</script>
+<script>document.addEventListener("DOMContentLoaded",()=>{
+  const el=document.getElementById("og-url");if(el)el.content=window.location.origin;
+
+  // Handle ?return=customer — show a prominent "Find Shops" CTA
+  const returnTo = new URLSearchParams(window.location.search).get('return');
+  if (returnTo === 'customer') {
+    // Create a sticky "Find Shops" banner at the top
+    const banner = document.createElement('div');
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;' +
+      'background:linear-gradient(135deg,#E8B84B,#F5CC6A);' +
+      'padding:12px 20px;display:flex;align-items:center;justify-content:space-between;' +
+      'box-shadow:0 2px 20px rgba(0,0,0,0.3)';
+    banner.innerHTML =
+      '<span style="font-size:13px;font-weight:700;color:#050810">🏪 WaitMate — Digital Queue System</span>' +
+      '<button onclick="goToShops()" style="padding:8px 18px;border:none;border-radius:100px;' +
+        'background:#050810;color:#E8B84B;font-family:Sora,sans-serif;font-size:13px;' +
+        'font-weight:700;cursor:pointer">Find Shops →</button>';
+    document.body.prepend(banner);
+    // Push body down so banner doesn't overlap nav
+    document.body.style.paddingTop = '52px';
+  }
+});</script>
+<script>
+function goToShops() {
+  localStorage.setItem('waitmate_seen_landing', '1');
+  window.location.href = '/customer.html';
+}
+// Also wire existing hero CTAs if arriving via ?return=customer
+window.addEventListener('DOMContentLoaded', function() {
+  const returnTo = new URLSearchParams(window.location.search).get('return');
+  if (returnTo !== 'customer') return;
+  // All "Find Shops" style anchors — add goToShops behavior
+  document.querySelectorAll('a[href="/customer.html"],a[href="./customer.html"]').forEach(a => {
+    a.addEventListener('click', function(e) {
+      e.preventDefault();
+      goToShops();
+    });
+  });
+});
+</script>
 </head>
 <body>
 

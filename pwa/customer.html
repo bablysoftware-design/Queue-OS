@@ -448,6 +448,13 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
       </div>
     </div>
     <div style="display:flex;gap:8px;align-items:center">
+      <a href="/landing.html?ref=header"
+         style="padding:6px 11px;border:1px solid rgba(255,255,255,0.08);border-radius:100px;
+                background:transparent;color:#64748B;font-family:'Sora',sans-serif;
+                font-size:11px;font-weight:500;text-decoration:none;white-space:nowrap;
+                display:inline-flex;align-items:center">
+        How it works?
+      </a>
       <button onclick="toggleLangAndReload()" id="cust-lang-btn"
         style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;
                border:1px solid rgba(232,184,75,0.3);border-radius:100px;
@@ -2375,6 +2382,19 @@ function scrollToShopCard(shopId) {
 }
 
 (async function boot() {
+  // ── First-visit landing redirect ─────────────────────────
+  // Skip if: already seen landing, arriving via a shop link (QR/share),
+  //          or has an active token (returning customer)
+  const _hasActiveToken = !!localStorage.getItem('saf_token_id');
+  const _seenLanding    = !!localStorage.getItem('waitmate_seen_landing');
+  const _hasShopParam   = !!(params.get('shop') || params.get('slug'));
+  if (!_seenLanding && !_hasShopParam && !_hasActiveToken) {
+    // First-time visitor with no shop context → show landing
+    window.location.replace('/landing.html?return=customer');
+    return; // stop boot — redirect is happening
+  }
+  // ── End first-visit redirect ──────────────────────────────
+
   buildCatChips();
   updateMuteUI(); // init mute button state from localStorage
   // Restore active token from previous session
