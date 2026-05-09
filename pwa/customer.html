@@ -1378,8 +1378,30 @@ async function openShop(shopId) {
   document.getElementById('m-queue').textContent     = selectedShop.queue_length;
   document.getElementById('m-wait').textContent      = `${selectedShop.estimated_wait}m`;
 
+  // Scroll to top before showing fixed modal — fixes PWA viewport offset clipping
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Safe-area inset for notched devices (applied at show time, not in base CSS)
+  const _sheet = document.getElementById('modal-sheet');
+  if (_sheet) {
+    _sheet.style.paddingBottom    = 'env(safe-area-inset-bottom, 28px)';
+    _sheet.style.minHeight        = '40dvh'; // ensures form is never too short to see
+  }
   document.getElementById('token-modal').classList.add('show');
   setTimeout(() => document.getElementById('c-name').focus(), 400);
+
+  // Fix: when mobile keyboard opens, scroll focused input into view
+  // Uses event delegation on the form — set up once per modal open
+  const _form = document.getElementById('join-form-wrap');
+  if (_form && !_form._focusListenerAttached) {
+    _form._focusListenerAttached = true;
+    _form.addEventListener('focusin', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        setTimeout(() => {
+          e.target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }, 300); // wait for keyboard animation to settle
+      }
+    });
+  }
 
   // Refresh live stats
   try {
