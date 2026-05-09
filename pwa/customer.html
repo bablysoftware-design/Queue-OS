@@ -2,7 +2,7 @@
 <html lang="ur" dir="rtl" id="html-root">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
 <meta name="theme-color" content="#050810"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <title>ویٹ میٹ — ٹوکن لیں</title>
@@ -15,6 +15,7 @@
   --amber:#F59E0B;--text:#EDE8D0;--muted:rgba(237,232,208,.4);--r:16px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{margin:0;padding:0;width:100%;overflow-x:hidden;}
 body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-height:100dvh;overflow-x:hidden;} [lang='ur'] body,[dir='rtl'] body{font-family:'Noto Nastaliq Urdu',serif;}
 #particle-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;}
 .holo-grid{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(212,175,55,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(212,175,55,.03) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;animation:gridDrift 25s linear infinite;}
@@ -433,6 +434,13 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
 }
 .wa-msg-btn{display:block;margin:12px 0;padding:10px;background:#25D366;color:white;border-radius:8px;text-align:center;text-decoration:none;font-weight:600;}
 
+/* ── MOBILE FORM VIEWPORT FIXES ── */
+.token-form-wrapper{width:100%;max-width:100vw;padding:16px;box-sizing:border-box;}
+.token-form-wrapper input,
+.token-form-wrapper textarea,
+.token-form-wrapper select{width:100%;font-size:16px;padding:12px;box-sizing:border-box;}
+.shop-phone{font-size:14px;color:var(--muted);text-align:center;margin:8px 0;}
+
 </style>
 </head>
 <body>
@@ -572,7 +580,7 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
     <div class="sheet-handle"></div>
 
     <!-- Join form -->
-    <div id="join-form-wrap">
+    <div id="join-form-wrap" class="token-form-wrapper">
       <div class="sheet-shop-name" id="m-shop-name">—</div>
       <div class="sheet-shop-meta" id="m-shop-meta">—</div>
       <div id="m-shop-address" style="font-size:11px;color:var(--muted);text-align:center;margin-top:2px;display:none">📍 <span id="m-addr-txt"></span></div>
@@ -1279,7 +1287,7 @@ function buildShopCard(s, i) {
         <div class="shop-area">📍 ${esc(s.area||'')}${s.city ? ' · ' + esc(s.city) : ''} &nbsp;·&nbsp; ${catLabel(s.category)}</div>
         ${s.address ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">🏠 ${esc(s.address)}</div>` : ''}
         ${(s.city || s.country) ? `<div style="font-size:10px;color:var(--muted);margin-top:1px">📍 ${[s.area,s.city,s.country].filter(Boolean).map(esc).join(', ')}</div>` : ''}
-        ${s.owner_phone ? (() => { const p = String(s.owner_phone).replace(/\D/g,''); const href = (p.startsWith('92') || p.startsWith('0092')) ? `https://wa.me/${p}` : `tel:${p}`; return `<a href="${href}" target="_blank" style="font-size:11px;color:var(--gold);margin-top:2px;text-decoration:none;display:inline-flex;align-items:center;gap:4px">📞 ${esc(s.owner_phone)}</a>`; })() : ''}
+        ${s.owner_phone ? `<div class="shop-phone">📱 <a href="https://wa.me/${String(s.owner_phone).replace(/\D/g,'')}" style="color:inherit;text-decoration:none">${esc(s.owner_phone)}</a></div>` : ''}
       </div>
       ${statusBadge}
     </div>
