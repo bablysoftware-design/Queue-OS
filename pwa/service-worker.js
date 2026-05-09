@@ -1,5 +1,5 @@
 // service-worker.js v7 - aggressive reset
-const CACHE = 'wm-v9'; // bumped to clear stale cache (slug/rendering fixes)
+const CACHE = 'wm-v10'; // bumped: playAlarm resume fix, debug log cleanup
 
 self.addEventListener('install', e => {
   self.skipWaiting();

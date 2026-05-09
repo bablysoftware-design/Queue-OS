@@ -1641,7 +1641,7 @@ async function submitJoin() {
       voice_note_path:     _voicePath,
       voice_note_duration: _voiceDur
     };
-    console.log('[WM-DEBUG-1] submitJoin payload:', JSON.stringify(_payload));
+    console.log('[WM-JOIN] payload:', JSON.stringify(_payload));
 
     const res  = await fetch(`${WORKER}/public/join`, {
       method: 'POST',
@@ -1799,55 +1799,57 @@ function urlBase64ToUint8Array(base64String) {
 // ── ALARM SOUND (Web Audio API) ──────────────────────────────
 function playAlarm(type = 'called') {
   try {
-    // ── Bug 2 fix: reuse singleton AudioContext, resume before use ──
     if (!window._wmAudioCtx || window._wmAudioCtx.state === 'closed') {
       window._wmAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
     const ctx = window._wmAudioCtx;
+
+    function scheduleBeeps() {
+      function beep(freq, startTime, duration, vol, wave) {
+        vol  = vol  || 0.7;
+        wave = wave || 'square';
+        var osc  = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.type = wave;
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(vol, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(startTime);
+        osc.stop(startTime + duration + 0.01);
+      }
+
+      var t = ctx.currentTime;
+
+      if (type === 'called') {
+        beep(880,  t + 0.00, 0.18, 0.9, 'square');
+        beep(1100, t + 0.22, 0.18, 0.9, 'square');
+        beep(880,  t + 0.44, 0.18, 0.9, 'square');
+        beep(1100, t + 0.66, 0.18, 0.9, 'square');
+        beep(1320, t + 0.88, 0.50, 1.0, 'square');
+        beep(880,  t + 1.50, 0.18, 0.9, 'square');
+        beep(1100, t + 1.72, 0.18, 0.9, 'square');
+        beep(1320, t + 1.94, 0.60, 1.0, 'square');
+        if (navigator.vibrate) navigator.vibrate([400,150,400,150,600,200,400,150,600]);
+      } else if (type === 'near') {
+        beep(660, t + 0.00, 0.20, 0.6, 'sine');
+        beep(880, t + 0.25, 0.20, 0.6, 'sine');
+        beep(660, t + 0.55, 0.20, 0.6, 'sine');
+        beep(880, t + 0.80, 0.30, 0.7, 'sine');
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      } else {
+        beep(440, t + 0.00, 0.15, 0.5, 'sine');
+        beep(550, t + 0.18, 0.15, 0.5, 'sine');
+        beep(660, t + 0.36, 0.20, 0.5, 'sine');
+      }
+    }
+
+    // Resume if suspended, then schedule — fixes silent beeps after page hidden/visible
     if (ctx.state === 'suspended') {
-      ctx.resume().catch(() => {});
-    }
-
-    function beep(freq, startTime, duration, vol, wave) {
-      vol  = vol  || 0.7;
-      wave = wave || 'square';
-      var osc  = ctx.createOscillator();
-      var gain = ctx.createGain();
-      osc.type = wave;
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(vol, startTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(startTime);
-      osc.stop(startTime + duration + 0.01);
-    }
-
-    var t = ctx.currentTime;
-
-    if (type === 'called') {
-      // URGENT loud alarm — double burst
-      beep(880,  t + 0.00, 0.18, 0.9, 'square');
-      beep(1100, t + 0.22, 0.18, 0.9, 'square');
-      beep(880,  t + 0.44, 0.18, 0.9, 'square');
-      beep(1100, t + 0.66, 0.18, 0.9, 'square');
-      beep(1320, t + 0.88, 0.50, 1.0, 'square');
-      beep(880,  t + 1.50, 0.18, 0.9, 'square');
-      beep(1100, t + 1.72, 0.18, 0.9, 'square');
-      beep(1320, t + 1.94, 0.60, 1.0, 'square');
-      if (navigator.vibrate) navigator.vibrate([400,150,400,150,600,200,400,150,600]);
-    } else if (type === 'near') {
-      // 2-tone gentle warning — almost your turn
-      beep(660, t + 0.00, 0.20, 0.6, 'sine');
-      beep(880, t + 0.25, 0.20, 0.6, 'sine');
-      beep(660, t + 0.55, 0.20, 0.6, 'sine');
-      beep(880, t + 0.80, 0.30, 0.7, 'sine');
-      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      ctx.resume().then(scheduleBeeps).catch(() => {});
     } else {
-      // ready / join confirmation — soft ascending
-      beep(440, t + 0.00, 0.15, 0.5, 'sine');
-      beep(550, t + 0.18, 0.15, 0.5, 'sine');
-      beep(660, t + 0.36, 0.20, 0.5, 'sine');
+      scheduleBeeps();
     }
   } catch (e) { console.warn('[WM-ALARM] playAlarm error:', e.message); }
 }
