@@ -98,16 +98,10 @@ export async function createToken(
     token_number:      nextNumber,
     status:            'waiting',
   };
-  console.log('[WM-DEBUG-3] createToken insert object:', JSON.stringify(insertObj));
 
   const [token] = await db.insert('tokens', insertObj);
 
-  console.log('[WM-DEBUG-4] createToken inserted row:', JSON.stringify({
-    id:                   token?.id,
-    customer_note:        token?.customer_note,
-    voice_note_url:       token?.voice_note_url,
-    voice_note_duration:  token?.voice_note_duration,
-  }));
+
 
   const estimatedWaitMins = waitingCount * shop.avg_service_time_mins;
 

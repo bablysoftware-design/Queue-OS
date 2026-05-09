@@ -143,16 +143,9 @@ export async function joinQueue(request, env) {
                               ? body.voice_note_path.trim() : null;
     const voice_note_dur    = typeof body.voice_note_duration === 'number'
                               ? Math.min(Math.max(0, body.voice_note_duration), 15) : null;
-console.log('[WM-DEBUG-JOIN]', { customer_note, voice_note_path, voice_note_dur });
 
-    console.log('[WM-DEBUG-2] joinQueue body:', JSON.stringify({
-      raw_customer_note:     body.customer_note,
-      raw_voice_note_path:   body.voice_note_path,
-      raw_voice_note_duration: body.voice_note_duration,
-      extracted_customer_note:    customer_note,
-      extracted_voice_note_path:  voice_note_path,
-      extracted_voice_note_dur:   voice_note_dur,
-    }));
+
+    
 
     if (!shop_id)                          return badRequest('shop_id ضروری ہے');
     if (!customer_name && !customer_phone) return badRequest('نام یا نمبر ضروری ہے');
