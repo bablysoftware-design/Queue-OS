@@ -233,8 +233,23 @@ const WORKER='https://saf-queue-worker.byker-software.workers.dev';
 
 let allShops=[], suggestions=[], activeCategory='', userLat=null, userLng=null, searchTimer=null;
 
-const CAT_ICONS={barber:'💈',clinic:'🏥',pharmacy:'💊',govt:'🏛️',bank:'🏦',tailor:'🧵',restaurant:'🍽️',other:'🏪'};
-const CAT_LABELS={barber:'حجام',clinic:'کلینک',pharmacy:'فارمیسی',govt:'سرکاری',bank:'بینک',tailor:'درزی',restaurant:'ریستوران',other:'دیگر'};
+const CAT_ICONS={
+  barber:'✂️',ladies_salon:'💇',clinic:'🏥',hospital:'🏨',pharmacy:'💊',lab:'🧪',dentist:'🦷',
+  physio:'🧘',eye_clinic:'👁️',govt:'🏛️',nadra:'🪪',passport:'📋',bank:'🏦',post:'📮',
+  court:'⚖️',restaurant:'🍽️',food:'🍛',bakery:'🥖',dairy:'🥛',paan:'🫚',
+  mechanic:'🔧',carwash:'🚗',tyre:'🛞',mobile:'📱',electric:'💡',plumber:'🔩',
+  tailor:'🧵',realestate:'🏘️',courier:'🚚',school:'🎓',tuition:'📚',gym:'💪',
+  travel:'✈️',consultant:'🧑‍💼',other:'🏪'
+};
+const CAT_LABELS={
+  barber:'حجام',ladies_salon:'لیڈیز سیلون',clinic:'کلینک',hospital:'ہسپتال',
+  pharmacy:'فارمیسی',lab:'لیبارٹری',dentist:'دندان ساز',physio:'فزیو',eye_clinic:'آنکھوں کا ڈاکٹر',
+  govt:'سرکاری',nadra:'نادرا',passport:'پاسپورٹ',bank:'بینک',post:'پوسٹ آفس',court:'عدالت',
+  restaurant:'ریستوران',food:'بریانی',bakery:'بیکری',dairy:'ڈیری',paan:'پان',
+  mechanic:'مکینک',carwash:'کار واش',tyre:'ٹائر',mobile:'موبائل',electric:'الیکٹریشن',
+  plumber:'پلمبر',tailor:'درزی',realestate:'پراپرٹی',courier:'کوریئر',school:'اسکول',
+  tuition:'ٹیوشن',gym:'جم',travel:'ٹریول',consultant:'مشیر',other:'دیگر'
+};
 
 // ── Load shops ─────────────────────────────────────────────
 async function loadShops(params={}){

@@ -469,14 +469,20 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
       <button class="search-btn" onclick="loadShops()">🔍</button>
     </div>
 
-    <!-- City quick-filter -->
-    <div style="display:flex;gap:6px;overflow-x:auto;padding:6px 0;scrollbar-width:none" id="city-filter-row">
-      <button class="cat-chip active" data-city="" onclick="filterCity('')" data-en="🌍 All" data-ur="🌍 سب">🌍 All</button>
-      <button class="cat-chip" data-city="Islamabad"  onclick="filterCity('Islamabad')"  data-en="📍 Islamabad"  data-ur="📍 اسلام آباد">📍 Islamabad</button>
-      <button class="cat-chip" data-city="Rawalpindi" onclick="filterCity('Rawalpindi')" data-en="📍 Rawalpindi" data-ur="📍 راولپنڈی">📍 Rawalpindi</button>
-      <button class="cat-chip" data-city="Lahore"     onclick="filterCity('Lahore')"     data-en="📍 Lahore"     data-ur="📍 لاہور">📍 Lahore</button>
-      <button class="cat-chip" data-city="Karachi"    onclick="filterCity('Karachi')"    data-en="📍 Karachi"    data-ur="📍 کراچی">📍 Karachi</button>
-      <button class="cat-chip" data-city="Peshawar"   onclick="filterCity('Peshawar')"   data-en="📍 Peshawar"   data-ur="📍 پشاور">📍 Peshawar</button>
+    <!-- City autocomplete — single source of truth from /search/locations API -->
+    <div style="position:relative;margin:4px 0" id="city-filter-wrap">
+      <div style="display:flex;gap:6px;align-items:center">
+        <div style="position:relative;flex:1">
+          <input id="city-search-input" type="text" placeholder="📍 City / Area filter..."
+            autocomplete="off"
+            style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;padding:9px 12px 9px 10px;color:var(--text);font-family:inherit;font-size:12px;outline:none;transition:border-color .2s;box-sizing:border-box"
+            oninput="onCityInput(this.value)"
+            onfocus="onCityInput(this.value)"
+            onblur="setTimeout(()=>hideCityDrop(),200)"/>
+          <div id="city-drop" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface,#0d1424);border:1px solid var(--border);border-radius:10px;margin-top:3px;z-index:100;max-height:180px;overflow-y:auto"></div>
+        </div>
+        <button onclick="clearCityFilter()" id="city-clear-btn" style="display:none;padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;white-space:nowrap">✕ Clear</button>
+      </div>
     </div>
 
     <!-- Category filter -->
@@ -484,8 +490,8 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
       <!-- Built dynamically from CATEGORY_MAP in categories.js -->
     </div>
 
-    <!-- Area filter (populated dynamically) -->
-    <div class="area-row" id="area-row" style="display:none"></div>
+    <!-- Area filter: handled via city input — chip UI removed -->
+    <div id="area-row" style="display:none"></div>
 
     <!-- Add Business CTA -->
     <div style="padding:10px 0 4px">
@@ -2138,13 +2144,84 @@ ${link}
 
 // ── POLL PAYMENT APPROVAL ──────────────────────────────────
 // ── FILTERS ────────────────────────────────────────────────
-function filterCity(city) {
-  activeCity = city;
-  document.querySelectorAll('#city-filter-row .cat-chip').forEach(c =>
-    c.classList.toggle('active', c.dataset.city === city)
-  );
-  // City is client-side only — no server round-trip needed
+// ── City autocomplete — single source of truth: /search/locations ──
+let _cityCache = {};  // memory cache: query→results
+let _cityDebounce = null;
+
+async function fetchCityResults(q) {
+  if (_cityCache[q]) return _cityCache[q];
+  try {
+    const res  = await fetch(`${WORKER}/search/locations?q=${encodeURIComponent(q)}`);
+    const json = await res.json();
+    const results = json.data || [];
+    _cityCache[q] = results;
+    return results;
+  } catch(e) { return []; }
+}
+
+function renderCityDrop(items) {
+  const drop = document.getElementById('city-drop');
+  if (!drop) return;
+  if (!items.length) { drop.style.display = 'none'; return; }
+  drop.innerHTML = items.map(item => {
+    const label = item.label || item.value || item;
+    return `<div onclick="pickCity('${esc(label)}')"
+      style="padding:9px 12px;font-size:12px;color:var(--text2,rgba(237,232,208,.7));cursor:pointer;transition:background .15s"
+      onmouseover="this.style.background='rgba(212,175,55,.08)'"
+      onmouseout="this.style.background=''">${esc(label)}</div>`;
+  }).join('');
+  drop.style.display = 'block';
+}
+
+function hideCityDrop() {
+  const d = document.getElementById('city-drop');
+  if (d) d.style.display = 'none';
+}
+
+function pickCity(val) {
+  activeCity = val;
+  const inp = document.getElementById('city-search-input');
+  const clr = document.getElementById('city-clear-btn');
+  if (inp) inp.value = val;
+  if (clr) clr.style.display = val ? '' : 'none';
+  hideCityDrop();
   applyFilters();
+}
+
+function clearCityFilter() {
+  activeCity = '';
+  const inp = document.getElementById('city-search-input');
+  const clr = document.getElementById('city-clear-btn');
+  if (inp) inp.value = '';
+  if (clr) clr.style.display = 'none';
+  applyFilters();
+}
+window.clearCityFilter = clearCityFilter;
+window.pickCity = pickCity;
+
+function onCityInput(q) {
+  clearTimeout(_cityDebounce);
+  if (!q.trim()) {
+    // Show top cities from empty query
+    _cityDebounce = setTimeout(async () => {
+      const results = await fetchCityResults('');
+      renderCityDrop(results.slice(0, 10));
+    }, 0);
+    if (activeCity) { activeCity = ''; applyFilters(); }
+    const clr = document.getElementById('city-clear-btn');
+    if (clr) clr.style.display = 'none';
+    return;
+  }
+  _cityDebounce = setTimeout(async () => {
+    const results = await fetchCityResults(q.trim());
+    renderCityDrop(results);
+  }, 200);
+}
+window.onCityInput = onCityInput;
+
+function filterCity(city) {
+  // Legacy compat — still works if called programmatically
+  pickCity(city);
 }
 
 function filterCat(cat) {
