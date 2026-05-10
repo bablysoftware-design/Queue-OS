@@ -356,13 +356,13 @@ function renderShops() {
       <div><span class="badge ${plan}">${plan.toUpperCase()}</span></div>
       <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2)">${expiry}</div>
       <div class="action-group">
-        <button class="btn-xs plan" onclick="openPlanModal('${s.id}','${esc(s.name)}')">Plan</button>
-        <button class="btn-xs ${s.is_active ? 'off' : 'on'}" onclick="toggleActive('${s.id}',${!s.is_active})">${s.is_active ? 'Deactivate' : 'Activate'}</button>
-        <button class="btn-xs link" onclick="copyLink('${s.id}','${esc(s.name)}')">🔗 Link</button>
-        <button class="btn-xs link" onclick="shareWhatsApp('${s.id}')" style="background:rgba(37,211,102,0.15);border-color:rgba(37,211,102,0.4);color:#25d366">💬 WA</button>
-        <button class="btn-xs link" onclick="downloadQR('${s.id}','${esc(s.name)}')" style="background:rgba(212,175,55,0.1);border-color:rgba(212,175,55,0.3)">📱 QR</button>
-        <button class="btn-xs" onclick="resetPin('${s.id}','${esc(s.name)}')" style="background:rgba(251,191,36,0.1);border-color:rgba(251,191,36,0.3);color:#FBBF24">🔑 PIN</button>
-        <button class="btn-xs del" onclick="deleteShop('${s.id}','${esc(s.name)}')">Delete</button>
+        <button class="btn-xs plan" data-id="${s.id}" data-name="${esc(s.name)}" onclick="openPlanModal(this.dataset.id,this.dataset.name)">Plan</button>
+        <button class="btn-xs ${s.is_active ? 'off' : 'on'}" data-id="${s.id}" data-active="${!s.is_active}" onclick="toggleActive(this.dataset.id,this.dataset.active==='true')">${s.is_active ? 'Deactivate' : 'Activate'}</button>
+        <button class="btn-xs link" data-id="${s.id}" data-name="${esc(s.name)}" onclick="copyLink(this.dataset.id,this.dataset.name)">🔗 Link</button>
+        <button class="btn-xs link" data-id="${s.id}" onclick="shareWhatsApp(this.dataset.id)" style="background:rgba(37,211,102,0.15);border-color:rgba(37,211,102,0.4);color:#25d366">💬 WA</button>
+        <button class="btn-xs link" data-id="${s.id}" data-name="${esc(s.name)}" onclick="downloadQR(this.dataset.id,this.dataset.name)" style="background:rgba(212,175,55,0.1);border-color:rgba(212,175,55,0.3)">📱 QR</button>
+        <button class="btn-xs" data-id="${s.id}" data-name="${esc(s.name)}" onclick="resetPin(this.dataset.id,this.dataset.name)" style="background:rgba(251,191,36,0.1);border-color:rgba(251,191,36,0.3);color:#FBBF24">🔑 PIN</button>
+        <button class="btn-xs del" data-id="${s.id}" data-name="${esc(s.name)}" onclick="deleteShop(this.dataset.id,this.dataset.name)">Delete</button>
       </div>
     </div>`;
   }).join('');
