@@ -2502,7 +2502,27 @@ function applyFilters() {
       (s.category||'').toLowerCase().includes(searchQuery);
     return catOk && areaOk && cityOk && srchOk;
   });
+  updateAreaChipsForCity();
   renderShops();
+}
+
+function updateAreaChipsForCity() {
+  const cityFiltered = allShops.filter(s => {
+    const cityOk = !activeCity || (s.city||'').toLowerCase().includes(activeCity.toLowerCase())
+                               || (s.area||'').toLowerCase().includes(activeCity.toLowerCase());
+    const catOk  = !activeCategory || s.category === activeCategory;
+    return cityOk && catOk;
+  });
+  const areas = [...new Set(cityFiltered.map(s => s.area).filter(Boolean))].sort();
+  if (!areas.length) {
+    const row = document.getElementById('area-row');
+    if (row) row.style.display = 'none';
+    return;
+  }
+  renderAreaChips(areas);
+  document.querySelectorAll('.area-chip').forEach(c =>
+    c.classList.toggle('active', c.dataset.area === activeArea)
+  );
 }
 
 function renderAreaChips(areas) {
