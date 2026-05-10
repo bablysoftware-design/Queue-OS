@@ -111,14 +111,15 @@ h1{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;background:li
     </div>
 
     <div class="field" style="position:relative">
-      <label>دکان کی قسم</label>
+      <label>دکان کی قسم *</label>
       <input id="r-cat" type="text" placeholder="مثال: barber, clinic, pharmacy" autocomplete="off" oninput="this.dataset.canonicalValue=''; acCat(this,'ac-catd')"/>
       <div id="ac-catd" class="ac-drop"></div>
     </div>
 
-    <div class="field">
-      <label>علاقہ</label>
-      <input id="r-area" type="text" placeholder="مثال: صدر، لال کرتی"/>
+    <div class="field" style="position:relative">
+      <label>علاقہ *</label>
+      <input id="r-area" type="text" placeholder="مثال: North Nazimabad, Gulberg, F-7" autocomplete="off" oninput="acLoc(this,'area','ac-area')"/>
+      <div id="ac-area" class="ac-drop"></div>
     </div>
 
     <div class="field">
@@ -247,7 +248,7 @@ function pickAcCanonical(dropId, display, canonical, inputId) {
 function closeAcR(dropId){const d=document.getElementById(dropId);if(d)d.classList.remove('open');}
 
 document.addEventListener('click',e=>{
-  ['ac-cnt','ac-cty','ac-catd'].forEach(id=>{
+  ['ac-cnt','ac-cty','ac-catd','ac-area'].forEach(id=>{
     const el=document.getElementById(id);
     if(el&&!el.contains(e.target))el.classList.remove('open');
   });
@@ -255,53 +256,62 @@ document.addEventListener('click',e=>{
 
 function escR(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
+// Title Case normalize location names — prevents karachi/Karachi mismatch in DB
+function normalizeLoc(str) {
+  return str.trim().replace(/\b([a-zA-Z])/g, c => c.toUpperCase());
+}
+
 // ── Submit ────────────────────────
 async function submitReg(){
-  const name=document.getElementById('r-name').value.trim();
-  const phone=document.getElementById('r-phone').value.trim();
-  const pin=document.getElementById('r-pin').value.trim();
+  const name    = document.getElementById('r-name').value.trim();
+  const phone   = document.getElementById('r-phone').value.trim();
+  const pin     = document.getElementById('r-pin').value.trim();
   const catInput = document.getElementById('r-cat');
   const cat = catInput.dataset.canonicalValue
     || (window.normalizeCat ? window.normalizeCat(catInput.value.trim()) : catInput.value.trim());
-  const area=document.getElementById('r-area').value.trim();
-  const country=document.getElementById('r-country').value.trim();
-  const city=document.getElementById('r-city').value.trim();
-  const token_mode=document.getElementById('r-token-mode').value;
-  const errEl=document.getElementById('reg-err');
-  const btn=document.getElementById('reg-btn');
-  errEl.textContent='';
+  const area    = normalizeLoc(document.getElementById('r-area').value);
+  const country = normalizeLoc(document.getElementById('r-country').value) || 'Pakistan';
+  const city    = normalizeLoc(document.getElementById('r-city').value);
+  const token_mode = document.getElementById('r-token-mode').value;
+  const errEl   = document.getElementById('reg-err');
+  const btn     = document.getElementById('reg-btn');
+  errEl.textContent = '';
 
-  if(!name)return errEl.textContent='دکان کا نام ضروری ہے';
-  if(!phone)return errEl.textContent='فون نمبر ضروری ہے';
-  if(!pin||pin.length!==4)return errEl.textContent='پن 4 ہندسوں کا ہونا چاہیے';
+  // ── Required field validation ──
+  if (!name)                      return errEl.textContent = 'دکان کا نام ضروری ہے';
+  if (!phone)                     return errEl.textContent = 'واٹس ایپ نمبر ضروری ہے';
+  if (!pin || pin.length !== 4)   return errEl.textContent = 'پن 4 ہندسوں کا ہونا چاہیے';
+  if (!city)                      return errEl.textContent = 'شہر ضروری ہے — مثال: Karachi, Lahore';
+  if (!area)                      return errEl.textContent = 'علاقہ ضروری ہے — مثال: North Nazimabad, Gulberg';
+  if (!cat)                       return errEl.textContent = 'دکان کی قسم ضروری ہے — مثال: Barber, Clinic';
 
-  btn.disabled=true;btn.textContent='...';
-  try{
-    const body={name,owner_phone:phone,pin};
-    if(cat)body.category=cat;
-    if(area)body.area=area;
-    if(country)body.country=country;
-    if(city)body.city=city;
-    if(token_mode)body.token_mode=token_mode;
-    if(token_mode==='paid'){
-      const price=parseInt(document.getElementById('r-token-price')?.value||'0',10);
-      if(!price||price<1){errEl.textContent='ادا شدہ موڈ میں قیمت ضروری ہے';btn.disabled=false;btn.textContent='رجسٹریشن درخواست دیں';return;}
-      body.token_price=price;
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    const body = { name, owner_phone: phone, pin, category: cat, area, city, country };
+    if (token_mode) body.token_mode = token_mode;
+    if (token_mode === 'paid') {
+      const price = parseInt(document.getElementById('r-token-price')?.value || '0', 10);
+      if (!price || price < 1) {
+        errEl.textContent = 'ادا شدہ موڈ میں قیمت ضروری ہے';
+        btn.disabled = false; btn.textContent = 'رجسٹریشن درخواست دیں';
+        return;
+      }
+      body.token_price = price;
     }
-    const res=await fetch(`${WORKER}/register`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    const data=await res.json();
-    if(data.success){
-      document.getElementById('form-card').style.display='none';
-      document.getElementById('success-box').style.display='block';
+    const res  = await fetch(`${WORKER}/register`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('form-card').style.display  = 'none';
+      document.getElementById('success-box').style.display = 'block';
       const suppEl = document.getElementById('success-support-link');
       if (suppEl) suppEl.href = waSupport(`Hi WaitMate Support, I just registered my business "${name}" and need help.`);
-    }else{
-      errEl.textContent=data.error||'خرابی';
-      btn.disabled=false;btn.textContent='رجسٹریشن درخواست دیں';
+    } else {
+      errEl.textContent = data.error || 'خرابی';
+      btn.disabled = false; btn.textContent = 'رجسٹریشن درخواست دیں';
     }
-  }catch(e){
-    errEl.textContent='کنکشن خرابی';
-    btn.disabled=false;btn.textContent='رجسٹریشن درخواست دیں';
+  } catch(e) {
+    errEl.textContent = 'کنکشن خرابی';
+    btn.disabled = false; btn.textContent = 'رجسٹریشن درخواست دیں';
   }
 }
 </script>

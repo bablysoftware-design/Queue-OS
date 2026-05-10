@@ -36,11 +36,67 @@ const CITIES = [
 ].sort();
 
 const AREAS = [
-  'G-11','G-10','G-9','G-8','F-7','F-8','F-6','I-8','I-9',
-  'Blue Area','Saddar','DHA','Bahria Town','Gulberg',
-  'Model Town','Johar Town','Korang Town','kartar pura',
-  'Clifton','Defence','Gulshan','North Nazimabad',
-  'Hayatabad','University Town','Cantt',
+  // ── Islamabad Sectors ──
+  'F-6','F-7','F-8','F-10','F-11','G-6','G-7','G-8','G-9','G-10','G-11',
+  'H-8','H-9','H-11','H-13','I-8','I-9','I-10','I-11','I-14',
+  'E-7','E-11','D-12','B-17','Blue Area','Diplomatic Enclave',
+  'Tarlai','Saidpur Village','Golra','Rawat','Sangjani',
+  // ── Rawalpindi ──
+  'Saddar Rawalpindi','Raja Bazaar','Chaklala','Satellite Town',
+  'Bahria Town Rawalpindi','DHA Rawalpindi','Morgah','Adiala Road',
+  'Committee Chowk','Westridge','Dhoke Kala Khan','Murree Road Rawalpindi',
+  'GT Road Rawalpindi','Dhoke Mangtal','Dhoke Syedan','Pirwadhai',
+  // ── Lahore ──
+  'Gulberg Lahore','Model Town Lahore','DHA Lahore','Johar Town',
+  'Bahria Town Lahore','Allama Iqbal Town','Samanabad','Township Lahore',
+  'Wapda Town','Garden Town','Shadman','Faisal Town','Cavalry Ground',
+  'Cantt Lahore','Gulshan Ravi','Iqbal Town','Tajpura','Ravi Road',
+  'Ferozepur Road','Multan Road Lahore','Canal Road Lahore',
+  'Shad Bagh','Baghbanpura','Ichra','Mozang','Krishan Nagar',
+  'Gawalmandi','Anarkali','Bhati Gate','Shalimar','Kot Lakhpat',
+  'Sundar Industrial Estate','Raiwind Road',
+  // ── Karachi ──
+  'North Nazimabad','Nazimabad','Orangi Town','Korangi','Landhi',
+  'Malir','PECHS','Gulshan-e-Iqbal','Federal B Area','FB Area',
+  'Clifton','Defence Karachi','DHA Karachi','Saddar Karachi',
+  'Liaquatabad','New Karachi','Surjani Town','Baldia Town',
+  'Keamari','Lyari','Manghopir','Shah Faisal Colony',
+  'Bin Qasim','Gulistan-e-Jauhar','North Karachi','Azizabad',
+  'Metroville','Site Area','Scheme 33','Scheme 45',
+  'Gulberg Karachi','Rashid Minhas','Malir Cantt','Drigh Road',
+  'Shahra-e-Faisal','University Road Karachi','Tipu Sultan Road',
+  'Buffer Zone','Kemari','Martin Quarter','Soldier Bazaar',
+  'Garden Karachi','Tariq Road','Bahadurabad','Nursery Karachi',
+  'Jodia Bazaar','Old City Karachi','Kharadar','Lighthouse',
+  // ── Faisalabad ──
+  'Peoples Colony','Canal Road Faisalabad','Jhang Road',
+  'Sargodha Road','Jinnah Colony','Madina Town','Gulberg Faisalabad',
+  'D Ground','Millat Road','Susan Road','Satiana Road',
+  // ── Multan ──
+  'Cantt Multan','Saddar Multan','Shah Rukn-e-Alam','Gulgasht Colony',
+  'Bosan Road','Kutchery Road','Qasim Bela','New Multan',
+  // ── Peshawar ──
+  'University Town Peshawar','Hayatabad','Hayatabad Phase 1',
+  'Hayatabad Phase 2','Hayatabad Phase 3','Hayatabad Phase 4',
+  'Cantt Peshawar','Saddar Peshawar','Ring Road Peshawar',
+  'Gulbahar','Dalazak Road','Charsadda Road','Warsak Road',
+  // ── Quetta ──
+  'Brewery Road','Airport Road Quetta','Satellite Town Quetta',
+  'Sariab Road','Jinnah Road Quetta','Zarghoon Road',
+  'Spini Road','Hazar Ganji','Kuchlak Road',
+  // ── Hyderabad ──
+  'Qasimabad','Latifabad','Hirabad','Hyderabad Cantt',
+  'Tilak Incline','Pahore','Kohsar',
+  // ── Sialkot ──
+  'Cantt Sialkot','Ugoki Road','Paris Road','Iqbal Stadium Area',
+  // ── Gujranwala ──
+  'GT Road Gujranwala','Model Town Gujranwala','Satellite Town Gujranwala',
+  'Peoples Colony Gujranwala','Civil Lines Gujranwala',
+  // ── Abbottabad ──
+  'Cantt Abbottabad','Mirpur Road','Shimla Hill','Supply Bazaar',
+  // ── Other Common Areas ──
+  'Cantt','DHA','Bahria Town','Saddar','Gulberg','Model Town',
+  'Johar Town','Township','Defence','Wapda Town','Garden Town',
 ];
 
 export async function searchLocations(request, env) {
@@ -56,10 +112,17 @@ export async function searchLocations(request, env) {
     if (rows?.length) return ok(rows.map(r => ({ label: r.city || r.area, value: r.city || r.area })));
   } catch(e) {}
 
-  // Static fallback
-  const all    = [...new Set([...CITIES, ...AREAS])];
-  const filtered = q ? all.filter(x => x.toLowerCase().includes(q)) : all;
-  return ok(filtered.slice(0, 15).map(v => ({ label: v, value: v })));
+  // Static fallback — combine cities and areas, deduplicate case-insensitively
+  const all = [...CITIES, ...AREAS];
+  const seen = new Set();
+  const deduped = all.filter(x => {
+    const k = x.toLowerCase();
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+  const filtered = q ? deduped.filter(x => x.toLowerCase().includes(q)) : deduped;
+  return ok(filtered.slice(0, 20).map(v => ({ label: v, value: v })));
 }
 
 // Canonical list — must stay in sync with pwa/categories.js CATEGORY_MAP
