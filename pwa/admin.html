@@ -296,7 +296,7 @@ async function addLocation() {
   try {
     const res  = await fetch(WORKER + '/admin/locations', {
       method: 'POST',
-      headers: { 'Content-Type':'application/json', 'x-admin-secret': adminSecret },
+      headers: { 'Content-Type':'application/json', 'x-admin-secret': SECRET },
       body: JSON.stringify({ city: city||null, area: area||null, country: 'Pakistan' })
     });
     const json = await res.json();
@@ -446,7 +446,7 @@ async function resetPin(shopId, shopName) {
   try {
     const res  = await fetch(`${WORKER}/admin/shops/${shopId}/reset-pin`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
+      headers: { 'Content-Type': 'application/json', 'x-admin-secret': SECRET },
       body: JSON.stringify({ new_pin: newPin })
     });
     const data = await res.json();
@@ -474,7 +474,7 @@ async function saveSupportSettings() {
   try {
     const res = await fetch(`${WORKER}/admin/settings`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
+      headers: { 'Content-Type': 'application/json', 'x-admin-secret': SECRET },
       body: JSON.stringify({ support_whatsapp: wa, support_email: em, support_message: msg })
     });
     const data = await res.json();
