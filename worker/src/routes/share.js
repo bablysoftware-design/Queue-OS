@@ -15,7 +15,13 @@ export async function getShareLink(request, env) {
     const shopId = sanitizeParam(url.pathname.split('/')[2]);
 
     const db   = createClient(env);
-    const rows = await db.select('shops', `select=id,name,slug,area,category&id=eq.${shopId}&limit=1`);
+    // Try with slug first; fall back gracefully if slug column missing
+    let rows;
+    try {
+      rows = await db.select('shops', `select=id,name,slug,area,category&id=eq.${shopId}&limit=1`);
+    } catch(e) {
+      rows = await db.select('shops', `select=id,name,area,category&id=eq.${shopId}&limit=1`);
+    }
     if (!rows?.length) return notFound('Shop not found');
 
     const shop    = rows[0];
@@ -56,7 +62,12 @@ export async function getShopQR(request, env) {
     const shopId = sanitizeParam(url.pathname.split('/')[2]);
 
     const db   = createClient(env);
-    const rows = await db.select('shops', `select=id,name,slug&id=eq.${shopId}&limit=1`);
+    let rows;
+    try {
+      rows = await db.select('shops', `select=id,name,slug&id=eq.${shopId}&limit=1`);
+    } catch(e) {
+      rows = await db.select('shops', `select=id,name&id=eq.${shopId}&limit=1`);
+    }
     if (!rows?.length) return notFound('Shop not found');
 
     const shop   = rows[0];
