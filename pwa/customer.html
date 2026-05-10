@@ -2426,6 +2426,7 @@ function hideCityDrop() {
 
 function pickCity(val) {
   activeCity = val;
+  activeArea = ''; // reset area when city changes
   const inp = document.getElementById('city-search-input');
   const clr = document.getElementById('city-clear-btn');
   if (inp) inp.value = val;
@@ -2472,6 +2473,7 @@ function filterCity(city) {
 
 function filterCat(cat) {
   activeCategory = cat;
+  activeArea = ''; // reset area when category changes — area chips will regenerate
   document.querySelectorAll('#cat-row .cat-chip').forEach(c =>
     c.classList.toggle('active', c.dataset.cat === cat)
   );
@@ -2491,38 +2493,75 @@ function onSearch() {
 
 function applyFilters() {
   filteredShops = allShops.filter(s => {
-    const catOk  = !activeCategory || s.category === activeCategory;
-    const areaOk = !activeArea     || (s.area||'').toLowerCase().includes(activeArea.toLowerCase());
-    const cityOk = !activeCity     || (s.city||'').toLowerCase().includes(activeCity.toLowerCase())
-                                   || (s.area||'').toLowerCase().includes(activeCity.toLowerCase());
-    const srchOk = !searchQuery    ||
-      s.name.toLowerCase().includes(searchQuery) ||
-      (s.area||'').toLowerCase().includes(searchQuery) ||
-      (s.city||'').toLowerCase().includes(searchQuery) ||
-      (s.category||'').toLowerCase().includes(searchQuery);
-    return catOk && areaOk && cityOk && srchOk;
+    // Step 1: city match (checks both s.city and s.area for backward compat)
+    const cityOk = !activeCity
+      || (s.city||'').toLowerCase().includes(activeCity.toLowerCase())
+      || (s.area||'').toLowerCase().includes(activeCity.toLowerCase());
+
+    // Step 2: category match
+    const catOk = !activeCategory || s.category === activeCategory;
+
+    // Step 3: area match (only applies within already-city-filtered set)
+    const areaOk = !activeArea
+      || (s.area||'').toLowerCase().includes(activeArea.toLowerCase());
+
+    // Step 4: search
+    const srchOk = !searchQuery
+      || s.name.toLowerCase().includes(searchQuery)
+      || (s.area||'').toLowerCase().includes(searchQuery)
+      || (s.city||'').toLowerCase().includes(searchQuery)
+      || (s.category||'').toLowerCase().includes(searchQuery);
+
+    return cityOk && catOk && areaOk && srchOk;
   });
-  updateAreaChipsForCity();
+
+  // Rebuild area chips from shops matching city+category (not area — area is the chip selection itself)
+  refreshAreaChips();
   renderShops();
 }
 
-function updateAreaChipsForCity() {
-  const cityFiltered = allShops.filter(s => {
-    const cityOk = !activeCity || (s.city||'').toLowerCase().includes(activeCity.toLowerCase())
-                               || (s.area||'').toLowerCase().includes(activeCity.toLowerCase());
+function refreshAreaChips() {
+  const row = document.getElementById('area-row');
+  if (!row) return;
+
+  // Only show area chips when a city is selected
+  if (!activeCity) {
+    row.style.display = 'none';
+    activeArea = ''; // clear area if city cleared
+    return;
+  }
+
+  // Build from shops matching city + category only (not area filter)
+  const base = allShops.filter(s => {
+    const cityOk = (s.city||'').toLowerCase().includes(activeCity.toLowerCase())
+                || (s.area||'').toLowerCase().includes(activeCity.toLowerCase());
     const catOk  = !activeCategory || s.category === activeCategory;
     return cityOk && catOk;
   });
-  const areas = [...new Set(cityFiltered.map(s => s.area).filter(Boolean))].sort();
+
+  // Extract unique areas, exclude ones that are just the city name itself
+  const areas = [...new Set(
+    base.map(s => s.area).filter(a => {
+      if (!a) return false;
+      // Skip if area is just the city name (e.g. area="Karachi")
+      const norm = a.toLowerCase().trim();
+      const city = activeCity.toLowerCase();
+      return norm !== city;
+    })
+  )].sort();
+
   if (!areas.length) {
-    const row = document.getElementById('area-row');
-    if (row) row.style.display = 'none';
+    row.style.display = 'none';
     return;
   }
-  renderAreaChips(areas);
-  document.querySelectorAll('.area-chip').forEach(c =>
-    c.classList.toggle('active', c.dataset.area === activeArea)
-  );
+
+  const isUrdu = (localStorage.getItem('sq_lang')||'ur') === 'ur';
+  row.style.display = 'flex';
+  row.innerHTML =
+    `<button class="area-chip${!activeArea?' active':''}" onclick="filterArea('')" data-area="">${isUrdu?'سب علاقے':'All Areas'}</button>` +
+    areas.map(a =>
+      `<button class="area-chip${activeArea===a?' active':''}" onclick="filterArea('${esc(a)}')" data-area="${esc(a)}">${esc(a)}</button>`
+    ).join('');
 }
 
 function renderAreaChips(areas) {
