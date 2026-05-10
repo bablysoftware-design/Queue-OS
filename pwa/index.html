@@ -2147,6 +2147,17 @@ async function playVoiceNote(path, btn) {
 }
 window.playVoiceNote = playVoiceNote;
 
+// ── Window exports (onclick handlers) ──
+window.applyWaitOverride = applyWaitOverride;
+window.approvePayment = approvePayment;
+window.cancelQueueToken = cancelQueueToken;
+window.downloadQRImage = downloadQRImage;
+window.openQRModal = openQRModal;
+window.rejectPayment = rejectPayment;
+window.showScreen = showScreen;
+window.toggleSupportPopup = toggleSupportPopup;
+window.viewScreenshot = viewScreenshot;
+
 // ── Boot ──────────────────────────────────────────────────────
 (function boot() {
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/service-worker.js').catch(() => {});
