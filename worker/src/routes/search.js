@@ -21,7 +21,9 @@ const CITIES = [
   'Sukkur','Larkana','Nawabshah','Mirpurkhas','Jacobabad','Shikarpur','Dadu',
   'Thatta','Badin','Tharparkar','Sanghar','Khairpur','Ghotki','Kashmore',
   'Shahdadkot','Kandhkot','Kamber','Kotri','Jamshoro','Sehwan',
-  // KPK
+  // KPK / FATA / Tribal Districts
+  'Waziristan','North Waziristan','South Waziristan','Wana','Miranshah',
+  'Bajaur','Mohmand','Khyber','Kurram','Orakzai','FR Peshawar',
   'Mardan','Mingora','Kohat','Bannu','Dera Ismail Khan','Nowshera','Haripur',
   'Mansehra','Chitral','Dir','Buner','Shangla','Battagram','Kohistan',
   'Charsadda','Swabi','Malakand','Karak','Lakki Marwat','Tank',
@@ -102,27 +104,38 @@ const AREAS = [
 export async function searchLocations(request, env) {
   const q = (new URL(request.url).searchParams.get('q') || '').toLowerCase().trim();
 
-  // Try DB first, fall back to static list
+  // Merge DB custom entries + static list, deduplicate case-insensitively
+  let dbValues = [];
   try {
     const db   = createClient(env);
     const rows = await db.select('locations',
-      q ? `or=(city.ilike.*${q}*,area.ilike.*${q}*)&limit=10`
-        : 'limit=20&order=city.asc'
+      q ? `or=(city.ilike.*${q}*,area.ilike.*${q}*)&limit=20`
+        : 'limit=30&order=city.asc'
     );
-    if (rows?.length) return ok(rows.map(r => ({ label: r.city || r.area, value: r.city || r.area })));
+    if (rows?.length) {
+      dbValues = rows
+        .map(r => r.city || r.area || '')
+        .filter(Boolean);
+    }
   } catch(e) {}
 
-  // Static fallback — combine cities and areas, deduplicate case-insensitively
-  const all = [...CITIES, ...AREAS];
-  const seen = new Set();
-  const deduped = all.filter(x => {
-    const k = x.toLowerCase();
-    if (seen.has(k)) return false;
+  // Static list filtered by query
+  const all    = [...CITIES, ...AREAS];
+  const staticMatches = q
+    ? all.filter(x => x.toLowerCase().includes(q))
+    : all;
+
+  // Merge: DB first (custom/recent), then static — deduplicate case-insensitively
+  const seen   = new Set();
+  const merged = [];
+  for (const v of [...dbValues, ...staticMatches]) {
+    const k = v.toLowerCase().trim();
+    if (!k || seen.has(k)) continue;
     seen.add(k);
-    return true;
-  });
-  const filtered = q ? deduped.filter(x => x.toLowerCase().includes(q)) : deduped;
-  return ok(filtered.slice(0, 20).map(v => ({ label: v, value: v })));
+    merged.push(v);
+  }
+
+  return ok(merged.slice(0, 20).map(v => ({ label: v, value: v })));
 }
 
 // Canonical list — must stay in sync with pwa/categories.js CATEGORY_MAP
@@ -190,9 +203,19 @@ export async function adminAddLocation(request, env) {
     const { createClient } = await import('../utils/db.js');
     const db = createClient(env);
     const { ok, serverError } = await import('../utils/response.js');
+
+    // Prevent duplicates — check existing case-insensitively
+    const cityVal = city ? city.trim() : null;
+    const areaVal = area ? area.trim() : null;
+    const existing = await db.select('locations',
+      cityVal ? `city=ilike.${encodeURIComponent(cityVal)}&country=eq.${encodeURIComponent(country)}`
+              : `area=ilike.${encodeURIComponent(areaVal)}&country=eq.${encodeURIComponent(country)}`
+    ).catch(() => []);
+    if (existing?.length) return ok({ added: existing[0], duplicate: true });
+
     const row = await db.insert('locations', {
-      city:    city    || null,
-      area:    area    || null,
+      city:    cityVal || null,
+      area:    areaVal || null,
       country: country || 'Pakistan',
     });
     return ok({ added: Array.isArray(row) ? row[0] : row });

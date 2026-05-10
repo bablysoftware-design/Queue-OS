@@ -155,7 +155,7 @@ h1{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;background:li
     <p>
       آپ کی درخواست زیر غور ہے۔<br/>
       ایڈمن جلد منظوری دے گا۔<br/>
-      منظوری کے بعد آپ <strong>waitmate.pk</strong> پر لاگ ان کر سکتے ہیں۔<br/><br/>
+      منظوری کے بعد آپ <strong id="login-domain"></strong> پر لاگ ان کر سکتے ہیں۔<br/><br/>
       30 دن کا مفت ٹرائل خود بخود شروع ہو گا۔<br/><br/>
       <a id="success-support-link" href="#" target="_blank" rel="noopener" style="color:#25D366;font-weight:600;text-decoration:none;font-size:13px">💬 کوئی مسئلہ؟ WhatsApp Support</a>
     </p>
@@ -303,6 +303,8 @@ async function submitReg(){
     if (data.success) {
       document.getElementById('form-card').style.display  = 'none';
       document.getElementById('success-box').style.display = 'block';
+      const domainEl = document.getElementById('login-domain');
+      if (domainEl) domainEl.textContent = window.location.hostname;
       const suppEl = document.getElementById('success-support-link');
       if (suppEl) suppEl.href = waSupport(`Hi WaitMate Support, I just registered my business "${name}" and need help.`);
     } else {
