@@ -516,14 +516,18 @@ async function loadRegistrations() {
           </div>
           <span style="font-size:10px;padding:3px 8px;border-radius:100px;background:rgba(251,191,36,.15);color:#fbbf24;border:1px solid rgba(251,191,36,.3)">PENDING</span>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;font-size:11px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;font-size:11px">
           <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:6px 8px">
             <div style="color:var(--muted);margin-bottom:2px">Category</div>
             <div style="color:var(--text)">${esc(r.category||'—')}</div>
           </div>
           <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:6px 8px">
             <div style="color:var(--muted);margin-bottom:2px">City</div>
-            <div style="color:var(--text)">${esc(r.city||r.area||'—')}</div>
+            <div style="color:var(--text)">${esc(r.city||'—')}</div>
+          </div>
+          <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:6px 8px">
+            <div style="color:var(--muted);margin-bottom:2px">Area</div>
+            <div style="color:var(--text)">${esc(r.area||'—')}</div>
           </div>
           <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:6px 8px">
             <div style="color:var(--muted);margin-bottom:2px">Token Mode</div>
