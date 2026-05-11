@@ -1,5 +1,5 @@
 // service-worker.js v7 - aggressive reset
-const CACHE = 'wm-v15'; // bumped: paid flow fix + WM-PAID logs // bumped: urdu tts prompt, noisy log cleanup // bumped: removed merge conflict markers // bumped: insert trace log, dashboard item log // bumped: TTS urdu fallback fix, note trace logs // bumped: playAlarm resume fix, debug log cleanup
+const CACHE = 'wm-v16'; // bumped: screenshot event delegation fix
 
 self.addEventListener('install', e => {
   self.skipWaiting();
