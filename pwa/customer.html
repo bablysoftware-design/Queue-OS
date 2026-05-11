@@ -2154,19 +2154,15 @@ function triggerAlert(stage) {
     // Final call — force=true bypasses document.hidden
     playAlarm('called');
     if (document.hidden) _pendingCalledAlert = true;
-    playVoice(messages[0][0], messages[0][1], true); // force=true
+    playVoice(messages[0][0], messages[0][1], true);
     if (navigator.vibrate) navigator.vibrate([400, 150, 400, 150, 600]);
   } else if (stage === 1) {
-    // 1 person left — soft zigzag tone, then voice after 1.2s pause
+    // 1 person left — soft zigzag tone, then voice after 1.2s
     playAlarm('one-left');
     setTimeout(() => playVoice(messages[1][0], messages[1][1]), 1200);
     if (navigator.vibrate) navigator.vibrate([250, 120, 250]);
-  } else if (stage === 1) {
-    // Stage 1: soft zigzag tone → 1.7s pause → calm voice announcement
-    playAlarm('zigzag');
-    setTimeout(() => playVoice(messages[1][0], messages[1][1]), 1700);
-    if (navigator.vibrate) navigator.vibrate([120, 80, 120]);
   } else {
+    // Stages 5 and 3 — simple beep + voice
     const [freq, dur, vol] = beeps[stage];
     playBeep(freq, dur, vol);
     setTimeout(() => playVoice(messages[stage][0], messages[stage][1]), 600);
