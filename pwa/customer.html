@@ -2069,34 +2069,30 @@ function _checkUrduVoicePrompt() {
 }
 
 function playVoice(textEn, textUr, force) {
-  if (isMuted()) { if (DEBUG) console.log('[WM-VOICE] muted'); return; }
-  if (!('speechSynthesis' in window)) { return; }
-  // Bug 1 fix: allow force=true to bypass document.hidden for critical called alert
-  if (!force && document.hidden) { return; }
-  const useUrdu   = (localStorage.getItem('sq_lang') || 'en') === 'ur';
-  const hasUrduVoice = useUrdu && !!_urduVoice;
-  // If Urdu mode is on but no Urdu voice installed, fall back to English text + voice
+  if (isMuted()) return;
+  if (!('speechSynthesis' in window)) return;
+  if (!force && document.hidden) return;
 
-  const text = hasUrduVoice && textUr ? textUr : textEn;
-  if (DEBUG) console.log('[WM-VOICE] Speaking:', text);
+  // Reload voices if not yet populated (Android Chrome lazy-loads voices)
+  if (!_voiceList.length) _loadVoices();
+
+  const useUrdu    = (localStorage.getItem('sq_lang') || 'ur') === 'ur';
+  const hasUrduVoice = useUrdu && !!_urduVoice;
+  const text  = (hasUrduVoice && textUr) ? textUr : textEn;
+  const voice = hasUrduVoice ? _urduVoice : _engVoice;
+
   try {
     window.speechSynthesis.cancel();
-    const utt = new SpeechSynthesisUtterance(text);
-    if (hasUrduVoice && textUr) {
-      utt.voice   = _urduVoice;
-      utt.lang    = 'ur-PK';
-      utt.rate    = 0.82;
-      utt.pitch   = 1.0;
-    } else {
-      if (_engVoice) utt.voice = _engVoice;
-      utt.lang    = _engVoice?.lang || 'en-US';
-      utt.rate    = 0.88;
-      utt.pitch   = 1.05;
-    }
+    const utt   = new SpeechSynthesisUtterance(text);
+    if (voice) utt.voice = voice;
+    utt.lang    = hasUrduVoice ? 'ur-PK' : (voice?.lang || 'en-US');
+    utt.rate    = hasUrduVoice ? 0.82 : 0.88;
+    utt.pitch   = 1.0;
     utt.volume  = 1.0;
-    utt.onerror = (e) => console.warn('[WM-VOICE] SpeechSynthesis error:', e.error);
+    utt.onerror = (e) => console.warn('[WM-VOICE] error:', e.error, 'text:', text);
+    utt.onstart = ()  => console.log('[WM-VOICE] started:', text.substring(0,40));
     window.speechSynthesis.speak(utt);
-  } catch(e) { console.warn('[WM-VOICE] playVoice exception:', e.message); }
+  } catch(e) { console.warn('[WM-VOICE] exception:', e.message); }
 }
 
 // ── SOUND BEEP ─────────────────────────────────────────────
@@ -2154,10 +2150,12 @@ function triggerAlert(stage) {
   };
 
   if (stage === 0) {
-    // Final call — force=true bypasses document.hidden
     playAlarm('called');
     if (document.hidden) _pendingCalledAlert = true;
-    playVoice(messages[0][0], messages[0][1], true);
+    // Reload voices in case they weren't loaded yet (Android lazy load)
+    if (!_voiceList.length) _loadVoices();
+    // Delay voice 2s so alarm beeps play first without overlap
+    setTimeout(() => playVoice(messages[0][0], messages[0][1], true), 2000);
     if (navigator.vibrate) navigator.vibrate([400, 150, 400, 150, 600]);
   } else if (stage === 1) {
     // 1 person left — soft zigzag tone, then voice after 1.2s

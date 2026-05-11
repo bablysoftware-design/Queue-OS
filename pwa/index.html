@@ -1543,7 +1543,7 @@ function renderPaymentRequests(pending) {
           <div style="font-size:10px;color:var(--muted);margin-top:2px">${new Date(r.created_at).toLocaleTimeString('ur-PK',{hour:'2-digit',minute:'2-digit'})}</div>
 
           ${r.screenshot_url && r.screenshot_url !== '[screenshot_uploaded]'
-            ? `<button onclick="viewScreenshot('${r.screenshot_url}')" style="display:block;margin-top:6px;padding:5px 10px;border:1px solid rgba(212,175,55,.3);border-radius:8px;background:transparent;color:var(--gold);font-size:11px;cursor:pointer">📸 Screenshot دیکھیں</button>`
+            ? `<button class="ss-view-btn" data-url="${esc(r.screenshot_url)}" style="display:block;margin-top:6px;padding:5px 10px;border:1px solid rgba(212,175,55,.3);border-radius:8px;background:transparent;color:var(--gold);font-size:11px;cursor:pointer">📸 Screenshot دیکھیں</button>`
             : r.screenshot_url === '[screenshot_uploaded]'
               ? `<span style="display:block;margin-top:6px;font-size:11px;color:var(--muted)">📸 Screenshot موصول</span>`
               : ''}
@@ -1755,6 +1755,12 @@ async function cancelQueueToken(tokenId) {
 }
 
 // ── Screenshot modal ──────────────────────────────────────────
+// Use event delegation — avoids base64 URLs breaking onclick attributes
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.ss-view-btn');
+  if (btn) viewScreenshot(btn.dataset.url);
+});
+
 function viewScreenshot(url) {
   // If it's a marker string (old format), show error message
   if (url === 'base64_uploaded') {
