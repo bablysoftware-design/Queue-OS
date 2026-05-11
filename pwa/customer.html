@@ -2084,8 +2084,13 @@ function playVoice(textEn, textUr, force) {
   try {
     window.speechSynthesis.cancel();
     const utt   = new SpeechSynthesisUtterance(text);
-    if (voice) utt.voice = voice;
-    utt.lang    = hasUrduVoice ? 'ur-PK' : (voice?.lang || 'en-US');
+    if (voice) {
+      utt.voice = voice;
+      utt.lang  = voice.lang; // only set lang when we have a matching voice
+    } else if (hasUrduVoice) {
+      utt.lang  = 'ur-PK';   // explicit urdu with no fallback
+    }
+    // If no voice found at all — no lang/voice set, browser picks its default
     utt.rate    = hasUrduVoice ? 0.82 : 0.88;
     utt.pitch   = 1.0;
     utt.volume  = 1.0;
