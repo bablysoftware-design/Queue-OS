@@ -37,43 +37,10 @@ export async function submitPaymentRequest(request, env) {
     const shop = shopRows[0];
     if (shop.token_mode !== 'paid') return badRequest('یہ دکان فری ٹوکن موڈ پر ہے');
 
-    // Upload screenshot to Supabase Storage so business can actually view it
-    let screenshotStored = null;
-    if (screenshot_url) {
-      if (screenshot_url.startsWith('data:')) {
-        try {
-          const [meta, b64] = screenshot_url.split(',');
-          const mime  = (meta.match(/:(.*?);/) || [])[1] || 'image/jpeg';
-          const ext   = mime.includes('png') ? 'png' : 'jpg';
-          const bin   = atob(b64);
-          const bytes = new Uint8Array(bin.length);
-          for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-          if (bytes.length > 2 * 1024 * 1024) throw new Error('Image too large');
-
-          const fname  = `ss_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-          const upRes  = await fetch(
-            `${env.SUPABASE_URL}/storage/v1/object/voice-notes/${fname}`,
-            { method:'POST', headers:{ apikey:env.SUPABASE_KEY, Authorization:`Bearer ${env.SUPABASE_KEY}`, 'Content-Type':mime }, body:bytes }
-          );
-          if (upRes.ok) {
-            const signRes = await fetch(
-              `${env.SUPABASE_URL}/storage/v1/object/sign/voice-notes/${fname}`,
-              { method:'POST', headers:{ apikey:env.SUPABASE_KEY, Authorization:`Bearer ${env.SUPABASE_KEY}`, 'Content-Type':'application/json' }, body:JSON.stringify({ expiresIn:604800 }) }
-            );
-            if (signRes.ok) {
-              const sd = await signRes.json();
-              const s  = sd.signedUrl || sd.signedURL || '';
-              screenshotStored = s.startsWith('http') ? s : `${env.SUPABASE_URL}/storage/v1${s}`;
-            } else { screenshotStored = 'base64_uploaded'; }
-          } else { screenshotStored = 'base64_uploaded'; }
-        } catch(e) {
-          console.warn('[WM-SS] upload failed:', e.message);
-          screenshotStored = 'base64_uploaded';
-        }
-      } else {
-        screenshotStored = screenshot_url; // already a URL
-      }
-    }
+    // Store screenshot — base64 stored directly, max 1MB
+    const screenshotStored = screenshot_url
+      ? (screenshot_url.length > 1_000_000 ? null : screenshot_url)
+      : null;
 
     const pr = await db.insert('payment_requests', {
       shop_id,

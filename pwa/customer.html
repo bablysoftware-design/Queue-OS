@@ -1471,11 +1471,22 @@ function previewScreenshot(input) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
-    const data = e.target.result; // base64 data URL
-    document.getElementById('c-screenshot-data').value = data;
-    document.getElementById('screenshot-img').src = data;
-    document.getElementById('screenshot-preview').style.display = 'block';
-    document.getElementById('screenshot-drop').style.display = 'none';
+    // Compress via canvas before storing — keeps payload under 200KB
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 800;
+      const ratio = Math.min(MAX / img.width, MAX / img.height, 1);
+      const canvas = document.createElement('canvas');
+      canvas.width  = Math.round(img.width  * ratio);
+      canvas.height = Math.round(img.height * ratio);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      const compressed = canvas.toDataURL('image/jpeg', 0.7);
+      document.getElementById('c-screenshot-data').value = compressed;
+      document.getElementById('screenshot-img').src = compressed;
+      document.getElementById('screenshot-preview').style.display = 'block';
+      document.getElementById('screenshot-drop').style.display = 'none';
+    };
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
