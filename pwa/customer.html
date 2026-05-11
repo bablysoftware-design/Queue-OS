@@ -2084,8 +2084,18 @@ function playVoice(textEn, textUr, force) {
   if (!('speechSynthesis' in window)) return;
   if (!force && document.hidden) return;
 
-  // Reload voices if not yet populated (Android Chrome lazy-loads voices)
-  if (!_voiceList.length) _loadVoices();
+  // Android lazy-loads voices — if empty, schedule retry after voices load
+  if (!_voiceList.length) {
+    _loadVoices();
+    if (!_voiceList.length) {
+      window.speechSynthesis.onvoiceschanged = () => {
+        _loadVoices();
+        playVoice(textEn, textUr, force);
+        window.speechSynthesis.onvoiceschanged = () => { _loadVoices(); _checkUrduVoicePrompt(); };
+      };
+      return;
+    }
+  }
 
   const useUrdu    = (localStorage.getItem('sq_lang') || 'ur') === 'ur';
   const hasUrduVoice = useUrdu && !!_urduVoice;
