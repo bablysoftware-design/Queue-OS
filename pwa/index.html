@@ -1542,11 +1542,13 @@ function renderPaymentRequests(pending) {
           <div style="font-size:11px;color:var(--muted);margin-top:2px">${esc(r.customer_phone)} · <span style="color:var(--gold);font-weight:700">Rs ${r.amount}</span></div>
           <div style="font-size:10px;color:var(--muted);margin-top:2px">${new Date(r.created_at).toLocaleTimeString('ur-PK',{hour:'2-digit',minute:'2-digit'})}</div>
 
-          ${r.screenshot_url && r.screenshot_url !== 'base64_uploaded'
-            ? `<button class="ss-view-btn" data-url="${esc(r.screenshot_url)}" style="display:block;margin-top:6px;padding:5px 10px;border:1px solid rgba(212,175,55,.3);border-radius:8px;background:transparent;color:var(--gold);font-size:11px;cursor:pointer">📸 Screenshot دیکھیں</button>`
-            : r.screenshot_url === 'base64_uploaded'
-              ? `<span style="display:block;margin-top:6px;font-size:11px;color:var(--muted)">📸 Screenshot موصول (پرانا فارمیٹ)</span>`
-              : ''}
+          ${(() => {
+            const ss = r.screenshot_url;
+            const isMarker = ss === 'base64_uploaded' || ss === '[screenshot_uploaded]';
+            if (ss && !isMarker) return `<button class="ss-view-btn" data-url="${esc(ss)}" style="display:block;margin-top:6px;padding:5px 10px;border:1px solid rgba(212,175,55,.3);border-radius:8px;background:transparent;color:var(--gold);font-size:11px;cursor:pointer">📸 Screenshot دیکھیں</button>`;
+            if (isMarker) return `<span style="display:block;margin-top:6px;font-size:11px;color:var(--muted)">📸 Screenshot موصول (نئے ریکارڈ میں دیکھیں)</span>`;
+            return '';
+          })()}
 
           ${r.customer_note
             ? `<div style="margin-top:8px;padding:7px 10px;background:rgba(255,255,255,.04);border-radius:8px;border:1px solid rgba(255,255,255,.07)">
