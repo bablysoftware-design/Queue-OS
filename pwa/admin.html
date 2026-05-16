@@ -131,7 +131,7 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
 .modal-select option{background:var(--bg2);}
 
 /* Toast */
-#toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--surface);border:1px solid var(--border2);border-radius:100px;padding:8px 18px;font-size:13px;font-weight:500;z-index:999;transition:transform .3s cubic-bezier(0.16,1,0.3,1);white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.4);}
+#toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--surface);border:1px solid var(--border2);border-radius:100px;padding:8px 18px;font-size:13px;font-weight:500;z-index:999;transition:transform .3s cubic-bezier(0.16,1,0.3,1);white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.4);cursor:pointer;}
 #toast.show{transform:translateX(-50%) translateY(0);}
 #toast.success{color:var(--green);border-color:rgba(52,211,153,0.3);}
 #toast.error{color:var(--red);border-color:rgba(248,113,113,0.3);}
@@ -229,7 +229,7 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
     </div>
 
     <!-- Pending Registrations -->
-    <div class="section">
+    <div class="section" id="pending-section">
       <div class="section-title" style="display:flex;align-items:center;gap:8px">
         Pending Registrations
         <span id="pending-badge" style="font-size:11px;padding:2px 8px;border-radius:100px;background:rgba(251,191,36,.2);color:#fbbf24;font-weight:700"></span>
@@ -258,7 +258,7 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
   </div>
 </div>
 
-<div id="toast"></div>
+<div id="toast" onclick="scrollToPending()"></div>
 
 <script>
 const WORKER = 'https://saf-queue-worker.byker-software.workers.dev';
@@ -576,6 +576,11 @@ async function api(method, path, body) {
 function esc(s) { return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 let toastT;
+function scrollToPending() {
+  const sec = document.getElementById('pending-section');
+  if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 function showToast(msg, type = '') {
   const el = document.getElementById('toast');
   el.textContent = msg; el.className = `show ${type}`;
@@ -676,7 +681,8 @@ window.rejectReg = rejectReg;
 window.resetPin = resetPin;
 window.shareWhatsApp = shareWhatsApp;
 window.toggleActive    = toggleActive;
-window.startRegPolling = startRegPolling;
+window.startRegPolling  = startRegPolling;
+window.scrollToPending  = scrollToPending;
 window.stopRegPolling  = stopRegPolling;
 </script>
 </body>
