@@ -205,21 +205,6 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
 
     <!-- TAB: Shops -->
     <div class="tab-pane active" id="tab-shops">
-
-    <!-- Add Shop -->
-    <div class="section">
-      <div class="section-title">Add New Shop</div>
-      <div class="add-form">
-        <input id="f-name"  placeholder="Shop name *"/>
-        <input id="f-phone" placeholder="Phone (923001234567) *" type="tel"/>
-        <input id="f-pin"   placeholder="4-digit PIN *" type="number"/>
-        <input id="f-cat"   placeholder="Category (barber, clinic...)"/>
-        <input id="f-area"  placeholder="Area / City"/>
-        <button class="btn-primary" style="padding:9px" onclick="addShop()">Add Shop</button>
-      </div>
-    </div>
-
-    <!-- Shops Table -->
     <div class="section">
       <div class="section-title">All Shops</div>
       <div class="table-wrap">
@@ -229,8 +214,21 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
         <div id="shop-list"><div class="loading-row">Loading shops...</div></div>
       </div>
     </div>
+    </div><!-- end tab-shops -->
 
-    <!-- PATCH 5: Quick add city/area -->
+    <!-- TAB: Add -->
+    <div class="tab-pane" id="tab-add">
+    <div class="section">
+      <div class="section-title">➕ Add New Shop</div>
+      <div class="add-form">
+        <input id="f-name"  placeholder="Shop name *"/>
+        <input id="f-phone" placeholder="Phone (923001234567) *" type="tel"/>
+        <input id="f-pin"   placeholder="4-digit PIN *" type="number"/>
+        <input id="f-cat"   placeholder="Category (barber, clinic...)"/>
+        <input id="f-area"  placeholder="Area / City"/>
+        <button class="btn-primary" style="padding:9px" onclick="addShop()">Add Shop</button>
+      </div>
+    </div>
     <div class="section">
       <div class="section-title">📍 Add City / Area</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
@@ -246,8 +244,7 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
       <button onclick="addLocation()" style="padding:8px 20px;background:var(--gold);color:#0d1422;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">+ Add Location</button>
       <span id="location-msg" style="font-size:12px;margin-left:10px"></span>
     </div>
-
-    </div><!-- end tab-shops -->
+    </div><!-- end tab-add -->
 
     <!-- TAB: Pending Registrations -->
     <div class="tab-pane" id="tab-pending">
@@ -257,9 +254,6 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
     </div>
     </div><!-- end tab-pending -->
 
-    <!-- TAB: Add -->
-    <div class="tab-pane" id="tab-add">
-    </div><!-- end tab-add (empty for now) -->
 
   </div>
 </div>
