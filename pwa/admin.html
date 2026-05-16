@@ -79,6 +79,12 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
 .add-form input::placeholder{color:var(--text3);}
 
 /* Table */
+.tab-bar{display:flex;gap:4px;padding:4px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;margin-bottom:20px;}
+.tab-btn{flex:1;padding:9px 12px;border:none;border-radius:9px;background:transparent;color:var(--text2);font-family:'Sora',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.tab-btn.active{background:rgba(212,175,55,.12);color:var(--gold);border:1px solid rgba(212,175,55,.25);}
+.tab-btn:hover:not(.active){background:rgba(255,255,255,.04);color:var(--text);}
+.tab-pane{display:none;}.tab-pane.active{display:block;}
+.pending-pill{background:rgba(251,191,36,.25);color:#fbbf24;border-radius:100px;padding:1px 7px;font-size:10px;font-weight:700;min-width:18px;text-align:center;}
 .table-wrap{background:var(--glass);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;backdrop-filter:blur(16px);overflow-x:auto;-webkit-overflow-scrolling:touch;}
 .table-head{display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr 1fr 1.8fr;padding:10px 16px;border-bottom:1px solid var(--border);font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;}
 .table-row{display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr 1fr 1.8fr;padding:14px 16px;border-bottom:1px solid var(--border);align-items:center;transition:background .15s;animation:rowIn .3s ease both;}
@@ -187,6 +193,19 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
       <div class="stat-box"><div class="val" id="s-free" style="color:var(--text2)">—</div><div class="lbl">Free Plan</div></div>
     </div>
 
+    <!-- Tab bar -->
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tab-shops-btn" onclick="switchAdminTab('shops')">🏪 Shops</button>
+      <button class="tab-btn" id="tab-pending-btn" onclick="switchAdminTab('pending')">
+        📋 Pending
+        <span class="pending-pill" id="pending-badge" style="display:none"></span>
+      </button>
+      <button class="tab-btn" id="tab-add-btn" onclick="switchAdminTab('add')">➕ Add</button>
+    </div>
+
+    <!-- TAB: Shops -->
+    <div class="tab-pane active" id="tab-shops">
+
     <!-- Add Shop -->
     <div class="section">
       <div class="section-title">Add New Shop</div>
@@ -228,14 +247,19 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
       <span id="location-msg" style="font-size:12px;margin-left:10px"></span>
     </div>
 
-    <!-- Pending Registrations -->
+    </div><!-- end tab-shops -->
+
+    <!-- TAB: Pending Registrations -->
+    <div class="tab-pane" id="tab-pending">
     <div class="section" id="pending-section">
-      <div class="section-title" style="display:flex;align-items:center;gap:8px">
-        Pending Registrations
-        <span id="pending-badge" style="font-size:11px;padding:2px 8px;border-radius:100px;background:rgba(251,191,36,.2);color:#fbbf24;font-weight:700"></span>
-      </div>
+      <div class="section-title">Pending Registrations</div>
       <div id="reg-list"><div class="loading-row">Loading...</div></div>
     </div>
+    </div><!-- end tab-pending -->
+
+    <!-- TAB: Add -->
+    <div class="tab-pane" id="tab-add">
+    </div><!-- end tab-add (empty for now) -->
 
   </div>
 </div>
@@ -501,7 +525,10 @@ async function loadRegistrations() {
 
     // Update badge + sync poll counter so first load doesn't trigger flash
     _lastPendingCount = pending.length;
-    if (badge) badge.textContent = pending.length ? `(${pending.length})` : '';
+    if (badge) {
+      badge.textContent = pending.length || '';
+      badge.style.display = pending.length ? 'inline-block' : 'none';
+    }
 
     if (!pending.length) {
       el.innerHTML = '<div class="empty-row" style="padding:20px;text-align:center;color:var(--text2)">✅ No pending registrations</div>';
@@ -576,6 +603,15 @@ async function api(method, path, body) {
 function esc(s) { return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 let toastT;
+function switchAdminTab(tab) {
+  ['shops','pending','add'].forEach(t => {
+    document.getElementById(`tab-${t}`).classList.toggle('active', t === tab);
+    document.getElementById(`tab-${t}-btn`).classList.toggle('active', t === tab);
+  });
+  if (tab === 'pending') loadRegistrations();
+}
+window.switchAdminTab = switchAdminTab;
+
 function scrollToPending() {
   const sec = document.getElementById('pending-section');
   if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -602,8 +638,7 @@ function startRegPolling() {
       const pending  = data.filter(r => r.status === 'pending');
       const count    = pending.length;
       const badge    = document.getElementById('pending-badge');
-
-      if (badge) badge.textContent = count ? `(${count})` : '';
+      if (badge) { badge.textContent = count || ''; badge.style.display = count ? 'inline-block' : 'none'; }
 
       // New registrations arrived since last check
       if (count > _lastPendingCount) {
@@ -623,8 +658,8 @@ function startRegPolling() {
           document.title = `(${count}) Pending — Admin`;
         }, 15000);
 
-        // Reload the list
-        loadRegistrations();
+        // Switch to pending tab + reload
+        switchAdminTab('pending');
       }
       _lastPendingCount = count;
     } catch(e) { /* silent — don't spam on network error */ }
