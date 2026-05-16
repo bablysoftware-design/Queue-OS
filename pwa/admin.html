@@ -499,7 +499,8 @@ async function loadRegistrations() {
     const { data } = await api('GET', '/admin/registrations');
     const pending = data.filter(r => r.status === 'pending');
 
-    // Update badge
+    // Update badge + sync poll counter so first load doesn't trigger flash
+    _lastPendingCount = pending.length;
     if (badge) badge.textContent = pending.length ? `(${pending.length})` : '';
 
     if (!pending.length) {
@@ -583,6 +584,53 @@ function showToast(msg, type = '') {
 
 document.getElementById('secret-input').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
+// ── Auto-poll for new registrations every 60s ─────────────────
+let _lastPendingCount = 0;
+let _regPollTimer     = null;
+let _titleFlash       = null;
+
+function startRegPolling() {
+  if (_regPollTimer) return; // already running
+  _regPollTimer = setInterval(async () => {
+    try {
+      const { data } = await api('GET', '/admin/registrations');
+      const pending  = data.filter(r => r.status === 'pending');
+      const count    = pending.length;
+      const badge    = document.getElementById('pending-badge');
+
+      if (badge) badge.textContent = count ? `(${count})` : '';
+
+      // New registrations arrived since last check
+      if (count > _lastPendingCount) {
+        const diff = count - _lastPendingCount;
+        showToast(`🔔 ${diff} new registration request${diff > 1 ? 's' : ''}`, 'success');
+        // Flash tab title
+        clearInterval(_titleFlash);
+        let on = true;
+        const orig = document.title;
+        _titleFlash = setInterval(() => {
+          document.title = on ? `🔔 (${count}) New Request — Admin` : orig;
+          on = !on;
+        }, 900);
+        // Stop flashing after 15s
+        setTimeout(() => {
+          clearInterval(_titleFlash);
+          document.title = `(${count}) Pending — Admin`;
+        }, 15000);
+
+        // Reload the list
+        loadRegistrations();
+      }
+      _lastPendingCount = count;
+    } catch(e) { /* silent — don't spam on network error */ }
+  }, 60000); // every 60 seconds
+}
+
+function stopRegPolling() {
+  clearInterval(_regPollTimer);
+  _regPollTimer = null;
+}
+
 // Boot
 (function boot() {
   const saved = localStorage.getItem('admin_secret');
@@ -592,6 +640,7 @@ document.getElementById('secret-input').addEventListener('keydown', e => { if (e
       .then(() => {
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('dash').style.display         = 'block';
+        startRegPolling();
         loadAll();
       })
       .catch(err => {
@@ -626,7 +675,9 @@ window.openPlanModal = openPlanModal;
 window.rejectReg = rejectReg;
 window.resetPin = resetPin;
 window.shareWhatsApp = shareWhatsApp;
-window.toggleActive = toggleActive;
+window.toggleActive    = toggleActive;
+window.startRegPolling = startRegPolling;
+window.stopRegPolling  = stopRegPolling;
 </script>
 </body>
 </html>
