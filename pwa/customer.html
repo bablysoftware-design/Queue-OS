@@ -2116,7 +2116,7 @@ function playVoice(textEn, textUr, force) {
     utt.pitch   = 1.0;
     utt.volume  = 1.0;
     utt.onerror = (e) => console.warn('[WM-VOICE] error:', e.error, 'text:', text);
-    utt.onstart = ()  => console.log('[WM-VOICE] started:', text.substring(0,40));
+    utt.onstart = ()  => { if (DEBUG) console.log('[WM-VOICE] started:', text.substring(0,40)); };
     window.speechSynthesis.speak(utt);
   } catch(e) { console.warn('[WM-VOICE] exception:', e.message); }
 }

@@ -8,7 +8,7 @@
 import { createClient }  from '../utils/db.js';
 import { createToken }   from '../services/tokenService.js';
 import { checkSubscriptionValid } from '../services/subscriptionService.js';
-import { sanitizeParam, sanitizeSearch, sanitizeName } from '../utils/sanitize.js';
+import { sanitizeParam, sanitizeSearch, sanitizeName, isRateLimited } from '../utils/sanitize.js';
 import { ok, badRequest, notFound, serverError }       from '../utils/response.js';
 
 /**
@@ -135,6 +135,13 @@ export async function joinQueue(request, env) {
     // FIX #4: Sanitize inputs
     const customer_name  = sanitizeName(body.customer_name);
     const customer_phone = sanitizeParam(body.customer_phone);
+
+    // Rate limit: max 10 token joins per IP per minute
+    const ip       = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const rateKey  = `join:${ip}:${shop_id}`;
+    if (isRateLimited(rateKey, 10, 60_000)) {
+      return badRequest('بہت زیادہ درخواستیں — ایک منٹ بعد کوشش کریں');
+    }
     // customer_note: optional, max 200 chars, strip tags
     const raw_note          = typeof body.customer_note === 'string' ? body.customer_note : '';
     const customer_note     = raw_note.trim().replace(/<[^>]*>/g, '').slice(0, 200) || null;

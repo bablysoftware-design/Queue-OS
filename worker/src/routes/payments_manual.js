@@ -17,6 +17,12 @@ export async function submitPaymentRequest(request, env) {
     const customer_name  = sanitizeName(body.customer_name || '');
     const customer_phone = sanitizeParam(body.customer_phone || '');
     const screenshot_url = body.screenshot_url || null;
+
+    // Rate limit: max 3 payment requests per IP per 5 minutes
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    if (isRateLimited(`pay:${ip}`, 3, 300_000)) {
+      return badRequest('بہت زیادہ درخواستیں — کچھ دیر بعد کوشش کریں');
+    }
     const customer_note  = typeof body.customer_note === 'string'
       ? body.customer_note.trim().slice(0, 200) || null : null;
     const voice_note_path = typeof body.voice_note_path === 'string' &&

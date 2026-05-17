@@ -140,7 +140,7 @@ export default {
   async fetch(request, env, ctx) {
     const { method }   = request;
     const { pathname } = new URL(request.url);
-    // // BUILD: 2026-05-08 12:52:58 — v2ab5cdc
+    //
     if (pathname === '/ping') return new Response(JSON.stringify({ok:true,build:'20260508125258',route:'index.js'}), {headers:{'Content-Type':'application/json'}});
     if (method === 'OPTIONS') return preflight();
     const handler = matchRoute(method, pathname);
