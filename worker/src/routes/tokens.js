@@ -93,6 +93,23 @@ export async function getStatsHandler(request, env) {
   } catch (err) { return serverError(err.message); }
 }
 
+/** GET /tokens/analytics?shop_id=xxx (auth required) */
+export async function getAnalyticsHandler(request, env) {
+  try {
+    const db   = createClient(env);
+    const auth = await requireShopAuth(request, env);
+    if (auth instanceof Response) return auth;
+
+    const url    = new URL(request.url);
+    const shopId = url.searchParams.get('shop_id');
+    if (!isValidUUID(shopId))    return badRequest('Invalid shop_id');
+    if (auth.shop_id !== shopId) return badRequest('Unauthorized for this shop');
+
+    const data = await getShopAnalytics(db, shopId);
+    return ok(data);
+  } catch (err) { return serverError(err.message); }
+}
+
 /** GET /tokens/position?shop_id=xxx&phone=xxx (public) */
 export async function getPositionHandler(request, env) {
   try {

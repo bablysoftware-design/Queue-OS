@@ -5,7 +5,7 @@
 import { handleVerify, handleMessage }               from './routes/webhook.js';
 import { createTokenHandler, nextTokenHandler,
          getQueueHandler, noShowHandler,
-         getStatsHandler, getPositionHandler,
+         getStatsHandler, getAnalyticsHandler, getPositionHandler,
          cancelTokenHandler }                         from './routes/tokens.js';
 import { createShopHandler, getScanStats, loginShopHandler,
          toggleShopHandler, getShopHandler,
@@ -94,6 +94,7 @@ const ROUTES = [
   { method: 'POST',   path: '/tokens/cancel',                   handler: cancelTokenHandler },
   { method: 'GET',    path: '/tokens/queue',                    handler: getQueueHandler },
   { method: 'GET',    path: '/tokens/stats',                    handler: getStatsHandler },
+  { method: 'GET',    path: '/tokens/analytics',                handler: getAnalyticsHandler },
   { method: 'GET',    path: '/tokens/position',                 handler: getPositionHandler },
 
   // Shops (auth required)

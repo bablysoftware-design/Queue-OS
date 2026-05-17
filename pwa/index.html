@@ -993,13 +993,54 @@ body::after {
 
     <!-- Reports tab -->
     <div class="tab-panel" id="tab-reports">
+
+      <!-- Today's summary -->
+      <div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px" id="lbl-today-stats">Today</div>
       <div class="report-grid">
         <div class="report-card served" ><div class="report-val" id="r-served">—</div><div class="report-lbl" id="lbl-served">Served</div></div>
         <div class="report-card noshow" ><div class="report-val" id="r-noshow">—</div><div class="report-lbl" id="lbl-noshow">No Shows</div></div>
         <div class="report-card waiting"><div class="report-val" id="r-waiting">—</div><div class="report-lbl" id="lbl-waiting">Waiting</div></div>
-        <div class="report-card total"  ><div class="report-val" id="r-total">—</div><div class="report-lbl" id="lbl-total">Total Today</div></div>
+        <div class="report-card total"  ><div class="report-val" id="r-total">—</div><div class="report-lbl" id="lbl-total">Total</div></div>
       </div>
-      <div class="card" style="margin-top:4px">
+
+      <!-- Avg wait time -->
+      <div class="card" style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;padding:14px 16px">
+        <div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:3px" id="lbl-avg-wait">Avg Wait Time Today</div>
+          <div style="font-size:26px;font-weight:700;color:var(--gold)" id="r-avg-wait">—</div>
+        </div>
+        <div style="font-size:32px;opacity:.4">⏱</div>
+      </div>
+
+      <!-- 7-day chart -->
+      <div class="card" style="margin-top:10px;padding:14px 16px">
+        <div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px" id="lbl-week-chart">This Week</div>
+        <div id="week-chart" style="display:flex;align-items:flex-end;gap:6px;height:70px"></div>
+        <div id="week-chart-labels" style="display:flex;gap:6px;margin-top:6px"></div>
+      </div>
+
+      <!-- Week + Month summary -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+        <div class="card" style="padding:14px 16px;text-align:center">
+          <div style="font-size:10px;color:var(--text3);margin-bottom:6px;letter-spacing:.05em;text-transform:uppercase" id="lbl-week-total">This Week</div>
+          <div style="font-size:28px;font-weight:700;color:var(--gold)" id="r-week-total">—</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:3px" id="lbl-week-served-sub">served</div>
+        </div>
+        <div class="card" style="padding:14px 16px;text-align:center">
+          <div style="font-size:10px;color:var(--text3);margin-bottom:6px;letter-spacing:.05em;text-transform:uppercase" id="lbl-month-total">This Month</div>
+          <div style="font-size:28px;font-weight:700;color:var(--cyan)" id="r-month-total">—</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:3px" id="lbl-month-served-sub">served</div>
+        </div>
+      </div>
+
+      <!-- Peak hours -->
+      <div class="card" style="margin-top:10px;padding:14px 16px">
+        <div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px" id="lbl-peak-hours">Peak Hours (Last 7 Days)</div>
+        <div id="peak-hours-list"></div>
+      </div>
+
+      <!-- Subscription -->
+      <div class="card" style="margin-top:10px">
         <div class="sub-banner">
           <div>
             <div class="sub-plan" id="sub-plan-r">—</div>
@@ -1008,7 +1049,8 @@ body::after {
           <div style="font-size:22px">💎</div>
         </div>
       </div>
-      <button class="btn-primary" id="refresh-report-btn" onclick="loadStats()">Refresh Report</button>
+
+      <button class="btn-primary" id="refresh-report-btn" onclick="loadStats()" style="margin-top:10px">↺ Refresh</button>
     </div>
 
     <!-- Settings (shown/hidden) -->
@@ -1452,20 +1494,100 @@ function loadSubscription() {
 }
 
 function loadStats() {
-  ['r-served','r-noshow','r-waiting','r-total'].forEach(id => {
+  // Dim existing values
+  ['r-served','r-noshow','r-waiting','r-total','r-avg-wait','r-week-total','r-month-total'].forEach(id => {
     const el = document.getElementById(id);
-    if (el && el.textContent === '—') el.style.opacity = '0.4';
+    if (el) el.style.opacity = '0.4';
   });
-  api('GET', `/tokens/stats?shop_id=${state.shopId}`)
-    .then(({ data }) => {
-      const set = (id, val) => { const el = document.getElementById(id); if(el){ el.textContent = val ?? 0; el.style.opacity = '1'; }};
-      set('r-served',  data.served);
-      set('r-noshow',  data.no_show);
-      set('r-waiting', data.waiting);
-      set('r-total',   data.total);
-    }).catch(() => {});
+
+  // Fetch both stats (legacy compat) and full analytics
+  Promise.all([
+    api('GET', `/tokens/stats?shop_id=${state.shopId}`).catch(() => null),
+    api('GET', `/tokens/analytics?shop_id=${state.shopId}`).catch(() => null),
+  ]).then(([statsRes, analyticsRes]) => {
+    const set = (id, val, suffix='') => {
+      const el = document.getElementById(id);
+      if (el) { el.textContent = (val ?? '—') + suffix; el.style.opacity = '1'; }
+    };
+
+    // Today basics (from legacy stats — always available)
+    if (statsRes?.data) {
+      const s = statsRes.data;
+      set('r-served',  s.served);
+      set('r-noshow',  s.no_show);
+      set('r-waiting', s.waiting);
+      set('r-total',   s.total);
+    }
+
+    // Rich analytics (from new endpoint — requires SQL migration)
+    if (analyticsRes?.data) {
+      const a = analyticsRes.data;
+
+      // Override today with richer data if available
+      if (a.today) {
+        set('r-served',  a.today.served);
+        set('r-noshow',  a.today.no_show);
+        set('r-waiting', a.today.waiting);
+        set('r-total',   a.today.total);
+        set('r-avg-wait', a.today.avg_wait ? `${a.today.avg_wait} min` : '—');
+      }
+
+      // Week + Month
+      if (a.week)  set('r-week-total',  a.week.served);
+      if (a.month) set('r-month-total', a.month.served);
+
+      // 7-day bar chart
+      if (a.daily?.length) renderWeekChart(a.daily);
+
+      // Peak hours
+      if (a.peak_hours?.length) renderPeakHours(a.peak_hours);
+    }
+  });
 }
 window.loadStats = loadStats;
+
+function renderWeekChart(daily) {
+  const chart  = document.getElementById('week-chart');
+  const labels = document.getElementById('week-chart-labels');
+  if (!chart || !labels) return;
+
+  const max = Math.max(...daily.map(d => d.total), 1);
+
+  chart.innerHTML = daily.map(d => {
+    const pct  = Math.max(4, Math.round((d.total / max) * 100));
+    const isToday = d.date === new Date().toISOString().slice(0,10);
+    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+      <div style="font-size:9px;color:var(--text3)">${d.total||''}</div>
+      <div style="width:100%;height:${pct}%;background:${isToday ? 'var(--gold)' : 'rgba(212,175,55,.25)'};border-radius:4px 4px 0 0;min-height:4px;transition:height .4s"></div>
+    </div>`;
+  }).join('');
+
+  labels.innerHTML = daily.map(d => `<div style="flex:1;text-align:center;font-size:9px;color:var(--text3)">${d.day}</div>`).join('');
+}
+
+function renderPeakHours(peaks) {
+  const el = document.getElementById('peak-hours-list');
+  if (!el) return;
+  const max = Math.max(...peaks.map(p => Number(p.cnt)), 1);
+  const fmt = h => {
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12  = h % 12 || 12;
+    return `${h12}:00 ${ampm}`;
+  };
+  el.innerHTML = peaks.map((p, i) => {
+    const pct = Math.round((Number(p.cnt) / max) * 100);
+    const medals = ['🥇','🥈','🥉'];
+    return `<div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:12px;color:var(--text2)">${medals[i]||''} ${fmt(p.hour)}</span>
+        <span style="font-size:11px;color:var(--text3)">${p.cnt} tokens</span>
+      </div>
+      <div style="height:6px;background:rgba(255,255,255,.06);border-radius:3px">
+        <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:3px;transition:width .5s"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
 
 async function shareShopLink() {
   const shopUrl   = `${location.origin}/customer.html?shop=${state.shopId}`;

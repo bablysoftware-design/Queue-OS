@@ -272,6 +272,10 @@ export async function getShopStats(db, shopId) {
   return db.rpc('get_shop_stats', { p_shop_id: shopId });
 }
 
+export async function getShopAnalytics(db, shopId) {
+  return db.rpc('get_shop_analytics', { p_shop_id: shopId });
+}
+
 /** Get customer position by token_id */
 export async function getCustomerPosition(db, shopId, customerPhone) {
   const waiting = await db.select('tokens',
