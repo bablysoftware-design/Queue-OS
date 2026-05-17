@@ -6,6 +6,7 @@ self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE).then(c => c.addAll([
       '/index.html', '/customer.html', '/admin.html',
+      '/offline.html', '/404.html',
       '/manifest.json', '/icons/icon-192.png'
     ]).catch(() => {}))
   );

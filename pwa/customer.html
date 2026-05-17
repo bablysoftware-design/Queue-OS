@@ -2817,20 +2817,9 @@ function scrollToShopCard(shopId) {
   // If shop param or slug: load featured shop + scroll to card
   if (effectiveShop) {
     await loadFeaturedShop(effectiveShop);
+    // Customer arrived via shared link — open shop modal immediately
     document.querySelector('.search-wrap').style.opacity = '0.7';
-    try {
-      const res    = await fetch(`${WORKER}/public/shop/${effectiveShop}`);
-      const {data} = await res.json();
-      if (data?.is_open) {
-        // Open immediately — customer arrived via shared link, skip search
-        await openShop(effectiveShop);
-      } else {
-        // Shop closed — open modal but show closed state clearly
-        await openShop(effectiveShop);
-      }
-    } catch(e) {
-      scrollToShopCard(effectiveShop);
-    }
+    await openShop(effectiveShop);
 
     loadRelatedShops(effectiveShop);
   }
