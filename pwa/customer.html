@@ -1233,8 +1233,14 @@ function renderShops() {
 
   // Sort: open first, then by queue length ascending
   // Exclude the featured shop from main list (it's already shown at top)
-  const listShops = HIGHLIGHT_SHOP
-    ? filteredShops.filter(s => s.id !== HIGHLIGHT_SHOP)
+  const effectiveHighlight = _resolvedShopId || HIGHLIGHT_SHOP;
+
+  // Separate pinned shop from the rest — pinned goes to top
+  const pinned = effectiveHighlight
+    ? filteredShops.filter(s => s.id === effectiveHighlight)
+    : [];
+  const listShops = effectiveHighlight
+    ? filteredShops.filter(s => s.id !== effectiveHighlight)
     : filteredShops;
 
   const sorted = [...listShops].sort((a,b) => {
@@ -1243,8 +1249,17 @@ function renderShops() {
   });
 
   try {
-    const html = sorted.map((s, i) => buildShopCard(s, i)).join('');
-    document.getElementById('shop-list').innerHTML = html;
+    // Pinned shop (from shared link) always first, with highlight wrapper
+    const pinnedHtml = pinned.map((s, i) =>
+      `<div style="border:2px solid var(--gold);border-radius:18px;box-shadow:0 0 20px rgba(212,175,55,.25);margin-bottom:6px">
+        <div style="background:rgba(212,175,55,.08);border-radius:16px 16px 0 0;padding:6px 14px;font-size:10px;font-weight:700;color:var(--gold);letter-spacing:1px">
+          🔗 آپ نے یہ لنک کھولا — یہاں ٹوکن لیں
+        </div>
+        ${buildShopCard(s, i)}
+      </div>`
+    ).join('');
+    const listHtml  = sorted.map((s, i) => buildShopCard(s, i)).join('');
+    document.getElementById('shop-list').innerHTML = pinnedHtml + listHtml;
   } catch(cardErr) {
     console.error('[WM] buildShopCard crashed:', cardErr);
   }
@@ -1270,7 +1285,7 @@ function buildShopCard(s, i) {
     cardClass   = 'open';
   }
 
-  const highlighted = s.id === HIGHLIGHT_SHOP ? ' highlighted' : '';
+  const highlighted = (s.id === (_resolvedShopId || HIGHLIGHT_SHOP)) ? ' highlighted' : '';
 
   // Suggestions
   let suggestion = '';
