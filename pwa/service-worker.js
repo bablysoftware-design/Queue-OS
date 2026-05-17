@@ -1,5 +1,5 @@
 // service-worker.js v7 - aggressive reset
-const CACHE = 'wm-v16'; // bumped: screenshot event delegation fix
+const CACHE = 'wm-v17'; // sprint2: offline page, 404 // bumped: screenshot event delegation fix
 
 self.addEventListener('install', e => {
   self.skipWaiting();
@@ -41,14 +41,14 @@ self.addEventListener('fetch', e => {
           }
           return res;
         })
-        .catch(() => caches.match(e.request))
+        .catch(() => caches.match(e.request) || caches.match('/offline.html'))
     );
     return;
   }
 
-  // Static assets — cache first
+  // Static assets — cache first, offline fallback
   e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request))
+    caches.match(e.request).then(cached => cached || fetch(e.request).catch(() => caches.match('/offline.html')))
   );
 });
 

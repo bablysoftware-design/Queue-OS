@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Offline — WaitMate</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#080C14;color:#EDE8D0;font-family:'Sora',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}
+    .wrap{max-width:340px}
+    .icon{font-size:64px;margin-bottom:20px;animation:pulse 2s ease-in-out infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+    h1{font-size:22px;font-weight:700;color:#D4AF37;margin-bottom:8px}
+    p{font-size:14px;color:rgba(237,232,208,.5);line-height:1.6;margin-bottom:28px}
+    .btn{display:inline-block;padding:13px 28px;border:1.5px solid rgba(212,175,55,.4);color:#D4AF37;border-radius:12px;font-weight:600;font-size:14px;text-decoration:none;cursor:pointer;background:rgba(212,175,55,.06);transition:all .2s}
+    .btn:hover{background:rgba(212,175,55,.12)}
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body>
+  <div class="wrap">
+    <div class="icon">📡</div>
+    <h1>You're Offline</h1>
+    <p>انٹرنیٹ کنیکشن نہیں ہے۔<br/>Please check your connection and try again.</p>
+    <button class="btn" onclick="window.location.reload()">↺ Try Again</button>
+  </div>
+</body>
+</html>

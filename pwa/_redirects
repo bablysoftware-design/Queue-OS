@@ -8,3 +8,6 @@
 
 # Short shop links
 /s/:slug        /customer.html?slug=:slug   200
+
+# 404 fallback
+/* /404.html 404

@@ -172,6 +172,10 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
 .spinner{width:36px;height:36px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 14px;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .empty-state{text-align:center;padding:50px 20px;}
+.skeleton-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;margin-bottom:10px;animation:shimmerFade 1.4s ease-in-out infinite alternate;}
+@keyframes shimmerFade{from{opacity:.4}to{opacity:.8}}
+.sk-line{height:12px;border-radius:6px;background:rgba(255,255,255,.08);margin-bottom:8px;}
+.sk-line.wide{width:60%}.sk-line.mid{width:40%}.sk-line.narrow{width:25%}
 .empty-icon{font-size:44px;margin-bottom:12px;}
 .empty-txt{font-size:14px;color:var(--muted);}
 
@@ -1197,16 +1201,15 @@ async function loadShops() {
     renderAreaChips(data.data?.areas ?? []);
     applyFilters(); // applies activeCategory, activeArea, activeCity, searchQuery
 
-    if (HIGHLIGHT_SHOP || _resolvedShopId) {
-      const targetId = _resolvedShopId || HIGHLIGHT_SHOP;
-      setTimeout(() => {
-        const card = document.getElementById(`shop-${targetId}`);
-        if (card) card.scrollIntoView({behavior:'smooth', block:'center'});
-      }, 400);
-    }
+    // Note: auto-open is handled in boot — no manual scroll needed here
 
   } catch (e) {
     console.error('[WM] loadShops failed:', e.message);
+    listEl.innerHTML = `<div style="text-align:center;padding:32px 20px">
+      <div style="font-size:36px;margin-bottom:12px">📡</div>
+      <div style="font-size:14px;color:var(--muted);margin-bottom:16px">Could not load shops.<br/>انٹرنیٹ چیک کریں۔</div>
+      <button onclick="loadShops()" style="padding:10px 24px;border:1.5px solid rgba(212,175,55,.4);border-radius:10px;background:rgba(212,175,55,.08);color:var(--gold);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">↺ Try Again</button>
+    </div>`;
     document.getElementById('loading-state').innerHTML =
       `<div style="color:var(--red);padding:40px;text-align:center">
         <div style="font-size:20px;margin-bottom:8px">⚠️</div>
@@ -2835,13 +2838,14 @@ function scrollToShopCard(shopId) {
       const res    = await fetch(`${WORKER}/public/shop/${effectiveShop}`);
       const {data} = await res.json();
       if (data?.is_open) {
-        setTimeout(() => openShop(effectiveShop), 1500);
+        // Open immediately — customer arrived via shared link, skip search
+        await openShop(effectiveShop);
       } else {
-        // Shop is closed — scroll to its card so returning customer sees it
-        setTimeout(() => scrollToShopCard(effectiveShop), 800);
+        // Shop closed — open modal but show closed state clearly
+        await openShop(effectiveShop);
       }
     } catch(e) {
-      setTimeout(() => scrollToShopCard(effectiveShop), 800);
+      scrollToShopCard(effectiveShop);
     }
 
     loadRelatedShops(effectiveShop);

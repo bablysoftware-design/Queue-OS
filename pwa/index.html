@@ -756,6 +756,21 @@ body::after {
   transition: background .15s;
 }
 .ac-item:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+/* Onboarding */
+.onboard-overlay{position:fixed;inset:0;background:rgba(8,12,20,.97);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(10px);}
+.onboard-card{background:rgba(255,255,255,.04);border:1px solid rgba(212,175,55,.2);border-radius:20px;padding:28px 24px;max-width:380px;width:100%;text-align:center;}
+.onboard-icon{font-size:52px;margin-bottom:16px;}
+.onboard-title{font-size:20px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;}
+.onboard-sub{font-size:13px;color:var(--text3);line-height:1.6;margin-bottom:24px;}
+.onboard-steps{text-align:left;margin-bottom:24px;}
+.onboard-step{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);}
+.onboard-step:last-child{border-bottom:none;}
+.step-num{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#080C14;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.step-txt{font-size:12px;color:var(--text2);line-height:1.5;}
+.step-txt strong{color:var(--text);font-size:13px;display:block;margin-bottom:2px;}
+.onboard-btn{width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#080C14;font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;transition:opacity .2s;}
+.onboard-btn:hover{opacity:.9;}
+
 /* Animations */
 @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
 @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
@@ -1264,9 +1279,10 @@ function showDashboard() {
   api('GET', `/shops/${state.shopId}`)
     .then(({ data }) => {
       if (data.avg_service_time_mins) syncSliderToSettings(data.avg_service_time_mins);
-      // Show payments button if shop is paid mode
       const payBtn = document.getElementById('bar-pay-btn');
       if (payBtn && data.token_mode === 'paid') payBtn.style.display = 'flex';
+      // Show onboarding on first login
+      showOnboardingIfNeeded();
     }).catch(() => {});
   clearInterval(state.refreshTimer);
   state.refreshTimer = setInterval(() => {
@@ -2151,6 +2167,25 @@ async function playVoiceNote(path, btn) {
 }
 window.playVoiceNote = playVoiceNote;
 
+// ── Onboarding ────────────────────────────────────────────────
+function showOnboardingIfNeeded() {
+  const key = `wm_onboarded_${state.shopId}`;
+  if (localStorage.getItem(key)) return; // already seen
+  document.getElementById('onboard-overlay').style.display = 'flex';
+}
+
+function dismissOnboarding() {
+  const key = `wm_onboarded_${state.shopId}`;
+  localStorage.setItem(key, '1');
+  const el = document.getElementById('onboard-overlay');
+  el.style.opacity = '0';
+  el.style.transition = 'opacity .3s';
+  setTimeout(() => el.style.display = 'none', 300);
+  // Open settings so they complete step 1 naturally
+  setTimeout(() => toggleSettings(), 400);
+}
+window.dismissOnboarding = dismissOnboarding;
+
 // ── Window exports (onclick handlers) ──
 window.applyWaitOverride = applyWaitOverride;
 window.approvePayment = approvePayment;
@@ -2373,6 +2408,39 @@ document.addEventListener('click', e => {
   }, 5 * 60 * 1000);
 })();
 </script>
+
+<!-- Business Onboarding (shown once on first login) -->
+<div id="onboard-overlay" class="onboard-overlay" style="display:none">
+  <div class="onboard-card">
+    <div class="onboard-icon">🎉</div>
+    <div class="onboard-title">Welcome to WaitMate!</div>
+    <div class="onboard-sub">آپ کی دکان تیار ہے — یہ 3 آسان قدم مکمل کریں</div>
+    <div class="onboard-steps">
+      <div class="onboard-step">
+        <div class="step-num">1</div>
+        <div class="step-txt">
+          <strong>⚙️ Settings</strong>
+          Opening hours aur token time set karein
+        </div>
+      </div>
+      <div class="onboard-step">
+        <div class="step-num">2</div>
+        <div class="step-txt">
+          <strong>🔗 Share Your Link</strong>
+          Customers ko link share karein — woh ghar se token le sakte hain
+        </div>
+      </div>
+      <div class="onboard-step">
+        <div class="step-num">3</div>
+        <div class="step-txt">
+          <strong>✅ Open Your Shop</strong>
+          Dashboard pe "Open" button dabayein — queue shuru ho jayegi
+        </div>
+      </div>
+    </div>
+    <button class="onboard-btn" onclick="dismissOnboarding()">سمجھ گیا — شروع کریں 🚀</button>
+  </div>
+</div>
 
 </body>
 </html>
