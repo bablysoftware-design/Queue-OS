@@ -124,48 +124,89 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
 .timing-info strong{color:var(--text);}
 
 /* ── TOKEN MODAL ── */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(10px);z-index:100;align-items:flex-end;justify-content:center;padding:0;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);backdrop-filter:blur(12px);z-index:100;align-items:flex-end;justify-content:center;padding:0;}
 .modal-overlay.show{display:flex;}
-.modal-sheet{background:var(--surface);border:1px solid rgba(212,175,55,.2);border-radius:24px 24px 0 0;padding:16px 18px 28px;width:100%;max-width:500px;animation:sheetUp .4s cubic-bezier(.16,1,.3,1) both;position:relative;overflow:hidden;max-height:92dvh;overflow-y:auto;}
-.modal-sheet::before{content:'';position:absolute;top:0;left:30px;right:30px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+.modal-sheet{background:linear-gradient(180deg,#0d1424 0%,#080c14 100%);border:1px solid rgba(212,175,55,.18);border-radius:28px 28px 0 0;padding:0 0 32px;width:100%;max-width:500px;animation:sheetUp .38s cubic-bezier(.16,1,.3,1) both;position:relative;overflow:hidden;max-height:93dvh;overflow-y:auto;}
+.modal-sheet::before{content:'';position:absolute;top:0;left:20%;right:20%;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
 @keyframes sheetUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
-.sheet-handle{width:40px;height:4px;background:rgba(255,255,255,.1);border-radius:100px;margin:0 auto 20px;}
-.sheet-shop-name{font-size:18px;font-weight:700;color:var(--gold2);text-align:center;margin-bottom:4px;}
-.sheet-shop-meta{font-size:12px;color:var(--muted);text-align:center;margin-bottom:20px;}
-.sheet-live{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px;}
-.sheet-stat{background:rgba(5,8,16,.5);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;}
-.sheet-stat-val{font-family:'Orbitron',monospace;font-size:18px;font-weight:700;color:var(--gold2);}
-.sheet-stat-lbl{font-size:9px;color:var(--muted);margin-top:3px;}
-.sheet-field{margin-bottom:14px;}
-.sheet-field label{display:block;font-size:11px;color:var(--muted);margin-bottom:7px;}
-.sheet-field input{width:100%;background:rgba(5,8,16,.6);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:inherit;font-size:14px;outline:none;transition:border-color .3s;direction:ltr;text-align:right;}
-.sheet-field input:focus{border-color:var(--gold);box-shadow:0 0 14px rgba(212,175,55,.12);}
-.sheet-field input::placeholder{color:var(--muted);}
-.btn-gold{width:100%;padding:18px;border:none;border-radius:14px;background:linear-gradient(135deg,var(--gold),var(--gold2),var(--gold3));color:#080c14;font-family:'Sora',sans-serif;font-size:17px;font-weight:800;cursor:pointer;transition:all .25s cubic-bezier(.16,1,.3,1);box-shadow:0 8px 32px rgba(232,184,75,.3),0 2px 8px rgba(0,0,0,.3);letter-spacing:-.01em;}
+.sheet-handle{width:36px;height:4px;background:rgba(255,255,255,.12);border-radius:100px;margin:14px auto 0;}
+
+/* Shop header inside modal */
+.sheet-shop-name{font-size:19px;font-weight:700;color:var(--text);text-align:center;margin-bottom:3px;letter-spacing:-.01em;}
+.sheet-shop-meta{font-size:12px;color:var(--muted);text-align:center;margin-bottom:0;}
+
+/* Stats bar — Uber-style 3-metric row */
+.sheet-live{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin:16px 0;background:rgba(255,255,255,.06);border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.06);}
+.sheet-stat{background:#0d1424;padding:14px 8px;text-align:center;position:relative;}
+.sheet-stat+.sheet-stat::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:1px;background:rgba(255,255,255,.07);}
+.sheet-stat-val{font-family:'Orbitron',monospace;font-size:20px;font-weight:800;color:var(--gold2);line-height:1;}
+.sheet-stat-lbl{font-size:9px;color:var(--muted);margin-top:5px;letter-spacing:.04em;text-transform:uppercase;}
+
+/* Form section header */
+.form-sec-head{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;color:rgba(237,232,208,.4);letter-spacing:.08em;text-transform:uppercase;margin:18px 0 12px;padding:0 18px;}
+.form-sec-head::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.06);}
+
+/* Input fields — modern underline style */
+.sheet-field{margin-bottom:0;padding:0 18px;}
+.sheet-field label{display:block;font-size:11px;font-weight:600;color:rgba(237,232,208,.45);margin-bottom:6px;letter-spacing:.03em;}
+.sheet-field input{width:100%;background:rgba(255,255,255,.04);border:none;border-bottom:1.5px solid rgba(255,255,255,.1);border-radius:0;padding:12px 4px;color:var(--text);font-family:inherit;font-size:16px;outline:none;transition:border-color .25s;direction:ltr;text-align:right;}
+.sheet-field input:focus{border-bottom-color:var(--gold);background:rgba(212,175,55,.04);}
+.sheet-field input::placeholder{color:rgba(237,232,208,.25);}
+.sheet-field textarea:focus{border-color:var(--gold)!important;}
+
+/* Join button — full width, pill, Uber-feel */
+.big-join-btn{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:10px;width:calc(100% - 36px);margin:20px 18px 0;padding:18px 24px;border:none;border-radius:16px;background:linear-gradient(135deg,#D4AF37 0%,#F5C842 50%,#FFE066 100%);color:#050810;font-family:'Sora',sans-serif;font-size:17px;font-weight:800;letter-spacing:-.01em;cursor:pointer;transition:all .22s cubic-bezier(.16,1,.3,1);box-shadow:0 8px 28px rgba(212,175,55,.38),0 2px 8px rgba(0,0,0,.25);position:relative;overflow:hidden;}
+.big-join-btn::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.18) 0%,transparent 60%);border-radius:inherit;pointer-events:none;}
+.big-join-btn:hover{transform:translateY(-2px);box-shadow:0 14px 40px rgba(212,175,55,.52);}
+.big-join-btn:active{transform:scale(.98);}
+.big-join-btn:disabled{opacity:.4;pointer-events:none;background:rgba(212,175,55,.3);box-shadow:none;}
+.big-join-btn-icon{font-size:22px;display:block;}
+.join-form-center{text-align:center;}
+
+/* Sheet error + cancel */
+.sheet-err{color:var(--red);font-size:12px;text-align:center;margin-top:10px;min-height:18px;padding:0 18px;}
+.btn-cancel{width:calc(100% - 36px);margin:10px 18px 0;padding:13px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:transparent;color:rgba(237,232,208,.4);font-family:inherit;font-size:13px;cursor:pointer;transition:all .2s;display:block;}
+.btn-cancel:hover{border-color:var(--red);color:var(--red);}
+.btn-gold{width:100%;padding:16px;border:none;border-radius:14px;background:linear-gradient(135deg,var(--gold),var(--gold2),var(--gold3));color:#080c14;font-family:'Sora',sans-serif;font-size:15px;font-weight:800;cursor:pointer;transition:all .25s;box-shadow:0 6px 24px rgba(212,175,55,.28);}
 .btn-gold:hover{transform:translateY(-2px);}
 .btn-gold:disabled{opacity:.5;pointer-events:none;}
-.sheet-err{color:var(--red);font-size:12px;text-align:center;margin-top:10px;min-height:18px;}
-.btn-cancel{width:100%;padding:12px;border:1px solid var(--border);border-radius:12px;background:transparent;color:var(--muted);font-family:inherit;font-size:13px;cursor:pointer;margin-top:8px;transition:all .2s;}
-.btn-cancel:hover{border-color:var(--red);color:var(--red);}
 
-/* ── TOKEN RESULT SHEET ── */
+/* ── TOKEN RESULT — Boarding pass ── */
 .result-wrap{display:none;text-align:center;}
-.big-num{font-family:'JetBrains Mono',monospace;font-size:100px;font-weight:700;letter-spacing:-0.04em;background:linear-gradient(135deg,var(--gold),var(--gold3),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;filter:drop-shadow(0 8px 24px rgba(212,175,55,.4));animation:numPulse 2s ease-in-out infinite;}
-@keyframes numPulse{0%,100%{filter:drop-shadow(0 8px 24px rgba(212,175,55,.4));}50%{filter:drop-shadow(0 8px 36px rgba(212,175,55,.7));}}
-.result-label{font-size:11px;color:var(--gold);letter-spacing:3px;font-family:'JetBrains Mono',monospace;font-weight:600;margin-bottom:10px;}
-.result-greeting{font-size:13px;color:var(--text);margin:4px 0 8px;}
-.result-stats-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
-.rs{background:rgba(5,8,16,.5);border:1px solid var(--border);border-radius:12px;padding:14px;}
-.rs-val{font-family:'Orbitron',monospace;font-size:22px;font-weight:700;color:var(--gold2);}
-.rs-lbl{font-size:10px;color:var(--muted);margin-top:4px;}
-.tracker-box{background:rgba(5,8,16,.5);border:1px solid var(--border);border-radius:14px;padding:10px 14px;margin-bottom:8px;}
+.ticket-card{background:linear-gradient(160deg,rgba(18,24,40,1) 0%,rgba(8,12,20,1) 100%);border:1px solid rgba(212,175,55,.22);border-radius:24px;margin:16px 16px 0;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.04);}
+.ticket-top{padding:22px 20px 18px;text-align:center;background:linear-gradient(180deg,rgba(212,175,55,.07) 0%,transparent 100%);}
+.ticket-tear{position:relative;margin:0 -1px;height:24px;display:flex;align-items:center;}
+.ticket-tear::before,.ticket-tear::after{content:'';width:24px;height:24px;background:#050810;border-radius:50%;position:absolute;border:1px solid rgba(212,175,55,.22);}
+.ticket-tear::before{left:-13px;}
+.ticket-tear::after{right:-13px;}
+.ticket-tear-line{flex:1;border-top:2px dashed rgba(212,175,55,.2);margin:0 16px;}
+.ticket-bottom{padding:16px 20px 20px;text-align:center;}
+
+/* Token number */
+.result-token-num{font-family:'Orbitron',monospace;font-size:88px;font-weight:900;background:linear-gradient(135deg,var(--gold) 0%,var(--gold3) 50%,var(--cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;filter:drop-shadow(0 4px 24px rgba(212,175,55,.5));animation:numPulse 2.5s ease-in-out infinite;}
+@keyframes numPulse{0%,100%{filter:drop-shadow(0 4px 20px rgba(212,175,55,.4));}50%{filter:drop-shadow(0 6px 36px rgba(212,175,55,.75));}}
+.result-label{font-size:9px;color:var(--gold);letter-spacing:4px;font-family:'Orbitron',monospace;font-weight:700;margin-bottom:8px;opacity:.7;}
+.result-greeting{font-size:14px;color:var(--text);margin:6px 0 4px;font-weight:600;}
+
+/* Position + wait — inside ticket */
+.ticket-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0 0;}
+.ts{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 10px;text-align:center;}
+.ts-val{font-family:'Orbitron',monospace;font-size:24px;font-weight:800;color:var(--gold2);line-height:1;}
+.ts-lbl{font-size:10px;color:var(--muted);margin-top:5px;letter-spacing:.03em;}
+
+/* Tracker */
+.tracker-box{background:rgba(5,8,16,.5);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:8px;}
 .tracker-hd{font-family:'Orbitron',monospace;font-size:9px;color:var(--gold);letter-spacing:2px;margin-bottom:10px;direction:ltr;}
-.tracker-badge{padding:8px 20px;border-radius:100px;font-size:13px;font-weight:700;border:1px solid;display:inline-block;transition:all .3s;}
+.tracker-badge{padding:9px 22px;border-radius:100px;font-size:13px;font-weight:700;border:1px solid;display:inline-block;transition:all .3s;}
 .tracker-badge.waiting{background:rgba(212,175,55,.08);border-color:var(--gold);color:var(--gold);}
 .tracker-badge.called{background:rgba(0,227,150,.12);border-color:var(--green);color:var(--green);animation:calledPulse 1s ease-in-out infinite;}
 .tracker-badge.done{background:rgba(100,116,139,.08);border-color:var(--muted);color:var(--muted);}
 @keyframes calledPulse{0%,100%{box-shadow:0 0 0 0 rgba(0,227,150,.3);}50%{box-shadow:0 0 0 10px rgba(0,227,150,0);}}
 .tracker-sub{font-size:11px;color:var(--muted);margin-top:8px;}
+.result-stats-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+.rs{background:rgba(5,8,16,.5);border:1px solid var(--border);border-radius:12px;padding:14px;}
+.rs-val{font-family:'Orbitron',monospace;font-size:22px;font-weight:700;color:var(--gold2);}
+.rs-lbl{font-size:10px;color:var(--muted);margin-top:4px;}
 
 /* Loading */
 .loading{text-align:center;padding:60px 20px;color:var(--muted);}
@@ -371,71 +412,6 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
   font-family: 'Orbitron', monospace;
 }
 
-/* ── BIG TOKEN CTA ── */
-.big-join-btn {
-  display: block;
-  width: 100%;
-  max-width: 320px;
-  margin: 0 auto;
-  padding: 18px 32px;
-  border: none;
-  border-radius: 100px;
-  background: linear-gradient(135deg, var(--gold), var(--gold2), var(--gold3));
-  color: #050810;
-  font-family: 'Orbitron', monospace;
-  font-size: 16px;
-  font-weight: 900;
-  letter-spacing: 1px;
-  cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
-  box-shadow: 0 8px 32px rgba(212,175,55,0.4), 0 2px 8px rgba(0,0,0,0.3);
-  position: relative;
-  overflow: hidden;
-}
-.big-join-btn::before {
-  content: '';
-  position: absolute;
-  top: -50%; left: -50%;
-  width: 200%; height: 200%;
-  background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.25) 50%, transparent 70%);
-  transform: rotate(45deg) translateX(-100%);
-  transition: transform 0.6s;
-}
-.big-join-btn:hover::before { transform: rotate(45deg) translateX(100%); }
-.big-join-btn:hover {
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 16px 48px rgba(212,175,55,0.55), 0 4px 12px rgba(0,0,0,0.3);
-}
-.big-join-btn:active { transform: scale(0.98); }
-.big-join-btn:disabled {
-  opacity: 0.4;
-  pointer-events: none;
-  background: rgba(212,175,55,0.3);
-  box-shadow: none;
-}
-.big-join-btn-icon { font-size: 20px; margin-bottom: 4px; display: block; }
-
-/* Center the join form */
-.join-form-center { text-align: center; }
-.join-form-center .sheet-field { text-align: right; }
-
-/* Result big number */
-.result-token-display {
-  text-align: center;
-  padding: 8px 0 6px;
-}
-.result-token-num {
-  font-family: 'Orbitron', monospace;
-  font-size: 72px;
-  font-weight: 900;
-  background: linear-gradient(135deg, var(--gold), var(--gold3), var(--cyan));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  line-height: 1;
-  filter: drop-shadow(0 4px 20px rgba(212,175,55,0.5));
-  animation: numPulse 2s ease-in-out infinite;
-}
 .wa-msg-btn{display:block;margin:12px 0;padding:10px;background:#25D366;color:white;border-radius:8px;text-align:center;text-decoration:none;font-weight:600;}
 
 /* ── MOBILE FORM VIEWPORT FIXES ── */
@@ -595,45 +571,52 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
     <div class="sheet-handle"></div>
 
     <!-- Join form -->
-    <div id="join-form-wrap" class="token-form-wrapper">
-      <div class="sheet-shop-name" id="m-shop-name">—</div>
-      <div class="sheet-shop-meta" id="m-shop-meta">—</div>
-      <div id="m-shop-address" style="font-size:11px;color:var(--muted);text-align:center;margin-top:2px;display:none">📍 <span id="m-addr-txt"></span></div>
-      <div id="m-shop-hours" style="font-size:11px;color:var(--muted);text-align:center;margin-top:2px;margin-bottom:6px;display:none;font-family:'Orbitron',monospace;font-size:10px">⏰ <span id="m-hours-txt"></span></div>
-
-      <!-- Live stats inside modal -->
-      <div class="sheet-live">
-        <div class="sheet-stat"><div class="sheet-stat-val" id="m-current">—</div><div class="sheet-stat-lbl">ابھی نمبر</div></div>
-        <div class="sheet-stat"><div class="sheet-stat-val" id="m-queue">—</div><div class="sheet-stat-lbl">قطار</div></div>
-        <div class="sheet-stat"><div class="sheet-stat-val" id="m-wait">—</div><div class="sheet-stat-lbl">منٹ</div></div>
+    <div id="join-form-wrap" class="token-form-wrapper" style="padding:0">
+      <!-- Shop header -->
+      <div style="padding:20px 20px 0;text-align:center">
+        <div class="sheet-shop-name" id="m-shop-name">—</div>
+        <div class="sheet-shop-meta" id="m-shop-meta">—</div>
+        <div id="m-shop-address" style="font-size:11px;color:var(--muted);text-align:center;margin-top:2px;display:none">📍 <span id="m-addr-txt"></span></div>
+        <div id="m-shop-hours" style="font-size:11px;color:var(--muted);text-align:center;margin-top:2px;margin-bottom:0;display:none;font-family:'Orbitron',monospace;font-size:10px">⏰ <span id="m-hours-txt"></span></div>
       </div>
 
-      <div class="sheet-field">
-        <label>آپ کا نام *</label>
-        <input id="c-name" type="text" placeholder="نام درج کریں"/>
+      <!-- Live stats -->
+      <div style="padding:0 16px">
+        <div class="sheet-live">
+          <div class="sheet-stat"><div class="sheet-stat-val" id="m-current">—</div><div class="sheet-stat-lbl">Serving</div></div>
+          <div class="sheet-stat"><div class="sheet-stat-val" id="m-queue">—</div><div class="sheet-stat-lbl">In Queue</div></div>
+          <div class="sheet-stat"><div class="sheet-stat-val" id="m-wait">—</div><div class="sheet-stat-lbl">Est. Wait</div></div>
+        </div>
       </div>
-      <div class="sheet-field">
-        <label>فون نمبر (اختیاری)</label>
+
+      <!-- Your details section -->
+      <div class="form-sec-head">Your Details</div>
+      <div class="sheet-field" style="margin-bottom:18px">
+        <label>Full Name *</label>
+        <input id="c-name" type="text" placeholder="Enter your name"/>
+      </div>
+      <div class="sheet-field" style="margin-bottom:6px">
+        <label>Phone Number (optional)</label>
         <input id="c-phone" type="tel" placeholder="03001234567"/>
       </div>
 
-      <!-- Customer note — optional, max 200 chars -->
-      <div class="sheet-field">
-        <label style="display:flex;align-items:center;gap:5px">
-          <span>📝</span>
-          <span id="lbl-note">Note for business (optional)</span>
-        </label>
-        <textarea id="c-note" maxlength="200" rows="2" placeholder="Anything you'd like the business to know?"
-          style="width:100%;background:rgba(5,8,16,.6);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;resize:none;transition:border-color .2s;line-height:1.4"
+      <!-- Message section -->
+      <div class="form-sec-head">Message</div>
+      <div class="sheet-field" style="margin-bottom:4px;padding:0 18px">
+        <label>Note for business (optional)</label>
+        <textarea id="c-note" maxlength="200" rows="2" placeholder="Anything you'd like them to know?"
+          style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;color:var(--text);font-family:inherit;font-size:14px;outline:none;resize:none;transition:border-color .2s;line-height:1.5"
           oninput="const r=this;r.nextElementSibling.textContent=r.value.length+'/200'"
-          onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'"></textarea>
-        <div style="font-size:10px;color:var(--text3);text-align:right;margin-top:2px">0/200</div>
+          onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='rgba(255,255,255,.08)'"></textarea>
+        <div style="font-size:10px;color:var(--muted);text-align:right;margin-top:3px">0/200</div>
       </div>
 
+      <!-- Voice section -->
+      <div class="form-sec-head">Voice Note</div>
       <!-- Voice note — WhatsApp style, optional, max 15s -->
-      <div class="sheet-field" id="voice-note-field">
-        <label style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-          <span style="font-size:12px;color:var(--muted)">🎤 Voice Note <span style="font-size:10px;opacity:.7">(optional · max 15s)</span></span>
+      <div class="sheet-field" id="voice-note-field" style="padding:0 18px;margin-bottom:4px">
+        <label style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:11px;color:rgba(237,232,208,.4);font-weight:600;letter-spacing:.03em">OPTIONAL · MAX 15s</span>
           <span id="voice-timer" style="font-size:11px;color:var(--red);display:none;font-weight:700;font-family:'Orbitron',monospace;letter-spacing:.05em">0s</span>
         </label>
         <div style="display:flex;gap:8px;align-items:center">
@@ -655,16 +638,14 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
       <input type="hidden" id="c-voice-duration"/>
 
       <!-- Paid token section — shown dynamically -->
-      <div id="paid-token-section" style="display:none;margin-top:10px;background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.25);border-radius:14px;padding:14px">
+      <div id="paid-token-section" style="display:none;margin:12px 18px 0;background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.25);border-radius:14px;padding:14px">
         <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:4px">💳 ادائیگی ضروری ہے</div>
         <div id="paid-amount-txt" style="font-size:13px;color:var(--text);margin-bottom:12px;font-weight:600"></div>
         <div style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.5">Easypaisa / JazzCash پر ادائیگی کریں، پھر اسکرین شاٹ یہاں اپلوڈ کریں:</div>
-        <div class="sheet-field" style="margin-bottom:8px">
+        <div class="sheet-field" style="margin-bottom:8px;padding:0">
           <label style="font-size:11px;color:var(--gold);font-weight:600;margin-bottom:6px;display:block">📸 پیمنٹ اسکرین شاٹ اپلوڈ کریں</label>
-          <input id="c-screenshot-file" type="file" accept="image/*" onchange="previewScreenshot(this)"
-            style="display:none"/>
-          <div onclick="document.getElementById('c-screenshot-file').click()"
-            id="screenshot-drop"
+          <input id="c-screenshot-file" type="file" accept="image/*" onchange="previewScreenshot(this)" style="display:none"/>
+          <div onclick="document.getElementById('c-screenshot-file').click()" id="screenshot-drop"
             style="border:1.5px dashed rgba(212,175,55,.4);border-radius:10px;padding:18px;text-align:center;cursor:pointer;transition:all .2s;background:rgba(212,175,55,.03)"
             onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='rgba(212,175,55,.4)'">
             <div style="font-size:24px;margin-bottom:4px">📷</div>
@@ -676,133 +657,136 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
           </div>
         </div>
         <input type="hidden" id="c-screenshot-data"/>
-        <div style="font-size:10px;color:var(--muted);margin-top:6px">اسکرین شاٹ لگانے کے بعد درخواست دیں — دکان منظور کرے گی تو فوری ٹوکن ملے گا</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:6px">اسکرین شاٹ لگانے کے بعد درخواست دیں — بزنس منظور کرے گی تو فوری ٹوکن ملے گا</div>
       </div>
 
-      <div class="join-form-center" style="margin-top:16px">
-        <button class="big-join-btn" id="join-btn" onclick="submitJoin()">
-          <span class="big-join-btn-icon">🎫</span>
-          <span id="join-btn-label">GET MY TOKEN</span>
-        </button>
-      </div>
+      <!-- Submit -->
+      <button class="big-join-btn" id="join-btn" onclick="submitJoin()">
+        <span id="join-btn-label">Get My Token</span>
+        <span style="font-size:20px">🎫</span>
+      </button>
       <div class="sheet-err" id="sheet-err"></div>
-      <button class="btn-cancel" onclick="closeModal()">منسوخ کریں</button>
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
     </div>
 
-    <!-- Token result — optimised for emotional sequence + screenshot sharing -->
+    <!-- Token result — boarding pass style -->
     <div class="result-wrap" id="result-wrap">
 
-      <!-- ZONE 1: Screenshot crop area — shop name + token number + WaitMate brand
-           This is what appears in a forwarded screenshot. Keep it clean and legible. -->
-      <div style="text-align:center;padding:4px 0 16px;border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:16px">
-        <!-- Shop name — critical for screenshot context -->
-        <div id="r-shop-name" style="font-size:13px;font-weight:600;color:var(--gold);letter-spacing:.02em;margin-bottom:2px"></div>
-        <div id="r-shop-area" style="font-size:10px;color:var(--muted)"></div>
+      <!-- Boarding pass ticket -->
+      <div class="ticket-card">
 
-        <!-- Token number — the relief moment -->
-        <div style="margin:12px 0 4px">
-          <div style="font-size:9px;letter-spacing:3px;color:var(--text3);text-transform:uppercase;margin-bottom:6px">ٹوکن نمبر</div>
+        <!-- TOP: Shop + token number -->
+        <div class="ticket-top">
+          <div id="r-shop-name" style="font-size:12px;font-weight:700;color:var(--gold);letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px;opacity:.9"></div>
+          <div id="r-shop-area" style="font-size:10px;color:var(--muted);margin-bottom:16px"></div>
+
+          <div style="font-size:9px;letter-spacing:4px;color:rgba(237,232,208,.35);text-transform:uppercase;margin-bottom:6px;font-family:'Orbitron',monospace">Queue Token</div>
           <div class="result-token-num" id="r-num">—</div>
-          <a id="wa-msg-link" class="wa-msg-btn" style="display:none" target="_blank">💬 Message on WhatsApp</a>
+          <div class="result-greeting"><span id="r-greeting">You're in line!</span></div>
+          <a id="wa-msg-link" class="wa-msg-btn" style="display:none;margin:10px 0 0" target="_blank">💬 Message on WhatsApp</a>
         </div>
-        <div class="result-greeting"><span id="r-greeting">آپ کی باری آئے گی!</span> 🎉</div>
 
-        <!-- WaitMate brand — screenshot zone, must be legible -->
-        <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(212,175,55,0.15);text-align:center">
-          <div style="font-size:15px;font-weight:800;letter-spacing:0.04em;background:linear-gradient(90deg,#D4AF37,#F0D060,#D4AF37);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">WaitMate</div>
-          <div style="font-size:10px;color:rgba(237,232,208,0.5);margin-top:2px;letter-spacing:0.05em;font-style:italic">Skip the waiting line</div>
+        <!-- Perforated tear line -->
+        <div class="ticket-tear"><div class="ticket-tear-line"></div></div>
+
+        <!-- BOTTOM: Stats + brand -->
+        <div class="ticket-bottom">
+          <div class="ticket-stats">
+            <div class="ts"><div class="ts-val" id="r-pos">—</div><div class="ts-lbl">Position</div></div>
+            <div class="ts"><div class="ts-val" id="r-wait-val">—</div><div class="ts-lbl">Est. Wait</div></div>
+          </div>
+          <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;gap:8px">
+            <div style="font-size:14px;font-weight:800;letter-spacing:.04em;background:linear-gradient(90deg,#D4AF37,#F0D060,#D4AF37);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">WaitMate</div>
+            <div style="font-size:9px;color:rgba(237,232,208,.3);letter-spacing:.06em">· SKIP THE LINE</div>
+          </div>
         </div>
       </div>
 
-      <!-- ZONE 2: Save link — immediate, self-interested, practical
-           Appears instantly. No delay. The customer saves for themselves. -->
-      <button onclick="saveShopLink()" style="width:100%;padding:11px 14px;border:1px solid rgba(56,189,248,.25);border-radius:10px;background:rgba(56,189,248,.06);color:#38BDF8;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px">
-        🔖 <span>یہ لنک محفوظ کریں — اگلی بار بھی کام آئے گا</span>
-      </button>
+      <!-- Actions below ticket -->
+      <div style="padding:14px 16px 0">
 
-      <!-- ZONE 3: Position + wait — shown after save prompt so customer is calm -->
-      <div style="margin:-4px 0 12px;padding:7px 12px;background:rgba(212,175,55,0.06);border:1px solid rgba(212,175,55,0.15);border-radius:10px;font-size:11px;color:rgba(237,232,208,0.55);line-height:1.5;text-align:center">
-        🔔 Voice alerts work only while this screen is open. &nbsp;<button onclick="enableNotifications()" style="background:none;border:none;padding:0;font-size:11px;color:rgba(52,211,153,0.85);font-weight:600;cursor:pointer;font-family:inherit;text-decoration:underline">Allow notifications</button> for locked screen alerts.
-      </div>
-      <div class="result-stats-row" style="margin-bottom:14px">
-        <div class="rs"><div class="rs-val" id="r-pos">—</div><div class="rs-lbl">نمبر قطار میں</div></div>
-        <div class="rs"><div class="rs-val" id="r-wait-val">—</div><div class="rs-lbl">منٹ انتظار</div></div>
-      </div>
+        <!-- Save link -->
+        <button onclick="saveShopLink()" style="width:100%;padding:13px 14px;border:1px solid rgba(56,189,248,.2);border-radius:14px;background:rgba(56,189,248,.05);color:#38BDF8;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px">
+          🔖 <span>Save this link for next visit</span>
+        </button>
 
-      <!-- ZONE 4: Live tracker -->
-      <div class="tracker-box">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-          <div class="tracker-hd">LIVE POSITION</div>
-          <button id="mute-btn" onclick="toggleMute()"
-            style="display:flex;align-items:center;gap:5px;padding:5px 10px;border:1px solid rgba(212,175,55,.25);border-radius:20px;background:transparent;cursor:pointer;font-size:11px;font-family:'Sora',sans-serif;transition:all .2s">
-            <span id="mute-icon">🔊</span>
-            <span id="mute-label" style="color:var(--gold)">Alerts On</span>
+        <!-- Notification notice -->
+        <div style="margin-bottom:10px;padding:8px 12px;background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.14);border-radius:12px;font-size:11px;color:rgba(237,232,208,.5);line-height:1.5;text-align:center">
+          🔔 Voice alerts need screen on. &nbsp;<button onclick="enableNotifications()" style="background:none;border:none;padding:0;font-size:11px;color:rgba(52,211,153,.85);font-weight:700;cursor:pointer;font-family:inherit;text-decoration:underline">Allow notifications</button>
+        </div>
+
+        <!-- Live tracker -->
+        <div class="tracker-box" style="margin-bottom:10px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div class="tracker-hd" style="margin-bottom:0">LIVE POSITION</div>
+            <button id="mute-btn" onclick="toggleMute()"
+              style="display:flex;align-items:center;gap:5px;padding:5px 10px;border:1px solid rgba(212,175,55,.25);border-radius:20px;background:transparent;cursor:pointer;font-size:11px;font-family:'Sora',sans-serif;transition:all .2s">
+              <span id="mute-icon">🔊</span>
+              <span id="mute-label" style="color:var(--gold)">Alerts On</span>
+            </button>
+          </div>
+          <div class="tracker-badge waiting" id="tracker-badge">Waiting in queue</div>
+          <div class="tracker-sub" id="tracker-sub">Updates every 10 seconds</div>
+        </div>
+
+        <!-- Hidden system panels -->
+        <div class="countdown-wrap" id="countdown-wrap" style="display:none">
+          <div class="countdown-ring">
+            <svg class="countdown-svg" viewBox="0 0 120 120">
+              <circle class="countdown-track" cx="60" cy="60" r="54"/>
+              <circle class="countdown-progress" id="countdown-circle" cx="60" cy="60" r="54"/>
+            </svg>
+            <div class="countdown-num">
+              <div class="countdown-mins" id="countdown-val">—</div>
+              <div class="countdown-lbl">MINUTES</div>
+            </div>
+          </div>
+        </div>
+        <div id="notify-prompt" style="display:none;align-items:center;gap:10px;background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.25);border-radius:12px;padding:12px 14px;margin-bottom:10px">
+          <span style="font-size:20px">🔔</span>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:600;color:var(--text)">Get Notified</div>
+            <div style="font-size:11px;color:var(--muted)">Alert when it's almost your turn</div>
+          </div>
+          <button onclick="enableNotifications()" style="padding:8px 14px;border:none;border-radius:8px;background:var(--green);color:#050810;font-size:12px;font-weight:700;cursor:pointer">Enable</button>
+          <button onclick="document.getElementById('notify-prompt').style.display='none'" style="padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--muted);font-size:12px;cursor:pointer">✕</button>
+        </div>
+        <div id="grace-timer" style="display:none;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:12px;padding:12px 16px;margin-bottom:10px;text-align:center">
+          <div style="font-size:11px;color:var(--amber);font-weight:600;letter-spacing:1px;margin-bottom:4px">GRACE PERIOD</div>
+          <div style="font-family:'Orbitron',monospace;font-size:28px;font-weight:700;color:var(--gold2)" class="grace-time">2:00</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:3px">Please arrive before time runs out</div>
+        </div>
+
+        <button class="btn-gold" onclick="closeModal(true)" style="margin-bottom:10px">Back to List</button>
+
+        <!-- Family share -->
+        <div id="share-after-join" style="display:none;background:rgba(37,211,102,.07);border:1px solid rgba(37,211,102,.25);border-radius:14px;padding:14px 16px;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <span style="font-size:20px">👨‍👩‍👧</span>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#25d366">گھر والوں کو بتائیں</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">وہ آپ کی باری گھر بیٹھے دیکھ سکتے ہیں</div>
+            </div>
+          </div>
+          <button onclick="shareShopLink()" style="width:100%;padding:12px;border:none;border-radius:12px;background:#25d366;color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit">
+            💬 Share on WhatsApp
           </button>
         </div>
-        <div class="tracker-badge waiting" id="tracker-badge">انتظار میں ہیں</div>
-        <div class="tracker-sub" id="tracker-sub">ہر 10 سیکنڈ میں خودبخود اپڈیٹ ہوتا ہے</div>
-      </div>
 
-      <!-- Hidden system panels -->
-      <div class="countdown-wrap" id="countdown-wrap" style="display:none">
-        <div class="countdown-ring">
-          <svg class="countdown-svg" viewBox="0 0 120 120">
-            <circle class="countdown-track" cx="60" cy="60" r="54"/>
-            <circle class="countdown-progress" id="countdown-circle" cx="60" cy="60" r="54"/>
-          </svg>
-          <div class="countdown-num">
-            <div class="countdown-mins" id="countdown-val">—</div>
-            <div class="countdown-lbl">MINUTES</div>
+        <!-- Footer -->
+        <div style="text-align:center;padding:10px 0 4px;border-top:1px solid rgba(255,255,255,.05)">
+          <a href="/" style="display:inline-block;font-size:10px;color:rgba(212,175,55,.55);text-decoration:none;border:1px solid rgba(212,175,55,.18);border-radius:20px;padding:4px 12px">
+            🏪 Add your business — it's free
+          </a>
+          <div style="margin-top:8px">
+            <a id="result-support-link" href="#" target="_blank" rel="noopener" style="font-size:10px;color:rgba(237,232,208,.25);text-decoration:none;transition:color .2s" onmouseover="this.style.color='#25D366'" onmouseout="this.style.color='rgba(237,232,208,.25)'">💬 Need help? WhatsApp Support</a>
           </div>
         </div>
-      </div>
-      <div id="notify-prompt" style="display:none;align-items:center;gap:10px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.25);border-radius:12px;padding:12px 14px;margin-bottom:12px">
-        <span style="font-size:20px">🔔</span>
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:600;color:var(--text)">Get Notified</div>
-          <div style="font-size:11px;color:var(--muted)">We'll alert you when it's almost your turn</div>
-        </div>
-        <button onclick="enableNotifications()" style="padding:8px 14px;border:none;border-radius:8px;background:var(--green);color:#050810;font-size:12px;font-weight:700;cursor:pointer">Enable</button>
-        <button onclick="document.getElementById('notify-prompt').style.display='none'" style="padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--muted);font-size:12px;cursor:pointer">✕</button>
-      </div>
-      <div id="grace-timer" style="display:none;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:12px;padding:12px 16px;margin-bottom:12px;text-align:center">
-        <div style="font-size:11px;color:var(--amber);font-weight:600;letter-spacing:1px;margin-bottom:4px">GRACE PERIOD</div>
-        <div style="font-family:'Orbitron',monospace;font-size:28px;font-weight:700;color:var(--gold2)" class="grace-time">2:00</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:3px">Please arrive before time runs out</div>
-      </div>
 
-      <button class="btn-gold" onclick="closeModal(true)" style="margin-bottom:10px">واپس فہرست پر</button>
-
-      <!-- ZONE 5: Family share — appears after 3s (customer is calm, has seen position)
-           Framed as coordination, not marketing. -->
-      <div id="share-after-join" style="display:none;background:rgba(37,211,102,0.07);border:1px solid rgba(37,211,102,0.25);border-radius:14px;padding:14px 16px;margin-bottom:10px">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-          <span style="font-size:20px">👨‍👩‍👧</span>
-          <div>
-            <div style="font-size:13px;font-weight:700;color:#25d366">گھر والوں کو بتائیں</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:2px">وہ آپ کی باری گھر بیٹھے دیکھ سکتے ہیں</div>
-          </div>
-        </div>
-        <button onclick="shareShopLink()" style="width:100%;padding:11px;border:none;border-radius:10px;background:#25d366;color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit">
-          💬 واٹس ایپ پر شیئر کریں
-        </button>
       </div>
-
-      <!-- Powered by footer + business CTA -->
-      <div style="text-align:center;padding:12px 0 4px;border-top:1px solid rgba(255,255,255,0.05);margin-bottom:12px">
-        <div style="font-size:10px;color:rgba(237,232,208,0.3);letter-spacing:0.06em;margin-bottom:6px">POWERED BY</div>
-        <div style="font-size:13px;font-weight:700;background:linear-gradient(90deg,#D4AF37,#F0D060);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:2px">WaitMate</div>
-        <div style="font-size:10px;color:rgba(237,232,208,0.35);margin-bottom:8px">queue-os.pages.dev</div>
-        <a href="/" style="display:inline-block;font-size:10px;color:rgba(212,175,55,0.6);text-decoration:none;border:1px solid rgba(212,175,55,0.2);border-radius:20px;padding:4px 12px;transition:all .2s" onmouseover="this.style.color='#D4AF37'" onmouseout="this.style.color='rgba(212,175,55,0.6)'">
-          🏪 Businesses can use WaitMate FREE
-        </a>
-        <div style="margin-top:8px">
-          <a id="result-support-link" href="#" target="_blank" rel="noopener" style="font-size:10px;color:rgba(237,232,208,0.3);text-decoration:none;transition:color .2s" onmouseover="this.style.color='#25D366'" onmouseout="this.style.color='rgba(237,232,208,0.3)'">💬 Need help? WhatsApp Support</a>
-        </div>
-      </div>
-
-      <button id="cancel-token-btn" onclick="cancelMyToken()" style="width:100%;padding:12px;border:1px solid rgba(248,113,113,0.3);border-radius:12px;background:rgba(248,113,113,0.06);color:var(--red);font-family:'Sora',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s">
-        ٹوکن منسوخ کریں
+    </div>
+      <button id="cancel-token-btn" onclick="cancelMyToken()" style="width:100%;padding:13px;border:1px solid rgba(248,113,113,.3);border-radius:14px;background:rgba(248,113,113,.06);color:var(--red);font-family:'Sora',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;margin:12px 16px 0;width:calc(100% - 32px)">
+        Cancel Token
       </button>
     </div>
   </div>
