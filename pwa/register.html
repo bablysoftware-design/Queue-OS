@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="theme-color" content="#050810"/>
-<title>دکان رجسٹریشن — سف کیو</title>
+<title>بزنس رجسٹریشن — WaitMate</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
 <style>
 :root{--void:#050810;--surface:#0d1424;--glass:rgba(13,20,36,.8);--border:rgba(212,175,55,.12);--gold:#D4AF37;--gold2:#F5C842;--gold3:#FFE066;--cyan:#00D4FF;--red:#FF4560;--green:#00E396;--text:#EDE8D0;--muted:rgba(237,232,208,.4);}
@@ -77,14 +77,14 @@ h1{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;background:li
   <div class="header">
     <div class="orb"><div class="orb-inner">🏪</div></div>
     <h1>WaitMate</h1>
-    <p>Your Smart Queue Partner — اپنی دکان رجسٹر کریں</p>
+    <p>Your Smart Queue Partner — اپنا بزنس رجسٹر کریں</p>
   </div>
 
   <div class="card" id="form-card">
-    <div class="card-title">دکان رجسٹریشن</div>
+    <div class="card-title">بزنس رجسٹریشن</div>
 
     <div class="field">
-      <label>دکان کا نام *</label>
+      <label>بزنس کا نام *</label>
       <input id="r-name" type="text" placeholder="مثال: علی باربر شاپ"/>
     </div>
 
@@ -111,7 +111,7 @@ h1{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;background:li
     </div>
 
     <div class="field" style="position:relative">
-      <label>دکان کی قسم *</label>
+      <label>بزنس کی قسم *</label>
       <input id="r-cat" type="text" placeholder="مثال: barber, clinic, pharmacy" autocomplete="off" oninput="this.dataset.canonicalValue=''; acCat(this,'ac-catd')"/>
       <div id="ac-catd" class="ac-drop"></div>
     </div>
@@ -278,12 +278,12 @@ async function submitReg(){
   errEl.textContent = '';
 
   // ── Required field validation ──
-  if (!name)                      return errEl.textContent = 'دکان کا نام ضروری ہے';
+  if (!name)                      return errEl.textContent = 'بزنس کا نام ضروری ہے';
   if (!phone)                     return errEl.textContent = 'واٹس ایپ نمبر ضروری ہے';
   if (!pin || pin.length !== 4)   return errEl.textContent = 'پن 4 ہندسوں کا ہونا چاہیے';
   if (!city)                      return errEl.textContent = 'شہر ضروری ہے — مثال: Karachi, Lahore';
   if (!area)                      return errEl.textContent = 'علاقہ ضروری ہے — مثال: North Nazimabad, Gulberg';
-  if (!cat)                       return errEl.textContent = 'دکان کی قسم ضروری ہے — مثال: Barber, Clinic';
+  if (!cat)                       return errEl.textContent = 'بزنس کی قسم ضروری ہے — مثال: Barber, Clinic';
 
   btn.disabled = true; btn.textContent = '...';
   try {
