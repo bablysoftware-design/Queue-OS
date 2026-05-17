@@ -2832,10 +2832,8 @@ function scrollToShopCard(shopId) {
   // If shop param or slug: load featured shop + scroll to card
   if (effectiveShop) {
     await loadFeaturedShop(effectiveShop);
-    // Customer arrived via shared link — open shop modal immediately
     document.querySelector('.search-wrap').style.opacity = '0.7';
-    await openShop(effectiveShop);
-
+    // Do NOT auto-open modal — customer taps the pinned card themselves
     loadRelatedShops(effectiveShop);
   }
 
