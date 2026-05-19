@@ -2835,6 +2835,7 @@ function scrollToShopCard(shopId) {
     document.querySelector('.search-wrap').style.opacity = '0.7';
     // Do NOT auto-open modal — customer taps the pinned card themselves
     loadRelatedShops(effectiveShop);
+    maybeShowInstallPromptForSharedLink(); // Prompt install when arriving via shared link
   }
 
   // Refresh every 60s in background
@@ -2855,6 +2856,50 @@ window.addEventListener('beforeinstallprompt', e => {
   _deferredInstall = e;
   if (!localStorage.getItem(INSTALL_KEY)) showInstallBanner();
 });
+
+// Show install prompt when arriving via shared link (QR / business link)
+// Fires after a short delay so the shop modal opens first
+function maybeShowInstallPromptForSharedLink() {
+  if (localStorage.getItem(INSTALL_KEY)) return;
+  // Check if running in standalone (already installed)
+  if (window.matchMedia('(display-mode: standalone)').matches) return;
+  if (window.navigator.standalone) return; // iOS standalone
+  setTimeout(() => {
+    if (_deferredInstall) {
+      showInstallBanner(); // Android — use native prompt
+    } else {
+      showManualInstallBanner(); // iOS / Custom Tab — show manual instructions
+    }
+  }, 4000); // 4s after page load — after shop modal settles
+}
+
+function showManualInstallBanner() {
+  if (localStorage.getItem(INSTALL_KEY)) return;
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  let banner = document.getElementById('install-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'install-banner';
+    const msg = isIOS
+      ? `<div style="font-weight:700;font-size:14px;color:var(--gold)">📲 ایپ انسٹال کریں</div>
+         <div style="font-size:11px;color:var(--muted);margin-top:4px">Safari menu → <b>Add to Home Screen</b> دبائیں</div>`
+      : `<div style="font-weight:700;font-size:14px;color:var(--gold)">📲 ایپ انسٹال کریں</div>
+         <div style="font-size:11px;color:var(--muted);margin-top:4px">Browser menu → <b>Add to Home Screen</b> دبائیں</div>`;
+    banner.innerHTML = `<div style="display:flex;align-items:flex-start;gap:12px">
+      <div style="flex:1">${msg}</div>
+      <button onclick="hideInstallBanner();localStorage.setItem('${INSTALL_KEY}','1')" 
+        style="background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:0;flex-shrink:0">×</button>
+    </div>`;
+    Object.assign(banner.style, {
+      position:'fixed', bottom:'70px', left:'12px', right:'12px',
+      background:'var(--surface)', border:'1px solid rgba(212,175,55,.35)',
+      borderRadius:'16px', padding:'14px 16px', zIndex:'999',
+      boxShadow:'0 8px 32px rgba(0,0,0,.5)', animation:'sheetUp .4s ease both'
+    });
+    document.body.appendChild(banner);
+  }
+  banner.style.display = 'block';
+}
 
 window.addEventListener('appinstalled', () => {
   localStorage.setItem(INSTALL_KEY, '1');

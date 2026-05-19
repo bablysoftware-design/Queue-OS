@@ -2180,9 +2180,9 @@ function esc2(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;'
 
 // ── Language toggle (global) ─────────────────────────────────
 function toggleLang() {
-  const cur  = localStorage.getItem('sq_lang') || 'en';
+  const cur = localStorage.getItem('sq_lang') || 'en';
   localStorage.setItem('sq_lang', cur === 'ur' ? 'en' : 'ur');
-  window.location.reload();
+  applyLanguage(); // no reload — just re-apply strings in place
 }
 window.toggleLang = toggleLang;
 
@@ -2330,14 +2330,16 @@ window.viewScreenshot = viewScreenshot;
   const op  = localStorage.getItem('saf_is_open') === '1';
   const tok = localStorage.getItem('saf_session_token');
 
-  if (id && nm && tok) {
+  if (id && tok) {
     state.shopId       = id;
-    state.shopName     = nm;
+    state.shopName     = nm || '';
     state.isOpen       = op;
     state.sessionToken = tok;
     showDashboard();
   } else {
-    localStorage.clear();
+    // Clear only auth keys — preserve language preference and other settings
+    ['saf_shop_id','saf_shop_name','saf_is_open','saf_session_token'].forEach(k => localStorage.removeItem(k));
+    showScreen('login-screen');
   }
 
   document.getElementById('login-pin').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
