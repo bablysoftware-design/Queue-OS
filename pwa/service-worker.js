@@ -1,5 +1,5 @@
 // service-worker.js v7 - aggressive reset
-const CACHE = 'wm-v17'; // sprint2: offline page, 404 // bumped: screenshot event delegation fix
+const CACHE = 'wm-v18'; // sprint2: offline page, 404 // bumped: screenshot event delegation fix
 
 self.addEventListener('install', e => {
   self.skipWaiting();
