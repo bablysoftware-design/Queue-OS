@@ -548,6 +548,12 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
         <div class="banner-stat"><div class="banner-val" id="b-total">0</div><div class="banner-lbl">کل دکانیں</div></div>
         <div class="banner-stat"><div class="banner-val" id="b-tokens">0</div><div class="banner-lbl">قطار میں</div></div>
       </div>
+      <!-- Recent shops — shown when customer has history -->
+      <div id="recent-shops-wrap" style="display:none;margin-bottom:4px">
+        <div class="sec-lbl">⏱ حال ہی میں</div>
+        <div id="recent-shops-list"></div>
+      </div>
+
       <div class="sec-lbl" id="shops-section-label">تمام دکانیں</div>
       <div class="shop-list" id="shop-list"></div>
     </div>
@@ -934,6 +940,48 @@ function clearVoiceNote() {
   _audioChunks = []; _recSecs = 0;
 }
 window.clearVoiceNote = clearVoiceNote;
+
+// ── Recent Shops (localStorage, no DB needed) ────────────────
+function saveToRecentShops(shop) {
+  if (!shop?.id) return;
+  try {
+    const key   = 'wm_recent_shops';
+    const saved = JSON.parse(localStorage.getItem(key) || '[]');
+    // Remove if already exists, add to front
+    const filtered = saved.filter(s => s.id !== shop.id);
+    filtered.unshift({ id: shop.id, name: shop.name, category: shop.category, area: shop.area, city: shop.city });
+    localStorage.setItem(key, JSON.stringify(filtered.slice(0, 5))); // keep last 5
+  } catch(e) {}
+}
+
+function renderRecentShops() {
+  const key  = 'wm_recent_shops';
+  const wrap = document.getElementById('recent-shops-wrap');
+  if (!wrap) return;
+  try {
+    const saved = JSON.parse(localStorage.getItem(key) || '[]');
+    if (!saved.length) { wrap.style.display = 'none'; return; }
+    wrap.style.display = 'block';
+    document.getElementById('recent-shops-list').innerHTML = saved.map(s => `
+      <button onclick="openShop('${s.id}')"
+        style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.02);cursor:pointer;text-align:left;transition:all .2s;margin-bottom:6px"
+        onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">
+        <span style="font-size:20px">${getCatEmoji(s.category)}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.name)}</div>
+          <div style="font-size:11px;color:var(--text3)">${[s.area,s.city].filter(Boolean).map(esc).join(' · ')}</div>
+        </div>
+        <span style="font-size:16px;color:var(--text3)">›</span>
+      </button>`).join('');
+  } catch(e) { wrap.style.display = 'none'; }
+}
+
+function getCatEmoji(cat) {
+  const map = { barber:'✂️', ladies_salon:'💇', clinic:'🏥', hospital:'🏨', pharmacy:'💊',
+    lab:'🧪', dentist:'🦷', govt:'🏛️', nadra:'🪪', bank:'🏦', restaurant:'🍽️',
+    food:'🍛', bakery:'🥖', mechanic:'🔧', mobile:'📱', school:'🎓', gym:'💪' };
+  return map[cat] || '🏪';
+}
 
 // ── Particles ──────────────────────────────────────────────
 const canvas=document.getElementById('particle-canvas'),ctx=canvas.getContext('2d');
@@ -1737,6 +1785,7 @@ async function submitJoin() {
     localStorage.setItem('saf_token_id',   data.token_id);
     localStorage.setItem('saf_token_num',  String(data.token_number));
     localStorage.setItem('saf_token_shop', JSON.stringify(selectedShop));
+    saveToRecentShops(selectedShop);
 
     // Show result
     document.getElementById('join-form-wrap').style.display = 'none';
@@ -1807,9 +1856,28 @@ async function enableNotifications() {
   }
 }
 
-async function cancelMyToken() {
+function cancelMyToken() {
   if (!myTokenId || !selectedShop) return;
-  if (!confirm('کیا آپ واقعی اپنا ٹوکن منسوخ کرنا چاہتے ہیں؟')) return;
+  // Styled confirmation modal instead of native confirm()
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(8px)';
+  overlay.innerHTML = `
+    <div style="background:#0d1424;border:1px solid rgba(248,113,113,.3);border-radius:20px;padding:28px 24px;max-width:320px;width:100%;text-align:center">
+      <div style="font-size:40px;margin-bottom:14px">🎫</div>
+      <div style="font-size:16px;font-weight:700;color:#EDE8D0;margin-bottom:8px">ٹوکن منسوخ کریں؟</div>
+      <div style="font-size:13px;color:rgba(237,232,208,.5);margin-bottom:24px;line-height:1.6">آپ کی جگہ قطار سے ہٹ جائے گی۔<br>دوبارہ ٹوکن لینا ہوگا۔</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <button id="_cn" style="padding:13px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:transparent;color:rgba(237,232,208,.6);font-family:'Sora',sans-serif;font-size:13px;font-weight:600;cursor:pointer">نہیں رہنے دیں</button>
+        <button id="_cy" style="padding:13px;border:1px solid rgba(248,113,113,.4);border-radius:12px;background:rgba(248,113,113,.12);color:#f87171;font-family:'Sora',sans-serif;font-size:13px;font-weight:700;cursor:pointer">ہاں منسوخ کریں</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#_cn').onclick  = () => overlay.remove();
+  overlay.querySelector('#_cy').onclick  = () => { overlay.remove(); _doCancel(); };
+}
+
+async function _doCancel() {
+  if (!myTokenId || !selectedShop) return;
   try {
     const res  = await fetch(`${WORKER}/public/cancel`, {
       method: 'POST',
@@ -2828,6 +2896,7 @@ function scrollToShopCard(shopId) {
   const effectiveShop = _resolvedShopId || HIGHLIGHT_SHOP;
 
   await loadShops();
+  renderRecentShops(); // show recent shops above list
 
   // If shop param or slug: load featured shop + scroll to card
   if (effectiveShop) {
