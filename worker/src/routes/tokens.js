@@ -135,3 +135,63 @@ export async function cancelTokenHandler(request, env) {
     return ok(result);
   } catch (err) { return badRequest(err.message); }
 }
+
+/**
+ * POST /tokens/:id/call-now
+ * Manually call a specific waiting token (emergency/VIP/walk-in).
+ * Does NOT affect queue ordering, positions, or estimated waits.
+ * Stores call_method='manual' for auditability.
+ * Auth: shopkeeper must own the token's shop.
+ */
+export async function callNowHandler(request, env) {
+  try {
+    const db   = createClient(env);
+    const auth = await requireShopAuth(request, env);
+    if (auth instanceof Response) return auth;
+
+    const url     = new URL(request.url);
+    const tokenId = url.pathname.split('/')[2]; // /tokens/:id/call-now
+    if (!isValidUUID(tokenId)) return badRequest('Invalid token_id');
+
+    // Fetch token — verify ownership and current status
+    const rows = await db.select('tokens',
+      `id=eq.${tokenId}&select=id,shop_id,status,token_number,customer_name,customer_phone`
+    );
+    if (!rows?.length) return badRequest('Token not found');
+
+    const token = rows[0];
+
+    // Verify shopkeeper owns this token's shop
+    if (token.shop_id !== auth.shop_id) return badRequest('Unauthorized for this token');
+
+    // Only waiting tokens can be manually called
+    const terminal = ['called','served','completed','cancelled','expired','no_show'];
+    if (terminal.includes(token.status)) {
+      return badRequest(`Token is already ${token.status} — cannot call now`);
+    }
+    if (token.status !== 'waiting') {
+      return badRequest(`Token status '${token.status}' cannot be called`);
+    }
+
+    // Atomic update: filter on status=eq.waiting prevents race condition
+    // If two devices click simultaneously, second finds no matching row
+    const updated = await db.update(
+      'tokens',
+      `id=eq.${tokenId}&status=eq.waiting`,
+      {
+        status:      'called',
+        called_at:   new Date().toISOString(),
+        call_method: 'manual',
+      }
+    );
+
+    if (!updated?.length) {
+      return badRequest('Token was already called or modified by another device');
+    }
+
+    return ok({
+      token:   updated[0],
+      message: `Token #${token.token_number} called manually`,
+    });
+  } catch (err) { return serverError(err.message); }
+}

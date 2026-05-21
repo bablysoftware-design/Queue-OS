@@ -602,6 +602,7 @@ body::after {
 .q-badge { padding: 3px 9px; border-radius: 100px; font-size: 10px; font-weight: 600; border: 1px solid; letter-spacing: 0.04em; font-family: 'Sora', sans-serif; }
 .q-badge.waiting { background: rgba(251,191,36,0.1); border-color: var(--amber); color: var(--amber); }
 .q-badge.called  { background: rgba(56,189,248,0.1); border-color: var(--cyan); color: var(--cyan); }
+.call-now-btn { background: #E8B84B; color: #0F172A; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; margin-left: 4px; cursor: pointer; font-weight: 600; font-family: inherit; }
 
 .queue-empty {
   text-align: center;
@@ -1183,6 +1184,9 @@ body::after {
 <script>
 
 const WORKER = 'https://saf-queue-worker.byker-software.workers.dev';
+
+// Feature flag — set true to enable Call Now button in queue list
+const FEATURE_CALL_NOW = false;
 // ── Support config — change number here only ───────────────
 const SUPPORT_WA = '923338131889';
 function waSupport(msg) {
@@ -1374,6 +1378,7 @@ function refreshQueue() {
             <span class="q-name">${esc(item.customer_name || '—')}</span>
             <span class="q-phone">${maskPhone(item.customer_phone)}</span>
             <span class="q-badge waiting">Waiting</span>
+            ${FEATURE_CALL_NOW ? `<button class="call-now-btn" onclick="callNow('${item.id}','${item.token_number}','${esc(item.customer_name||'')}')">📢 Call Now</button>` : ''}
             <button onclick="cancelQueueToken('${item.id}')"
               style="margin-left:auto;padding:3px 10px;border:1px solid rgba(248,113,113,.4);border-radius:20px;background:transparent;color:var(--red);font-size:11px;cursor:pointer;font-family:inherit">
               ✗ Cancel
@@ -1889,6 +1894,31 @@ async function cancelQueueToken(tokenId) {
     refreshQueue(); loadStats();
   } catch(e) { showToast(e.message, 'error'); }
 }
+
+/**
+ * callNow() — Manually call a specific waiting token.
+ * Does NOT affect queue ordering, positions, or estimated waits.
+ * Customer tracker picks up status='called' via normal polling.
+ * Only active when FEATURE_CALL_NOW === true.
+ */
+async function callNow(tokenId, tokenNumber, customerName) {
+  if (!FEATURE_CALL_NOW) return;
+  const displayName = customerName || `Token #${tokenNumber}`;
+  const confirmed   = confirm(
+    `Call ${displayName} (Token #${tokenNumber}) now?\n\nNormal queue order will continue after this.`
+  );
+  if (!confirmed) return;
+
+  try {
+    const { data } = await api('POST', `/tokens/${tokenId}/call-now`, {});
+    showToast(`📢 Token #${tokenNumber} called successfully`, 'success');
+    refreshQueue();
+    loadStats();
+  } catch(e) {
+    showToast(e.message || 'Could not call token', 'error');
+  }
+}
+window.callNow = callNow;
 
 // ── Screenshot modal ──────────────────────────────────────────
 // Use event delegation — avoids base64 URLs breaking onclick attributes
