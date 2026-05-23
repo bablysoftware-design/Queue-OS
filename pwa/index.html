@@ -1357,10 +1357,47 @@ function refreshQueue() {
         numEl.textContent = currentlyServing.token_number;
         const nameOrPhone = currentlyServing.customer_name || maskPhone(currentlyServing.customer_phone);
         document.getElementById('token-phone-display').textContent = nameOrPhone;
+
+        // Priority call banner — shown when call_method is manual
+        const isPriority = currentlyServing.call_method === 'manual';
+        let priorityBanner = document.getElementById('priority-call-banner');
+        if (!priorityBanner) {
+          priorityBanner = document.createElement('div');
+          priorityBanner.id = 'priority-call-banner';
+          // Insert after the token display card
+          const card = document.getElementById('token-display').closest('.card') || numEl.parentElement;
+          card.parentNode.insertBefore(priorityBanner, card.nextSibling);
+        }
+        if (isPriority) {
+          priorityBanner.style.display = 'block';
+          priorityBanner.innerHTML = `
+            <div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.4);border-radius:14px;padding:12px 16px;margin-bottom:10px">
+              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:#f87171">🚨 Priority Call Active — Token #${currentlyServing.token_number}</div>
+                  <div style="font-size:11px;color:var(--muted);margin-top:2px">${esc(currentlyServing.customer_name||'')} · Normal queue paused until resolved</div>
+                </div>
+                <div style="display:flex;gap:8px">
+                  <button onclick="completePriorityCall('${currentlyServing.id}')"
+                    style="padding:8px 14px;border:none;border-radius:8px;background:#22c55e;color:#fff;font-size:12px;font-weight:700;cursor:pointer">
+                    ✓ Complete
+                  </button>
+                  <button onclick="cancelPriorityCall('${currentlyServing.id}')"
+                    style="padding:8px 14px;border:1px solid rgba(248,113,113,.4);border-radius:8px;background:transparent;color:var(--red);font-size:12px;cursor:pointer">
+                    ✗ Cancel
+                  </button>
+                </div>
+              </div>
+            </div>`;
+        } else {
+          priorityBanner.style.display = 'none';
+        }
       } else {
         numEl.className = 'token-number empty';
         numEl.textContent = '—';
         document.getElementById('token-phone-display').textContent = '';
+        const pb = document.getElementById('priority-call-banner');
+        if (pb) pb.style.display = 'none';
       }
 
       document.getElementById('stat-waiting').textContent = queueLength;
@@ -1919,6 +1956,27 @@ async function callNow(tokenId, tokenNumber, customerName) {
   }
 }
 window.callNow = callNow;
+
+/** Complete a priority (manual) called token — marks it served and advances queue */
+async function completePriorityCall(tokenId) {
+  try {
+    await api('POST', '/tokens/next', { shop_id: state.shopId });
+    showToast('✓ Priority call completed', 'success');
+    refreshQueue(); loadStats();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+window.completePriorityCall = completePriorityCall;
+
+/** Cancel a priority (manual) called token — frees queue without serving */
+async function cancelPriorityCall(tokenId) {
+  if (!confirm('Cancel this priority call? Token will be marked cancelled.')) return;
+  try {
+    await api('POST', '/tokens/cancel', { token_id: tokenId, shop_id: state.shopId });
+    showToast('Priority call cancelled', 'success');
+    refreshQueue(); loadStats();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+window.cancelPriorityCall = cancelPriorityCall;
 
 // ── Screenshot modal ──────────────────────────────────────────
 // Use event delegation — avoids base64 URLs breaking onclick attributes

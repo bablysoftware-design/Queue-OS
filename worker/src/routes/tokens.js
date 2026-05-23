@@ -10,6 +10,7 @@ import { createClient }           from '../utils/db.js';
 import { requireShopAuth }        from '../utils/auth.js';
 import { ok, badRequest, serverError } from '../utils/response.js';
 import { isValidUUID }            from '../utils/validation.js';
+import { checkSubscriptionValid } from '../services/subscriptionService.js';
 
 /** POST /tokens — manual token creation (auth required) */
 export async function createTokenHandler(request, env) {
@@ -38,6 +39,9 @@ export async function nextTokenHandler(request, env) {
     if (!isValidUUID(shop_id))    return badRequest('Invalid shop_id');
     if (auth.shop_id !== shop_id) return badRequest('Unauthorized for this shop');
 
+    const sub = await checkSubscriptionValid(db, shop_id);
+    if (!sub.valid) return badRequest('Subscription expired — renew to continue serving');
+
     const next = await advanceQueue(db, shop_id, env);
     return ok({ next, empty: !next });
   } catch (err) { return serverError(err.message); }
@@ -53,6 +57,9 @@ export async function noShowHandler(request, env) {
     const { shop_id } = await request.json();
     if (!isValidUUID(shop_id))    return badRequest('Invalid shop_id');
     if (auth.shop_id !== shop_id) return badRequest('Unauthorized for this shop');
+
+    const sub = await checkSubscriptionValid(db, shop_id);
+    if (!sub.valid) return badRequest('Subscription expired — renew to continue serving');
 
     const next = await markNoShow(db, shop_id, env);
     return ok({ next, empty: !next });
@@ -142,6 +149,7 @@ export async function cancelTokenHandler(request, env) {
  * Does NOT affect queue ordering, positions, or estimated waits.
  * Stores call_method='manual' for auditability.
  * Auth: shopkeeper must own the token's shop.
+ * Guard: only ONE manual called token allowed at a time.
  */
 export async function callNowHandler(request, env) {
   try {
@@ -152,6 +160,12 @@ export async function callNowHandler(request, env) {
     const url     = new URL(request.url);
     const tokenId = url.pathname.split('/')[2]; // /tokens/:id/call-now
     if (!isValidUUID(tokenId)) return badRequest('Invalid token_id');
+
+    // ── Subscription check ──────────────────────────────────
+    const subCheck = await checkSubscriptionValid(db, auth.shop_id);
+    if (!subCheck.valid) {
+      return badRequest('Subscription expired — upgrade plan to use Call Now');
+    }
 
     // Fetch token — verify ownership and current status
     const rows = await db.select('tokens',
@@ -173,8 +187,16 @@ export async function callNowHandler(request, env) {
       return badRequest(`Token status '${token.status}' cannot be called`);
     }
 
+    // ── Option A guard: one manual called token at a time ───
+    // Prevents orphaned tokens, preserves advanceQueue/markNoShow assumptions
+    const existingManual = await db.select('tokens',
+      `shop_id=eq.${auth.shop_id}&status=eq.called&call_method=eq.manual&limit=1`
+    );
+    if (existingManual?.length) {
+      return badRequest('Complete or dismiss the current priority call first');
+    }
+
     // Atomic update: filter on status=eq.waiting prevents race condition
-    // If two devices click simultaneously, second finds no matching row
     const updated = await db.update(
       'tokens',
       `id=eq.${tokenId}&status=eq.waiting`,
@@ -185,6 +207,16 @@ export async function callNowHandler(request, env) {
       }
     );
 
+    if (!updated?.length) {
+      return badRequest('Token was already called or modified by another device');
+    }
+
+    return ok({
+      token:   updated[0],
+      message: `Token #${token.token_number} called manually`,
+    });
+  } catch (err) { return serverError(err.message); }
+}
     if (!updated?.length) {
       return badRequest('Token was already called or modified by another device');
     }
