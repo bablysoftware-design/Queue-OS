@@ -217,13 +217,3 @@ export async function callNowHandler(request, env) {
     });
   } catch (err) { return serverError(err.message); }
 }
-    if (!updated?.length) {
-      return badRequest('Token was already called or modified by another device');
-    }
-
-    return ok({
-      token:   updated[0],
-      message: `Token #${token.token_number} called manually`,
-    });
-  } catch (err) { return serverError(err.message); }
-}
