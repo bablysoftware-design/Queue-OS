@@ -16,6 +16,8 @@ import { assignPlanHandler, getSubscriptionHandler,
          listShopsAdminHandler }                      from './routes/subscriptions.js';
 import { easypaisaWebhook, jazzcashWebhook,
          manualPayment }                              from './routes/payments.js';
+import { createPrioritySession,
+         getActivePrioritySession }             from './routes/priority.js';
 import { submitRegistration, listRegistrations,
          approveRegistration, rejectRegistration }    from './routes/register.js';
 import { subscribePush, unsubscribePush, requestDelay } from './routes/push.js';
@@ -87,6 +89,10 @@ const ROUTES = [
   { method: 'GET',    path: '/admin/payment-requests',                   handler: listPaymentRequests },
   { method: 'POST',   path: '/admin/payment-requests/:id/approve',       handler: approvePaymentRequest },
   { method: 'POST',   path: '/admin/payment-requests/:id/reject',        handler: rejectPaymentRequest },
+
+  // Priority Overlay System (Phase 1 — session create + read only)
+  { method: 'POST',   path: '/priority/sessions',              handler: createPrioritySession },
+  { method: 'GET',    path: '/priority/active',                handler: getActivePrioritySession },
 
   // Tokens (auth required)
   { method: 'POST',   path: '/tokens',                          handler: createTokenHandler },
