@@ -604,6 +604,36 @@ body::after {
 .q-badge.called  { background: rgba(56,189,248,0.1); border-color: var(--cyan); color: var(--cyan); }
 .call-now-btn { background: #E8B84B; color: #0F172A; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; margin-left: 4px; cursor: pointer; font-weight: 600; font-family: inherit; }
 
+/* Priority Overlay Panel — separate from normal queue, never replaces it */
+.priority-panel {
+  border: 1.5px solid rgba(239,68,68,.45);
+  border-radius: 16px;
+  background: rgba(239,68,68,.06);
+  padding: 14px 16px;
+  animation: fadeIn .3s ease both;
+}
+.priority-panel-header {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+}
+.priority-panel-title {
+  font-size: 11px; font-weight: 700; color: #f87171;
+  letter-spacing: .08em; text-transform: uppercase;
+}
+.priority-token-num {
+  font-family: 'Orbitron', monospace; font-size: 36px; font-weight: 900;
+  color: #f87171; line-height: 1; text-align: center; padding: 6px 0;
+}
+.priority-token-sub {
+  font-size: 12px; color: var(--text2); text-align: center; margin-bottom: 10px;
+}
+.priority-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.4);
+  border-radius: 20px; padding: 2px 8px;
+  font-size: 10px; font-weight: 700; color: #f87171;
+  margin-left: 4px; vertical-align: middle;
+}
+
 .queue-empty {
   text-align: center;
   padding: 32px;
@@ -916,6 +946,10 @@ body::after {
         </div>
       </div>
 
+      <!-- Priority Overlay Panel (Phase 2 — read-only rendering) -->
+      <!-- Completely separate from normal queue counter. Never replaces it. -->
+      <div id="priority-overlay-panel" style="display:none"></div>
+
       <!-- Wait time override slider -->
       <div class="card" id="wait-slider-card" style="padding:16px 18px">
         <div class="card-label" style="margin-bottom:12px">⏱ NEXT CUSTOMER WAIT TIME</div>
@@ -1187,6 +1221,10 @@ const WORKER = 'https://saf-queue-worker.byker-software.workers.dev';
 
 // Feature flag — set true to enable Call Now button in queue list
 const FEATURE_CALL_NOW = true;
+
+// Phase 2: Priority Overlay System — read-only UI rendering
+// Set true to show priority panel. No mutations until Phase 3.
+const FEATURE_PRIORITY_OVERLAY = true;
 // ── Support config — change number here only ───────────────
 const SUPPORT_WA = '923338131889';
 function waSupport(msg) {
@@ -1346,8 +1384,12 @@ function switchTab(name) {
 }
 window.switchTab = switchTab;
 
+// Phase 2: active priority session state (read-only, polled alongside queue)
+let _activePrioritySession = null;
+
 function refreshQueue() {
-  api('GET', `/tokens/queue?shop_id=${state.shopId}`)
+  // Existing queue poll — UNTOUCHED
+  const queuePromise = api('GET', `/tokens/queue?shop_id=${state.shopId}`)
     .then(({ data }) => {
       const { currentlyServing, queue, queueLength } = data;
       const numEl = document.getElementById('token-display');
@@ -1357,47 +1399,10 @@ function refreshQueue() {
         numEl.textContent = currentlyServing.token_number;
         const nameOrPhone = currentlyServing.customer_name || maskPhone(currentlyServing.customer_phone);
         document.getElementById('token-phone-display').textContent = nameOrPhone;
-
-        // Priority call banner — shown when call_method is manual
-        const isPriority = currentlyServing.call_method === 'manual';
-        let priorityBanner = document.getElementById('priority-call-banner');
-        if (!priorityBanner) {
-          priorityBanner = document.createElement('div');
-          priorityBanner.id = 'priority-call-banner';
-          // Insert after the token display card
-          const card = document.getElementById('token-display').closest('.card') || numEl.parentElement;
-          card.parentNode.insertBefore(priorityBanner, card.nextSibling);
-        }
-        if (isPriority) {
-          priorityBanner.style.display = 'block';
-          priorityBanner.innerHTML = `
-            <div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.4);border-radius:14px;padding:12px 16px;margin-bottom:10px">
-              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-                <div>
-                  <div style="font-size:13px;font-weight:700;color:#f87171">🚨 Priority Call Active — Token #${currentlyServing.token_number}</div>
-                  <div style="font-size:11px;color:var(--muted);margin-top:2px">${esc(currentlyServing.customer_name||'')} · Normal queue paused until resolved</div>
-                </div>
-                <div style="display:flex;gap:8px">
-                  <button onclick="completePriorityCall('${currentlyServing.id}')"
-                    style="padding:8px 14px;border:none;border-radius:8px;background:#22c55e;color:#fff;font-size:12px;font-weight:700;cursor:pointer">
-                    ✓ Complete
-                  </button>
-                  <button onclick="cancelPriorityCall('${currentlyServing.id}')"
-                    style="padding:8px 14px;border:1px solid rgba(248,113,113,.4);border-radius:8px;background:transparent;color:var(--red);font-size:12px;cursor:pointer">
-                    ✗ Cancel
-                  </button>
-                </div>
-              </div>
-            </div>`;
-        } else {
-          priorityBanner.style.display = 'none';
-        }
       } else {
         numEl.className = 'token-number empty';
         numEl.textContent = '—';
         document.getElementById('token-phone-display').textContent = '';
-        const pb = document.getElementById('priority-call-banner');
-        if (pb) pb.style.display = 'none';
       }
 
       document.getElementById('stat-waiting').textContent = queueLength;
@@ -1408,13 +1413,20 @@ function refreshQueue() {
       if (!queue.length) {
         listEl.innerHTML = `<div class="queue-empty">${t('queueEmpty')}</div>`;
       } else {
-        // debug logs removed — data confirmed correct
-        listEl.innerHTML = queue.map((item, i) => `
+        listEl.innerHTML = queue.map((item, i) => {
+          // Phase 2: badge if this token has an active priority session
+          const isPriorityToken = FEATURE_PRIORITY_OVERLAY
+            && _activePrioritySession?.token?.id === item.id;
+          const priorityBadge = isPriorityToken
+            ? `<span class="priority-badge">🚨 PRIORITY ACTIVE</span>` : '';
+
+          return `
           <div class="q-item" style="animation-delay:${i * 0.04}s;flex-wrap:wrap;gap:6px">
             <span class="q-num">#${item.token_number}</span>
             <span class="q-name">${esc(item.customer_name || '—')}</span>
             <span class="q-phone">${maskPhone(item.customer_phone)}</span>
             <span class="q-badge waiting">Waiting</span>
+            ${priorityBadge}
             ${FEATURE_CALL_NOW ? `<button class="call-now-btn" onclick="callNow('${item.id}','${item.token_number}','${esc(item.customer_name||'')}')">📢 Call Now</button>` : ''}
             <button onclick="cancelQueueToken('${item.id}')"
               style="margin-left:auto;padding:3px 10px;border:1px solid rgba(248,113,113,.4);border-radius:20px;background:transparent;color:var(--red);font-size:11px;cursor:pointer;font-family:inherit">
@@ -1422,12 +1434,80 @@ function refreshQueue() {
             </button>
             ${item.customer_note ? '<div style="width:100%;margin-top:3px;font-size:11px;color:rgba(237,232,208,.55);padding-left:2px">📝 ' + esc(item.customer_note) + '</div>' : ''}
             ${item.voice_note_url ? '<div style="width:100%;margin-top:4px"><button onclick="playVoiceNote(\'' + item.voice_note_url + '\',this)" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border:1px solid rgba(212,175,55,.3);border-radius:20px;background:rgba(212,175,55,.06);color:var(--gold);font-size:11px;cursor:pointer;font-family:inherit">🎤 Voice ' + (item.voice_note_duration ? '(' + item.voice_note_duration + 's) ' : '') + '&#9654;</button></div>' : ''}
-          </div>`).join('');
+          </div>`;
+        }).join('');
       }
     })
     .catch(() => {});
+
+  // Phase 2: priority overlay poll — runs in parallel, never blocks queue
+  if (FEATURE_PRIORITY_OVERLAY) {
+    api('GET', `/priority/active?shop_id=${state.shopId}`)
+      .then(({ data }) => {
+        _activePrioritySession = (data.session && data.token) ? data : null;
+        renderPriorityOverlay(_activePrioritySession);
+      })
+      .catch(() => {
+        // Priority poll failure must NEVER affect queue display
+      });
+  }
 }
 window.refreshQueue = refreshQueue;
+
+// ── Phase 2: Priority Overlay Renderer (read-only) ────────────
+// Renders the priority panel separate from normal queue display.
+// Never replaces or modifies the normal queue counter.
+// No mutations — display only.
+function renderPriorityOverlay(data) {
+  const panel = document.getElementById('priority-overlay-panel');
+  if (!panel) return;
+
+  // Feature disabled or no active session → hide panel, nothing else
+  if (!FEATURE_PRIORITY_OVERLAY || !data?.session) {
+    panel.style.display = 'none';
+    return;
+  }
+
+  const { session, token } = data;
+  const startedAt  = new Date(session.started_at);
+  const ageMinutes = Math.floor((Date.now() - startedAt) / 60000);
+  const isStale    = ageMinutes >= 15;
+  const timeLabel  = ageMinutes < 1 ? 'just now'
+                   : ageMinutes === 1 ? '1 min ago'
+                   : `${ageMinutes} min ago`;
+
+  panel.style.display = 'block';
+  panel.innerHTML = `
+    <div class="priority-panel">
+      <div class="priority-panel-header">
+        <span style="font-size:16px">🚨</span>
+        <span class="priority-panel-title">Priority Call Active</span>
+        ${isStale ? `<span style="font-size:10px;color:#f87171;margin-left:auto">⚠ ${ageMinutes}m — stale?</span>` : `<span style="font-size:10px;color:var(--muted);margin-left:auto">${timeLabel}</span>`}
+      </div>
+
+      <div class="priority-token-num">#${token.token_number}</div>
+      <div class="priority-token-sub">
+        ${esc(token.customer_name || '—')}
+        ${token.customer_phone ? ' · ' + maskPhone(token.customer_phone) : ''}
+      </div>
+
+      ${session.reason ? `<div style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:10px">📋 ${esc(session.reason)}</div>` : ''}
+
+      <div style="font-size:11px;color:rgba(248,113,113,.6);text-align:center;margin-bottom:10px">
+        Normal queue counter continues unaffected
+      </div>
+
+      ${isStale ? `
+      <div style="background:rgba(239,68,68,.08);border:1px dashed rgba(239,68,68,.3);border-radius:10px;padding:8px;text-align:center;margin-bottom:8px">
+        <div style="font-size:11px;color:#f87171;margin-bottom:6px">Session active for ${ageMinutes} minutes</div>
+        <div style="font-size:10px;color:var(--muted)">Use Complete or Cancel to resolve</div>
+      </div>` : ''}
+
+      <div style="font-size:10px;color:var(--muted);text-align:center;opacity:.5">
+        Phase 2 — action buttons in Phase 3
+      </div>
+    </div>`;
+}
 
 function callNext() {
   // Cancel any running grace timer
@@ -1957,26 +2037,7 @@ async function callNow(tokenId, tokenNumber, customerName) {
 }
 window.callNow = callNow;
 
-/** Complete a priority (manual) called token — marks it served and advances queue */
-async function completePriorityCall(tokenId) {
-  try {
-    await api('POST', '/tokens/next', { shop_id: state.shopId });
-    showToast('✓ Priority call completed', 'success');
-    refreshQueue(); loadStats();
-  } catch(e) { showToast(e.message, 'error'); }
-}
-window.completePriorityCall = completePriorityCall;
-
-/** Cancel a priority (manual) called token — frees queue without serving */
-async function cancelPriorityCall(tokenId) {
-  if (!confirm('Cancel this priority call? Token will be marked cancelled.')) return;
-  try {
-    await api('POST', '/tokens/cancel', { token_id: tokenId, shop_id: state.shopId });
-    showToast('Priority call cancelled', 'success');
-    refreshQueue(); loadStats();
-  } catch(e) { showToast(e.message, 'error'); }
-}
-window.cancelPriorityCall = cancelPriorityCall;
+// Phase 3 will add completePrioritySession() and cancelPrioritySession() here
 
 // ── Screenshot modal ──────────────────────────────────────────
 // Use event delegation — avoids base64 URLs breaking onclick attributes

@@ -2,7 +2,7 @@
 import { createClient }  from '../utils/db.js';
 import { createToken }   from '../services/tokenService.js';
 import { requireAdmin, requireShopOrAdmin } from '../utils/auth.js';
-import { sanitizeParam, sanitizeName } from '../utils/sanitize.js';
+import { sanitizeParam, sanitizeName, isRateLimited } from '../utils/sanitize.js';
 import { ok, badRequest, notFound, serverError } from '../utils/response.js';
 
 /**
