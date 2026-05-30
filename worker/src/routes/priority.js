@@ -181,3 +181,77 @@ export async function getActivePrioritySession(request, env) {
     });
   } catch (err) { return serverError(err.message); }
 }
+
+/**
+ * PATCH /priority/sessions/:id
+ * Complete or cancel an active priority session.
+ *
+ * Body: {
+ *   action:       'completed' | 'cancelled'  (required)
+ *   mark_served:  boolean (optional, only when action='completed')
+ *                 true  → also set token.status='completed'
+ *                 false → close session only, token stays waiting
+ * }
+ *
+ * IMMUTABILITY GUARANTEE:
+ * Token.status is ONLY mutated when action='completed' AND mark_served=true.
+ * In all other cases tokens table is untouched.
+ * advanceQueue, markNoShow, queue ordering: zero impact.
+ */
+export async function updatePrioritySession(request, env) {
+  try {
+    const db   = createClient(env);
+    const auth = await requireShopAuth(request, env);
+    if (auth instanceof Response) return auth;
+
+    const url       = new URL(request.url);
+    const sessionId = url.pathname.split('/')[3]; // /priority/sessions/:id
+    if (!isValidUUID(sessionId)) return badRequest('Invalid session id');
+
+    const body = await request.json();
+    const { action, mark_served = false } = body;
+
+    if (!['completed','cancelled'].includes(action)) {
+      return badRequest("action must be 'completed' or 'cancelled'");
+    }
+
+    // Fetch session — verify ownership
+    const sessions = await db.select('priority_sessions',
+      `id=eq.${sessionId}&status=eq.active&limit=1`
+    );
+    if (!sessions?.length) return notFound('No active priority session found with that id');
+
+    const session = sessions[0];
+    if (session.shop_id !== auth.shop_id) return badRequest('Unauthorized for this session');
+
+    // Close the session
+    const updated = await db.update('priority_sessions',
+      `id=eq.${sessionId}&status=eq.active`,
+      { status: action, ended_at: new Date().toISOString() }
+    );
+    if (!updated?.length) return badRequest('Session already closed by another device');
+
+    // Optionally mark token as served — ONLY when business explicitly chose "mark served"
+    let tokenResult = null;
+    if (action === 'completed' && mark_served === true) {
+      const tokenRows = await db.select('tokens',
+        `id=eq.${session.token_id}&shop_id=eq.${session.shop_id}&select=id,status,token_number&limit=1`
+      );
+      if (tokenRows?.length && tokenRows[0].status === 'waiting') {
+        const tUpdated = await db.update('tokens',
+          `id=eq.${session.token_id}&status=eq.waiting`,
+          { status: 'completed' }
+        );
+        tokenResult = tUpdated?.[0] || null;
+      }
+    }
+
+    return ok({
+      session:      updated[0],
+      token_served: tokenResult !== null,
+      message:      action === 'completed'
+        ? (mark_served ? 'Priority completed — customer marked served' : 'Priority completed — customer returned to queue')
+        : 'Priority cancelled',
+    });
+  } catch (err) { return serverError(err.message); }
+}

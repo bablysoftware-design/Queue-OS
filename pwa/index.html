@@ -1428,10 +1428,10 @@ function refreshQueue() {
             <span class="q-badge waiting">Waiting</span>
             ${priorityBadge}
             ${FEATURE_CALL_NOW ? `<button class="call-now-btn" onclick="callNow('${item.id}','${item.token_number}','${esc(item.customer_name||'')}')">📢 Call Now</button>` : ''}
-            <button onclick="cancelQueueToken('${item.id}')"
-              style="margin-left:auto;padding:3px 10px;border:1px solid rgba(248,113,113,.4);border-radius:20px;background:transparent;color:var(--red);font-size:11px;cursor:pointer;font-family:inherit">
-              ✗ Cancel
-            </button>
+            ${FEATURE_PRIORITY_OVERLAY && !isPriorityToken ? `<button onclick="startPrioritySession('${item.id}','${item.token_number}','${esc(item.customer_name||'')}')" style="padding:3px 8px;border:1px solid rgba(239,68,68,.4);border-radius:4px;background:rgba(239,68,68,.08);color:#f87171;font-size:11px;cursor:pointer;font-family:inherit;margin-left:4px">🚨 Priority</button>` : ''}
+            ${isPriorityToken
+              ? `<span style="margin-left:auto;padding:3px 10px;font-size:10px;color:rgba(248,113,113,.35);font-family:inherit">🔒 Priority Active</span>`
+              : `<button onclick="cancelQueueToken('${item.id}')" style="margin-left:auto;padding:3px 10px;border:1px solid rgba(248,113,113,.4);border-radius:20px;background:transparent;color:var(--red);font-size:11px;cursor:pointer;font-family:inherit">✗ Cancel</button>`}
             ${item.customer_note ? '<div style="width:100%;margin-top:3px;font-size:11px;color:rgba(237,232,208,.55);padding-left:2px">📝 ' + esc(item.customer_note) + '</div>' : ''}
             ${item.voice_note_url ? '<div style="width:100%;margin-top:4px"><button onclick="playVoiceNote(\'' + item.voice_note_url + '\',this)" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border:1px solid rgba(212,175,55,.3);border-radius:20px;background:rgba(212,175,55,.06);color:var(--gold);font-size:11px;cursor:pointer;font-family:inherit">🎤 Voice ' + (item.voice_note_duration ? '(' + item.voice_note_duration + 's) ' : '') + '&#9654;</button></div>' : ''}
           </div>`;
@@ -1462,9 +1462,13 @@ function renderPriorityOverlay(data) {
   const panel = document.getElementById('priority-overlay-panel');
   if (!panel) return;
 
-  // Feature disabled or no active session → hide panel, nothing else
+  // Feature disabled or no active session → hide panel, re-enable buttons
   if (!FEATURE_PRIORITY_OVERLAY || !data?.session) {
     panel.style.display = 'none';
+    const nb = document.getElementById('next-btn');
+    const ns = document.getElementById('noshow-btn');
+    if (nb) nb.title = '';
+    if (ns) ns.title = '';
     return;
   }
 
@@ -1503,13 +1507,25 @@ function renderPriorityOverlay(data) {
         <div style="font-size:10px;color:var(--muted)">Use Complete or Cancel to resolve</div>
       </div>` : ''}
 
-      <div style="font-size:10px;color:var(--muted);text-align:center;opacity:.5">
-        Phase 2 — action buttons in Phase 3
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+        <button onclick="completePrioritySession('${session.id}')"
+          style="width:100%;padding:11px;border:none;border-radius:10px;background:#22c55e;color:#fff;font-weight:700;font-size:13px;cursor:pointer">
+          ✓ Complete Priority
+        </button>
+        <button onclick="cancelPrioritySession('${session.id}')"
+          style="width:100%;padding:10px;border:1px solid rgba(239,68,68,.35);border-radius:10px;background:transparent;color:#f87171;font-size:12px;cursor:pointer">
+          ✗ Cancel Priority
+        </button>
       </div>
     </div>`;
 }
 
 function callNext() {
+  // Priority guard — must resolve active priority before calling next
+  if (_activePrioritySession) {
+    showToast('Resolve the active priority session before calling next', 'error');
+    return;
+  }
   // Cancel any running grace timer
   if (window._graceInterval) { clearInterval(window._graceInterval); window._graceInterval = null; }
   const graceDisplay = document.getElementById('grace-display');
@@ -1563,6 +1579,10 @@ function startGraceTimer(customerName, onExpire) {
 window.callNext = callNext;
 
 function handleNoShow() {
+  if (_activePrioritySession) {
+    showToast('Resolve the active priority session before marking no-show', 'error');
+    return;
+  }
   const btn = document.getElementById('noshow-btn');
   btn.disabled = true;
   api('POST', '/tokens/no-show', { shop_id: state.shopId })
@@ -2038,6 +2058,151 @@ async function callNow(tokenId, tokenNumber, customerName) {
 window.callNow = callNow;
 
 // Phase 3 will add completePrioritySession() and cancelPrioritySession() here
+
+// ── Phase 3: Priority Session Lifecycle ───────────────────────
+
+/**
+ * startPrioritySession()
+ * Called when business taps 🚨 Priority on a queue row.
+ * Shows confirmation modal, then POSTs to /priority/sessions.
+ * Does NOT mutate any token status.
+ */
+function startPrioritySession(tokenId, tokenNumber, customerName) {
+  if (!FEATURE_PRIORITY_OVERLAY) return;
+  if (_activePrioritySession) {
+    showToast('Complete or cancel the current priority session first', 'error');
+    return;
+  }
+  showPriorityConfirmModal(tokenId, tokenNumber, customerName);
+}
+window.startPrioritySession = startPrioritySession;
+
+function showPriorityConfirmModal(tokenId, tokenNumber, customerName) {
+  let modal = document.getElementById('priority-confirm-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'priority-confirm-modal';
+    Object.assign(modal.style, {
+      position:'fixed', inset:'0', background:'rgba(0,0,0,.85)',
+      zIndex:'9999', display:'flex', alignItems:'center',
+      justifyContent:'center', padding:'20px'
+    });
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `
+    <div style="background:var(--surface);border:1px solid rgba(239,68,68,.35);border-radius:20px;padding:24px;max-width:340px;width:100%">
+      <div style="font-size:20px;text-align:center;margin-bottom:6px">🚨</div>
+      <div style="font-size:15px;font-weight:700;color:#f87171;text-align:center;margin-bottom:6px">Start Priority Call?</div>
+      <div style="font-size:13px;color:var(--text2);text-align:center;margin-bottom:16px">
+        Token #${tokenNumber}${customerName ? ' — ' + esc(customerName) : ''}<br>
+        <span style="font-size:11px;color:var(--muted)">Normal queue continues unaffected</span>
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Reason (optional)</label>
+        <input id="priority-reason-input" type="text" placeholder="e.g. Emergency, VIP, Elderly"
+          style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;box-sizing:border-box"/>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button onclick="confirmStartPriority('${tokenId}')"
+          style="flex:1;padding:12px;border:none;border-radius:10px;background:#ef4444;color:#fff;font-weight:700;font-size:13px;cursor:pointer">
+          🚨 Start Priority
+        </button>
+        <button onclick="document.getElementById('priority-confirm-modal').style.display='none'"
+          style="flex:1;padding:12px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--text2);font-size:13px;cursor:pointer">
+          Cancel
+        </button>
+      </div>
+    </div>`;
+  modal.style.display = 'flex';
+  modal.onclick = e => { if (e.target === modal) modal.style.display = 'none'; };
+  setTimeout(() => document.getElementById('priority-reason-input')?.focus(), 100);
+}
+window.showPriorityConfirmModal = showPriorityConfirmModal;
+
+async function confirmStartPriority(tokenId) {
+  const reason = document.getElementById('priority-reason-input')?.value.trim() || null;
+  const modal  = document.getElementById('priority-confirm-modal');
+  if (modal) modal.style.display = 'none';
+  try {
+    await api('POST', '/priority/sessions', {
+      shop_id:  state.shopId,
+      token_id: tokenId,
+      counter_id: 'main',
+      reason,
+      created_by_device: navigator.userAgent.slice(0, 80),
+    });
+    showToast('🚨 Priority session started', 'success');
+    refreshQueue();
+  } catch(e) {
+    showToast(e.message || 'Could not start priority session', 'error');
+  }
+}
+window.confirmStartPriority = confirmStartPriority;
+
+/**
+ * completePrioritySession()
+ * Shows choice: mark served OR return to queue.
+ * Only mutates token if business explicitly chooses "Mark Served".
+ */
+function completePrioritySession(sessionId) {
+  let modal = document.getElementById('priority-complete-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'priority-complete-modal';
+    Object.assign(modal.style, {
+      position:'fixed', inset:'0', background:'rgba(0,0,0,.85)',
+      zIndex:'9999', display:'flex', alignItems:'center',
+      justifyContent:'center', padding:'20px'
+    });
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `
+    <div style="background:var(--surface);border:1px solid rgba(212,175,55,.25);border-radius:20px;padding:24px;max-width:340px;width:100%">
+      <div style="font-size:15px;font-weight:700;color:var(--gold);text-align:center;margin-bottom:8px">Complete Priority Call</div>
+      <div style="font-size:12px;color:var(--text2);text-align:center;margin-bottom:20px">Was the customer fully served?</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button onclick="resolvePriority('${sessionId}', true)"
+          style="padding:13px;border:none;border-radius:10px;background:#22c55e;color:#fff;font-weight:700;font-size:13px;cursor:pointer">
+          ✓ Yes — Mark as Served
+        </button>
+        <button onclick="resolvePriority('${sessionId}', false)"
+          style="padding:13px;border:1px solid rgba(212,175,55,.3);border-radius:10px;background:transparent;color:var(--gold);font-size:13px;cursor:pointer">
+          ↩ No — Return to Queue
+        </button>
+        <button onclick="document.getElementById('priority-complete-modal').style.display='none'"
+          style="padding:10px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--text2);font-size:12px;cursor:pointer">
+          Back
+        </button>
+      </div>
+    </div>`;
+  modal.style.display = 'flex';
+  modal.onclick = e => { if (e.target === modal) modal.style.display = 'none'; };
+}
+window.completePrioritySession = completePrioritySession;
+
+async function resolvePriority(sessionId, markServed) {
+  const modal = document.getElementById('priority-complete-modal');
+  if (modal) modal.style.display = 'none';
+  try {
+    await api('PATCH', `/priority/sessions/${sessionId}`, {
+      action: 'completed',
+      mark_served: markServed,
+    });
+    showToast(markServed ? '✓ Customer marked served' : '↩ Customer returned to queue', 'success');
+    refreshQueue(); loadStats();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+window.resolvePriority = resolvePriority;
+
+async function cancelPrioritySession(sessionId) {
+  if (!confirm('Cancel this priority session? Customer stays in normal queue.')) return;
+  try {
+    await api('PATCH', `/priority/sessions/${sessionId}`, { action: 'cancelled' });
+    showToast('Priority session cancelled', 'success');
+    refreshQueue();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+window.cancelPrioritySession = cancelPrioritySession;
 
 // ── Screenshot modal ──────────────────────────────────────────
 // Use event delegation — avoids base64 URLs breaking onclick attributes
