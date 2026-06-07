@@ -1473,6 +1473,9 @@ function renderPriorityOverlay(data) {
   }
 
   const { session, token } = data;
+  // Phase 4: fire audio on newly detected session
+  checkAndAnnouncePriority(session, token);
+
   const startedAt  = new Date(session.started_at);
   const ageMinutes = Math.floor((Date.now() - startedAt) / 60000);
   const isStale    = ageMinutes >= 15;
@@ -1748,7 +1751,7 @@ async function shareShopLink() {
   sheet.innerHTML = `
     <div style="background:#111827;border:1px solid rgba(255,255,255,.08);border-radius:20px 20px 0 0;padding:24px 20px 40px;width:100%;max-width:440px">
       <div style="width:36px;height:4px;background:rgba(255,255,255,.1);border-radius:100px;margin:0 auto 18px"></div>
-      <div style="font-size:15px;font-weight:700;margin-bottom:4px;color:#F1F5F9">Share Your Shop</div>
+      <div style="font-size:15px;font-weight:700;margin-bottom:4px;color:#F1F5F9">Share Your Business</div>
       <div style="font-size:11px;color:#475569;margin-bottom:18px;word-break:break-all;direction:ltr">${shopUrl}</div>
       <div style="display:flex;flex-direction:column;gap:8px">
         <a href="${waUrl}" target="_blank" rel="noopener"
@@ -2058,6 +2061,77 @@ async function callNow(tokenId, tokenNumber, customerName) {
 window.callNow = callNow;
 
 // Phase 3 will add completePrioritySession() and cancelPrioritySession() here
+
+// ── Phase 4: Priority Voice Announcement ─────────────────────
+// Completely isolated from triggerAlert/playVoice/playAlarm.
+// Fires ONCE per new session — deduped via sessionStorage.
+// Multi-device safe: priority_announced_at DB field prevents
+// multiple devices all announcing simultaneously.
+
+const PRIORITY_AUDIO_KEY = 'wm_last_priority_session';
+
+function playPriorityAlert(tokenNumber, customerName) {
+  // 1. Beep — isolated AudioContext, never reuses _wmAudioCtx
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const resume = ctx.state === 'suspended' ? ctx.resume() : Promise.resolve();
+    resume.then(() => {
+      const t = ctx.currentTime;
+      [[440,0],[880,0.25],[1320,0.5],[880,0.85],[440,1.1]].forEach(([f, when]) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'triangle';
+        o.frequency.value = f;
+        g.gain.setValueAtTime(0.5, t + when);
+        g.gain.exponentialRampToValueAtTime(0.001, t + when + 0.18);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(t + when); o.stop(t + when + 0.2);
+      });
+      if (navigator.vibrate) navigator.vibrate([200, 80, 200, 80, 400]);
+    }).catch(() => {});
+  } catch(e) {}
+
+  // 2. Voice — isolated utterance, no shared state with customer tracker TTS
+  try {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel(); // clear any pending
+      const name = customerName ? customerName : `Token ${tokenNumber}`;
+      const text = `Priority customer. Token number ${tokenNumber}. ${name}. Please proceed to counter now.`;
+      const utt  = new SpeechSynthesisUtterance(text);
+      utt.rate   = 0.88;
+      utt.volume = 1.0;
+      utt.pitch  = 1.0;
+      // Let browser pick default voice — most reliable cross-device
+      setTimeout(() => {
+        try { window.speechSynthesis.speak(utt); } catch(e) {}
+      }, 600); // after beep finishes
+    }
+  } catch(e) {}
+}
+
+// Called from renderPriorityOverlay — fires only on newly detected session
+function checkAndAnnouncePriority(session, token) {
+  if (!session || !token) return;
+  const stored = sessionStorage.getItem(PRIORITY_AUDIO_KEY);
+  if (stored === session.id) return; // already announced this session this tab
+
+  // Mark as announced in sessionStorage immediately to prevent replay on re-render
+  sessionStorage.setItem(PRIORITY_AUDIO_KEY, session.id);
+
+  // Attempt to claim announcement in DB (multi-device dedup)
+  // If priority_announced_at already set, another device claimed it — skip audio
+  if (session.priority_announced_at) {
+    // Another device already announced — no audio on this device
+    return;
+  }
+
+  // Claim the announcement — fire and forget
+  api('PATCH', `/priority/sessions/${session.id}/announce`, {})
+    .then(() => playPriorityAlert(token.token_number, token.customer_name))
+    .catch(() => {
+      // Claim failed (another device beat us) — skip audio
+    });
+}
 
 // ── Phase 3: Priority Session Lifecycle ───────────────────────
 
@@ -2717,16 +2791,16 @@ document.addEventListener('click', e => {
 // Wire static support links using centralized SUPPORT_WA constant
 (function wireStaticSupportLinks() {
   const loginLink = document.getElementById('login-support-link');
-  if (loginLink) loginLink.href = waSupport('Hi WaitMate Support, I need help logging in to my shopkeeper dashboard.');
+  if (loginLink) loginLink.href = waSupport('Hi WaitMate Support, I need help logging in to my business dashboard.');
   const settingsLink = document.getElementById('settings-support-link');
   if (settingsLink) {
     // Enrich with shop context when settings panel opens (state may not be ready yet)
     settingsLink.addEventListener('click', function() {
       const shopName = typeof state !== 'undefined' ? (state.shopName || '') : '';
       const shopId   = typeof state !== 'undefined' ? (state.shopId   || '') : '';
-      this.href = waSupport(`Hi WaitMate Support, I need help. Shop: ${shopName} (ID: ${shopId}), Page: shopkeeper dashboard.`);
+      this.href = waSupport(`Hi WaitMate Support, I need help. Shop: ${shopName} (ID: ${shopId}), Page: business dashboard.`);
     }, { passive: true });
-    settingsLink.href = waSupport('Hi WaitMate Support, I need help with my shopkeeper settings.');
+    settingsLink.href = waSupport('Hi WaitMate Support, I need help with my business settings.');
   }
 })();
 </script>
@@ -2871,7 +2945,7 @@ document.addEventListener('click', e => {
       <div class="onboard-step">
         <div class="step-num">3</div>
         <div class="step-txt">
-          <strong>✅ Open Your Shop</strong>
+          <strong>✅ Open Your Business</strong>
           Dashboard pe "Open" button dabayein — queue shuru ho jayegi
         </div>
       </div>

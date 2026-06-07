@@ -18,7 +18,8 @@ import { easypaisaWebhook, jazzcashWebhook,
          manualPayment }                              from './routes/payments.js';
 import { createPrioritySession,
          getActivePrioritySession,
-         updatePrioritySession }                from './routes/priority.js';
+         updatePrioritySession,
+         announcePrioritySession }              from './routes/priority.js';
 import { submitRegistration, listRegistrations,
          approveRegistration, rejectRegistration }    from './routes/register.js';
 import { subscribePush, unsubscribePush, requestDelay } from './routes/push.js';
@@ -91,9 +92,10 @@ const ROUTES = [
   { method: 'POST',   path: '/admin/payment-requests/:id/approve',       handler: approvePaymentRequest },
   { method: 'POST',   path: '/admin/payment-requests/:id/reject',        handler: rejectPaymentRequest },
 
-  // Priority Overlay System (Phase 1+3)
+  // Priority Overlay System (Phase 1+3+4)
   { method: 'POST',   path: '/priority/sessions',              handler: createPrioritySession },
   { method: 'GET',    path: '/priority/active',                handler: getActivePrioritySession },
+  { method: 'PATCH',  path: '/priority/sessions/:id/announce', handler: announcePrioritySession },
   { method: 'PATCH',  path: '/priority/sessions/:id',          handler: updatePrioritySession },
 
   // Tokens (auth required)

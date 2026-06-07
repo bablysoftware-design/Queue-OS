@@ -255,3 +255,33 @@ export async function updatePrioritySession(request, env) {
     });
   } catch (err) { return serverError(err.message); }
 }
+
+/**
+ * PATCH /priority/sessions/:id/announce
+ * Atomic claim for multi-device audio dedup.
+ * First device to call this sets priority_announced_at.
+ * Subsequent devices get 0 rows updated → skip audio.
+ * Auth: shopkeeper must own the session's shop.
+ */
+export async function announcePrioritySession(request, env) {
+  try {
+    const db   = createClient(env);
+    const auth = await requireShopAuth(request, env);
+    if (auth instanceof Response) return auth;
+
+    const url       = new URL(request.url);
+    // /priority/sessions/:id/announce → split gives ['','priority','sessions',':id','announce']
+    const sessionId = url.pathname.split('/')[3];
+    if (!isValidUUID(sessionId)) return badRequest('Invalid session id');
+
+    // Atomic: only updates if priority_announced_at IS NULL
+    // Second concurrent device finds 0 rows → returns claimed:false
+    const updated = await db.update('priority_sessions',
+      `id=eq.${sessionId}&status=eq.active&priority_announced_at=is.null`,
+      { priority_announced_at: new Date().toISOString() }
+    );
+
+    const claimed = updated?.length > 0;
+    return ok({ claimed });
+  } catch (err) { return serverError(err.message); }
+}

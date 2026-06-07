@@ -137,7 +137,7 @@ const STRINGS = {
     appTagline:     'سمارٹ قطار انتظام',
     langSwitch:     'English',
 
-    shopLogin:      'دکان لاگ ان',
+    shopLogin:      'کاروبار لاگ ان',
     whatsappNum:    'واٹس ایپ نمبر',
     phonePlaceholder:'923001234567',
     pin:            'چار ہندسہ پن',
