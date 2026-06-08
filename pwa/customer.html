@@ -2555,7 +2555,7 @@ function _firePriorityCustomerAlert(sessionId) {
       if (!('speechSynthesis' in window)) return;
       window.speechSynthesis.cancel();
       const utt = new SpeechSynthesisUtterance(
-        'Aap ki bari agae hay. Faoran counter par tashreef layen.'
+        'ترجیحی گاہک۔ براہ کرم کاؤنٹر پر تشریف لائیں۔'
       );
       utt.rate = 0.88; utt.volume = 1.0;
       window.speechSynthesis.speak(utt);
