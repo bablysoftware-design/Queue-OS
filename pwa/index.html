@@ -2096,7 +2096,7 @@ function playPriorityAlert(tokenNumber, customerName) {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel(); // clear any pending
       const name = customerName ? customerName : `Token ${tokenNumber}`;
-      const text = `Priority customer. Token number ${tokenNumber}. ${name}. Please proceed to counter now.`;
+      const text = `ترجیحی گاہک۔ ٹوکن نمبر ${tokenNumber}۔ ${name}۔ براہ کرم کاؤنٹر پر تشریف لائیں۔`;
       const utt  = new SpeechSynthesisUtterance(text);
       utt.rate   = 0.88;
       utt.volume = 1.0;

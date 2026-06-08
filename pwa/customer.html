@@ -2310,7 +2310,7 @@ function startTracker() {
   if (trackerTimer) clearInterval(trackerTimer);
   updateMuteUI();
   updateTracker();
-  trackerTimer = setInterval(updateTracker, 8000);
+  trackerTimer = setInterval(updateTracker, 5000); // 5s base — faster priority detection
 }
 
 async function updateTracker() {
@@ -2335,7 +2335,8 @@ async function updateTracker() {
       if (posEl)  posEl.textContent  = '🚨';
       if (waitEl) waitEl.textContent = '0 min';
       // Fire customer-side alert — isolated, one-time via sessionStorage dedup
-      _firePriorityCustomerAlert();
+      // Pass session ID so new sessions always re-alert even after page refresh
+      _firePriorityCustomerAlert(data.priority_session_id || null);
       return; // don't fall through to waiting branch
     }
 
@@ -2522,13 +2523,13 @@ ${link}
 
 // ── POLL PAYMENT APPROVAL ──────────────────────────────────
 // ── Priority customer alert — isolated, fires once per priority session ──
-const _CUST_PRIORITY_KEY = 'wm_cust_priority_alerted';
-let   _custPriorityAlerted = false;
+// Track last alerted priority session ID — resets automatically on new session
+let _lastAlertedPrioritySession = null;
 
-function _firePriorityCustomerAlert() {
-  // Dedupe: only fire once per page session
-  if (_custPriorityAlerted) return;
-  _custPriorityAlerted = true;
+function _firePriorityCustomerAlert(sessionId) {
+  // Dedupe: only fire once per unique priority session
+  if (sessionId && _lastAlertedPrioritySession === sessionId) return;
+  _lastAlertedPrioritySession = sessionId || '__unknown__';
 
   // Beep — separate AudioContext, never touches existing _wmAudioCtx
   try {
@@ -2554,7 +2555,7 @@ function _firePriorityCustomerAlert() {
       if (!('speechSynthesis' in window)) return;
       window.speechSynthesis.cancel();
       const utt = new SpeechSynthesisUtterance(
-        'Priority call. Please proceed to the counter now.'
+        'Aap ki bari agae hay. Faoran counter par tashreef layen.'
       );
       utt.rate = 0.88; utt.volume = 1.0;
       window.speechSynthesis.speak(utt);
