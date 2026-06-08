@@ -242,6 +242,16 @@ export async function checkPosition(request, env) {
       return ok({ status: 'shop_closed', token: myToken });
     }
 
+    // Check if this token has an active priority session
+    // Additive only — does not affect position math or any other status
+    let priority_active = false;
+    try {
+      const pRows = await db.select('priority_sessions',
+        `token_id=eq.${tokenId}&status=eq.active&limit=1`
+      );
+      priority_active = pRows?.length > 0;
+    } catch(e) { /* non-critical — fall through with false */ }
+
     return ok({
       status:          'waiting',
       token:           myToken,
@@ -250,6 +260,7 @@ export async function checkPosition(request, env) {
       estimated_wait:  ahead.length * (shop?.avg_service_time_mins ?? 10),
       current_serving: shop?.current_token,
       shop_name:       shop?.name,
+      priority_active,
     });
   } catch (err) { return serverError(err.message); }
 }

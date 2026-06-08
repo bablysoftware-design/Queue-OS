@@ -2326,6 +2326,19 @@ async function updateTracker() {
     const posEl  = document.getElementById('r-pos');
     const waitEl = document.getElementById('r-wait-val');
 
+    // Priority overlay: business flagged this token without changing its status
+    // Show go-to-counter alert, play isolated alert — tracker math unchanged
+    if (data.status === 'waiting' && data.priority_active) {
+      badge.className   = 'tracker-badge called';
+      badge.textContent = '🚨 ابھی کاؤنٹر پر آئیں!';
+      sub.textContent   = 'آپ کو ترجیحی بنیاد پر بلایا گیا ہے';
+      if (posEl)  posEl.textContent  = '🚨';
+      if (waitEl) waitEl.textContent = '0 min';
+      // Fire customer-side alert — isolated, one-time via sessionStorage dedup
+      _firePriorityCustomerAlert();
+      return; // don't fall through to waiting branch
+    }
+
     if (data.status === 'called') {
       badge.className   = 'tracker-badge called';
       badge.textContent = '🔔 آپ کی باری آ گئی!';
@@ -2508,6 +2521,47 @@ ${link}
 }
 
 // ── POLL PAYMENT APPROVAL ──────────────────────────────────
+// ── Priority customer alert — isolated, fires once per priority session ──
+const _CUST_PRIORITY_KEY = 'wm_cust_priority_alerted';
+let   _custPriorityAlerted = false;
+
+function _firePriorityCustomerAlert() {
+  // Dedupe: only fire once per page session
+  if (_custPriorityAlerted) return;
+  _custPriorityAlerted = true;
+
+  // Beep — separate AudioContext, never touches existing _wmAudioCtx
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const go  = () => {
+      const t = ctx.currentTime;
+      [[880,0],[1100,0.2],[880,0.4],[1320,0.65]].forEach(([f,w]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'square'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.6, t+w);
+        g.gain.exponentialRampToValueAtTime(0.001, t+w+0.18);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(t+w); o.stop(t+w+0.2);
+      });
+      if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 600]);
+    };
+    ctx.state === 'suspended' ? ctx.resume().then(go) : go();
+  } catch(e) {}
+
+  // Voice — after beep
+  setTimeout(() => {
+    try {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const utt = new SpeechSynthesisUtterance(
+        'Priority call. Please proceed to the counter now.'
+      );
+      utt.rate = 0.88; utt.volume = 1.0;
+      window.speechSynthesis.speak(utt);
+    } catch(e) {}
+  }, 800);
+}
+
 // ── FILTERS ────────────────────────────────────────────────
 // ── City autocomplete — single source of truth: /search/locations ──
 let _cityCache = {};  // memory cache: query→results
