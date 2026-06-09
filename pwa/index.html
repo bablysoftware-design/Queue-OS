@@ -1220,7 +1220,7 @@ body::after {
 const WORKER = 'https://saf-queue-worker.byker-software.workers.dev';
 
 // Feature flag — set true to enable Call Now button in queue list
-const FEATURE_CALL_NOW = true;
+const FEATURE_CALL_NOW = false; // Replaced by Priority button — kept for potential future use
 
 // Phase 2: Priority Overlay System — read-only UI rendering
 // Set true to show priority panel. No mutations until Phase 3.
@@ -2096,7 +2096,7 @@ function playPriorityAlert(tokenNumber, customerName) {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel(); // clear any pending
       const name = customerName ? customerName : `Token ${tokenNumber}`;
-      const text = `ترجیحی ٹوکن نمبر ${tokenNumber}۔ ${name}۔ براہ کرم کاؤنٹر پر تشریف لائیں۔`;
+      const text = `ترجیحی ٹوکن نمبر ${tokenNumber}۔ ${name}۔ براۓ مہربانی کاؤنٹر پر تشریف لائیں۔`;
       const utt  = new SpeechSynthesisUtterance(text);
       utt.rate   = 0.88;
       utt.volume = 1.0;
@@ -2441,8 +2441,13 @@ async function api(method, path, body) {
   if (body) opts.body = JSON.stringify(body);
   const res  = await fetch(WORKER + path, opts);
   // Auto-logout on auth errors — but NOT on login route or background polls
-  const isBackground = path.includes('/priority/') || path.includes('/public/');
-  if (res.status === 401 && !path.includes('/login') && !isBackground) {
+  // Only auto-logout on explicit auth failures for mutation routes
+  // Queue reads, priority polls, public routes: let them fail silently
+  const isSilentRoute = path.includes('/priority/') 
+                     || path.includes('/public/')
+                     || path.includes('/tokens/queue')
+                     || path.includes('/tokens/stats');
+  if (res.status === 401 && !path.includes('/login') && !isSilentRoute) {
     localStorage.clear();
     state.sessionToken = null;
     showScreen('login-screen');
@@ -2725,17 +2730,10 @@ window.viewScreenshot = viewScreenshot;
     state.isOpen       = op;
     state.sessionToken = tok;
 
-    // Show dashboard optimistically — session likely still valid
+    // Show dashboard — session token is trusted until a real API call fails
+    // refreshQueue() runs immediately inside showDashboard() and will
+    // trigger normal re-login flow if token is genuinely expired
     showDashboard();
-
-    // Silently verify session in background
-    // If 401 → api() will handle it via its own 401 handler
-    // We just ensure the first refresh doesn't visibly flash login
-    api('GET', `/tokens/queue?shop_id=${id}&limit=1`)
-      .catch(() => {
-        // api() already handles 401 by calling showScreen('login-screen')
-        // No additional action needed here
-      });
   } else {
     ['saf_shop_id','saf_shop_name','saf_is_open','saf_session_token'].forEach(k => localStorage.removeItem(k));
     showScreen('login-screen');
