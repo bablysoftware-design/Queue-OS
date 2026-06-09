@@ -2445,6 +2445,7 @@ async function api(method, path, body) {
   // All GET reads fail silently — prevents refresh → login redirect
   const isReadRoute = method === 'GET' || path.includes('/priority/') || path.includes('/public/');
   if (res.status === 401 && !path.includes('/login') && !isReadRoute) {
+    console.log('[401-LOGOUT] triggered by:', method, path);
     localStorage.clear();
     state.sessionToken = null;
     showScreen('login-screen');
@@ -2721,17 +2722,16 @@ window.viewScreenshot = viewScreenshot;
   const op  = localStorage.getItem('saf_is_open') === '1';
   const tok = localStorage.getItem('saf_session_token');
 
+  console.log('[BOOT] id:', !!id, 'tok:', !!tok, 'shopId:', id?.slice(0,8));
+
   if (id && tok) {
     state.shopId       = id;
     state.shopName     = nm || '';
     state.isOpen       = op;
     state.sessionToken = tok;
-
-    // Show dashboard — session token is trusted until a real API call fails
-    // refreshQueue() runs immediately inside showDashboard() and will
-    // trigger normal re-login flow if token is genuinely expired
     showDashboard();
   } else {
+    console.log('[BOOT] no session — showing login. id=', id, 'tok=', tok?.slice(0,8));
     ['saf_shop_id','saf_shop_name','saf_is_open','saf_session_token'].forEach(k => localStorage.removeItem(k));
     showScreen('login-screen');
   }
