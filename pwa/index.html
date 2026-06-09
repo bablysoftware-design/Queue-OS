@@ -2441,13 +2441,10 @@ async function api(method, path, body) {
   if (body) opts.body = JSON.stringify(body);
   const res  = await fetch(WORKER + path, opts);
   // Auto-logout on auth errors — but NOT on login route or background polls
-  // Only auto-logout on explicit auth failures for mutation routes
-  // Queue reads, priority polls, public routes: let them fail silently
-  const isSilentRoute = path.includes('/priority/') 
-                     || path.includes('/public/')
-                     || path.includes('/tokens/queue')
-                     || path.includes('/tokens/stats');
-  if (res.status === 401 && !path.includes('/login') && !isSilentRoute) {
+  // Auto-logout ONLY on mutation routes that explicitly reject the session
+  // All GET reads fail silently — prevents refresh → login redirect
+  const isReadRoute = method === 'GET' || path.includes('/priority/') || path.includes('/public/');
+  if (res.status === 401 && !path.includes('/login') && !isReadRoute) {
     localStorage.clear();
     state.sessionToken = null;
     showScreen('login-screen');

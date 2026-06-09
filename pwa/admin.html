@@ -207,9 +207,32 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
     <div class="tab-pane active" id="tab-shops">
     <div class="section">
       <div class="section-title">All Shops</div>
+
+      <!-- Search + Filter bar -->
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <input id="admin-shop-search" type="text" placeholder="🔍 Search by name, phone, area..."
+          oninput="renderShops()"
+          style="flex:1;min-width:200px;padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px"/>
+        <select id="admin-shop-filter-status" onchange="renderShops()"
+          style="padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px">
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+        <select id="admin-shop-filter-plan" onchange="renderShops()"
+          style="padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px">
+          <option value="">All Plans</option>
+          <option value="free">Free</option>
+          <option value="basic">Basic</option>
+          <option value="pro">Pro</option>
+        </select>
+      </div>
+
+      <div id="admin-search-count" style="font-size:11px;color:var(--text2);margin-bottom:8px"></div>
+
       <div class="table-wrap">
         <div class="table-head">
-          <span>Shop</span><span>Phone</span><span>Status</span><span>Plan</span><span>Expiry</span><span>Actions</span>
+          <span>Business</span><span>Phone</span><span>Status</span><span>Plan</span><span>Expiry</span><span>Actions</span>
         </div>
         <div id="shop-list"><div class="loading-row">Loading shops...</div></div>
       </div>
@@ -359,9 +382,37 @@ function renderStats() {
 
 function renderShops() {
   const el = document.getElementById('shop-list');
-  if (!shops.length) { el.innerHTML = '<div class="empty-row">No shops yet</div>'; return; }
+  if (!shops.length) { el.innerHTML = '<div class="empty-row">No businesses yet</div>'; return; }
 
-  el.innerHTML = shops.map((s, i) => {
+  const q      = (document.getElementById('admin-shop-search')?.value || '').toLowerCase().trim();
+  const status = document.getElementById('admin-shop-filter-status')?.value || '';
+  const planF  = document.getElementById('admin-shop-filter-plan')?.value   || '';
+
+  const filtered = shops.filter(s => {
+    const matchQ = !q
+      || s.name.toLowerCase().includes(q)
+      || (s.owner_phone||'').toLowerCase().includes(q)
+      || (s.area||'').toLowerCase().includes(q)
+      || (s.city||'').toLowerCase().includes(q)
+      || (s.category||'').toLowerCase().includes(q);
+    const matchStatus = !status
+      || (status === 'active'   &&  s.is_active)
+      || (status === 'inactive' && !s.is_active);
+    const matchPlan = !planF || (s.sub?.plan_name ?? 'free') === planF;
+    return matchQ && matchStatus && matchPlan;
+  });
+
+  const countEl = document.getElementById('admin-search-count');
+  if (countEl) countEl.textContent = (q || status || planF)
+    ? `${filtered.length} of ${shops.length} businesses`
+    : `${shops.length} businesses total`;
+
+  if (!filtered.length) {
+    el.innerHTML = '<div class="empty-row">No businesses match your search</div>';
+    return;
+  }
+
+  el.innerHTML = filtered.map((s, i) => {
     const plan   = s.sub?.plan_name ?? 'free';
     const expiry = s.sub?.end_date  ?? '—';
     return `<div class="table-row" style="animation-delay:${i*.03}s">
