@@ -132,10 +132,16 @@ export async function getActivePrioritySession(request, env) {
     if (!isValidUUID(shop_id))      return badRequest('Invalid shop_id');
     if (auth.shop_id !== shop_id)   return badRequest('Unauthorized for this shop');
 
-    // Fetch active session for this shop+counter
-    const sessions = await db.select('priority_sessions',
-      `shop_id=eq.${shop_id}&counter_id=eq.${counter_id}&status=eq.active&order=started_at.desc&limit=1`
-    );
+    // Fetch active session — returns null gracefully if table not yet created
+    let sessions;
+    try {
+      sessions = await db.select('priority_sessions',
+        `shop_id=eq.${shop_id}&counter_id=eq.${counter_id}&status=eq.active&order=started_at.desc&limit=1`
+      );
+    } catch(dbErr) {
+      // Table may not exist yet — return null session instead of 500
+      return ok({ session: null });
+    }
 
     if (!sessions?.length) return ok({ session: null });
 
