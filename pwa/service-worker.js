@@ -1,5 +1,5 @@
 // service-worker.js v7 - aggressive reset
-const CACHE = 'wm-v18'; // sprint3: analytics // sprint2: offline page, 404 // bumped: screenshot event delegation fix
+const CACHE = 'wm-v19'; // bumped: boot fix + 401 handler + admin search
 
 self.addEventListener('install', e => {
   self.skipWaiting();
