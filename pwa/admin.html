@@ -250,17 +250,45 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
       </div>
       <div class="section" style="margin-top:16px">
         <div class="section-title">Set Custom Plan for Business</div>
-        <div style="display:flex;flex-direction:column;gap:8px;max-width:400px">
-          <input id="custom-plan-shop-id" type="text" placeholder="Business ID (UUID)" style="padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px"/>
-          <select id="custom-plan-name" style="padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px">
-            <option value="free">Free</option>
-            <option value="basic">Basic</option>
-            <option value="pro">Pro</option>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:12px">Search a business by name, then assign a plan with custom duration</div>
+        <div style="display:flex;flex-direction:column;gap:8px;max-width:440px">
+
+          <!-- Business search -->
+          <div style="position:relative">
+            <input id="custom-plan-search" type="text" placeholder="🔍 Search business by name or phone..."
+              oninput="searchBusinessForPlan()"
+              autocomplete="off"
+              style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;box-sizing:border-box"/>
+            <div id="custom-plan-results"
+              style="position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid rgba(212,175,55,.2);border-radius:10px;z-index:50;margin-top:4px;max-height:200px;overflow-y:auto;display:block"></div>
+          </div>
+          <input type="hidden" id="custom-plan-shop-id"/>
+
+          <!-- Plan selector -->
+          <select id="custom-plan-name"
+            style="padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px">
+            <option value="free">Free Trial</option>
+            <option value="basic">Basic — Priority + Paid Tokens + Voice Notes</option>
+            <option value="pro">Pro — All Features + Unlimited</option>
           </select>
-          <input id="custom-plan-days" type="number" placeholder="Duration (days, default 30)" value="30" style="padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px"/>
-          <input id="custom-plan-note" type="text" placeholder="Note (optional)" style="padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px"/>
-          <button onclick="applyCustomPlan()" style="padding:10px;border:none;border-radius:10px;background:var(--gold);color:#0d1422;font-weight:700;font-size:13px;cursor:pointer">Apply Custom Plan</button>
-          <div id="custom-plan-msg" style="font-size:11px;color:var(--green);display:none"></div>
+
+          <!-- Duration -->
+          <div style="display:flex;gap:8px;align-items:center">
+            <input id="custom-plan-days" type="number" value="30" min="1" max="365"
+              placeholder="Days"
+              style="width:90px;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px"/>
+            <span style="font-size:12px;color:var(--text2)">days duration</span>
+          </div>
+
+          <!-- Note -->
+          <input id="custom-plan-note" type="text" placeholder="Note (optional — e.g. NGO discount, hospital deal)"
+            style="padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px"/>
+
+          <button onclick="applyCustomPlan()"
+            style="padding:12px;border:none;border-radius:10px;background:var(--gold);color:#0d1422;font-weight:800;font-size:14px;cursor:pointer">
+            ✓ Apply Custom Plan
+          </button>
+          <div id="custom-plan-msg" style="font-size:12px;color:var(--green);display:none;padding:6px 0"></div>
         </div>
       </div>
     </div>
@@ -700,45 +728,129 @@ async function loadPlans() {
   const el = document.getElementById('plans-list');
   try {
     const { data } = await api('GET', '/admin/plans');
-    if (!data?.length) { el.innerHTML = '<div class="empty-row">No plans found</div>'; return; }
-    el.innerHTML = data.map(p => `
-      <div style="border:1px solid rgba(212,175,55,.2);border-radius:14px;padding:16px;margin-bottom:12px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+    if (!data?.length) { el.innerHTML = '<div class="empty-row">No plans found — run sql/features_v3.sql first</div>'; return; }
+    el.innerHTML = data.map(p => {
+      const inf = p.max_tokens_per_day >= 9999 ? '∞' : p.max_tokens_per_day;
+      const inq = p.max_queue_size >= 9999 ? '∞' : p.max_queue_size;
+      return `
+      <div style="border:1px solid rgba(212,175,55,.25);border-radius:16px;padding:18px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
           <div>
-            <span style="font-size:14px;font-weight:700;color:var(--gold)">${p.display_name || p.name.toUpperCase()}</span>
-            <span style="font-size:11px;color:var(--text2);margin-right:8px"> — ${p.description || ''}</span>
+            <span style="font-size:15px;font-weight:800;color:var(--gold)">${p.display_name||p.name.toUpperCase()}</span>
+            <span style="font-size:11px;color:var(--text2);margin-right:8px"> · ${p.description||''}</span>
           </div>
-          <span style="font-size:16px;font-weight:800;color:var(--text)">Rs ${p.price}<span style="font-size:10px;color:var(--text2)">/mo</span></span>
+          <span style="font-size:18px;font-weight:800">Rs ${p.price}<span style="font-size:10px;color:var(--text2)">/mo</span></span>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:11px">
-          <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px">Tokens/day: <strong>${p.max_tokens_per_day >= 9999 ? '∞' : p.max_tokens_per_day}</strong></div>
-          <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px">Queue size: <strong>${p.max_queue_size >= 9999 ? '∞' : p.max_queue_size}</strong></div>
-          <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px">Priority Call: <strong style="color:${p.allow_priority_call?'var(--green)':'var(--red)'}">${p.allow_priority_call?'✓':'✗'}</strong></div>
-          <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px">Paid Tokens: <strong style="color:${p.allow_paid_tokens?'var(--green)':'var(--red)'}">${p.allow_paid_tokens?'✓':'✗'}</strong></div>
-          <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px">Voice Notes: <strong style="color:${p.allow_voice_notes?'var(--green)':'var(--red)'}">${p.allow_voice_notes?'✓':'✗'}</strong></div>
-          <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px">Analytics: <strong style="color:${p.allow_analytics?'var(--green)':'var(--red)'}">${p.allow_analytics?'✓':'✗'}</strong></div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;margin-bottom:14px">
+          <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px 10px">
+            <div style="color:var(--muted);font-size:10px;margin-bottom:4px">Price (Rs/month)</div>
+            <input id="price-${p.name}" type="number" value="${p.price}" min="0"
+              style="width:100%;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;font-weight:700"/>
+          </div>
+          <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px 10px">
+            <div style="color:var(--muted);font-size:10px;margin-bottom:4px">Tokens / day (9999=∞)</div>
+            <input id="tokens-${p.name}" type="number" value="${p.max_tokens_per_day}" min="1"
+              style="width:100%;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px"/>
+          </div>
+          <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px 10px">
+            <div style="color:var(--muted);font-size:10px;margin-bottom:4px">Queue size (9999=∞)</div>
+            <input id="qsize-${p.name}" type="number" value="${p.max_queue_size}" min="1"
+              style="width:100%;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px"/>
+          </div>
+          <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px 10px">
+            <div style="color:var(--muted);font-size:10px;margin-bottom:4px">Max devices (-1=∞)</div>
+            <input id="devices-${p.name}" type="number" value="${p.max_devices||1}" min="-1"
+              style="width:100%;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px"/>
+          </div>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <label style="font-size:11px;color:var(--text2)">Price:</label>
-          <input id="price-${p.name}" type="number" value="${p.price}" style="width:90px;padding:5px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px"/>
-          <label style="font-size:11px;color:var(--text2)">Tokens/day:</label>
-          <input id="tokens-${p.name}" type="number" value="${p.max_tokens_per_day}" style="width:80px;padding:5px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px"/>
-          <button onclick="savePlan('${p.name}')" style="padding:6px 14px;border:none;border-radius:8px;background:var(--gold);color:#0d1422;font-weight:700;font-size:12px;cursor:pointer">Save</button>
+
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:600;letter-spacing:.05em">FEATURE FLAGS</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">
+          ${[
+            ['priority_call','Priority Call','allow_priority_call'],
+            ['paid_tokens','Paid Tokens','allow_paid_tokens'],
+            ['voice_notes','Voice Notes','allow_voice_notes'],
+            ['analytics','Analytics','allow_analytics'],
+            ['poster','Poster/QR Print','allow_poster'],
+          ].map(([key,label,col]) => `
+          <label style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border-radius:8px;padding:8px 10px;cursor:pointer">
+            <input type="checkbox" id="feat-${p.name}-${key}" ${p[col]?'checked':''} style="width:15px;height:15px;accent-color:var(--gold)"/>
+            <span style="font-size:12px">${label}</span>
+          </label>`).join('')}
         </div>
-      </div>`).join('');
+
+        <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px 10px;margin-bottom:12px">
+          <div style="color:var(--muted);font-size:10px;margin-bottom:4px">Description</div>
+          <input id="desc-${p.name}" type="text" value="${esc(p.description||'')}"
+            style="width:100%;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:12px"/>
+        </div>
+
+        <button onclick="savePlan('${p.name}')"
+          style="width:100%;padding:11px;border:none;border-radius:10px;background:var(--gold);color:#0d1422;font-weight:800;font-size:13px;cursor:pointer">
+          💾 Save ${p.display_name||p.name.toUpperCase()} Plan
+        </button>
+      </div>`;
+    }).join('');
   } catch(e) { el.innerHTML = `<div class="empty-row">Error: ${e.message}</div>`; }
 }
 
 async function savePlan(name) {
-  const price  = parseInt(document.getElementById(`price-${name}`)?.value);
-  const tokens = parseInt(document.getElementById(`tokens-${name}`)?.value);
+  const price   = parseInt(document.getElementById(`price-${name}`)?.value) || 0;
+  const tokens  = parseInt(document.getElementById(`tokens-${name}`)?.value) || 50;
+  const qsize   = parseInt(document.getElementById(`qsize-${name}`)?.value) || 20;
+  const devices = parseInt(document.getElementById(`devices-${name}`)?.value) || 1;
+  const desc    = document.getElementById(`desc-${name}`)?.value.trim() || null;
+  const feat = {
+    allow_priority_call: document.getElementById(`feat-${name}-priority_call`)?.checked || false,
+    allow_paid_tokens:   document.getElementById(`feat-${name}-paid_tokens`)?.checked   || false,
+    allow_voice_notes:   document.getElementById(`feat-${name}-voice_notes`)?.checked   || false,
+    allow_analytics:     document.getElementById(`feat-${name}-analytics`)?.checked     || false,
+    allow_poster:        document.getElementById(`feat-${name}-poster`)?.checked        || false,
+  };
   try {
-    await api('PATCH', `/admin/plans/${name}`, { price, max_tokens_per_day: tokens });
-    showToast(`✓ ${name} plan updated`, 'success');
+    await api('PATCH', `/admin/plans/${name}`, {
+      price, max_tokens_per_day: tokens, max_queue_size: qsize,
+      max_devices: devices, description: desc, ...feat
+    });
+    showToast(`✓ ${name.toUpperCase()} plan saved`, 'success');
     loadPlans();
   } catch(e) { showToast(e.message, 'error'); }
 }
 window.savePlan = savePlan;
+
+// ── Custom plan — search business by name ───────────────────
+let _customPlanShops = [];
+
+async function searchBusinessForPlan() {
+  const q   = document.getElementById('custom-plan-search')?.value.trim().toLowerCase();
+  const res = document.getElementById('custom-plan-results');
+  if (!q || q.length < 2) { res.innerHTML = ''; return; }
+  if (!_customPlanShops.length) {
+    try { const { data } = await api('GET', '/admin/shops'); _customPlanShops = data || []; } catch(e) {}
+  }
+  const matches = _customPlanShops.filter(s =>
+    s.name.toLowerCase().includes(q) || (s.owner_phone||'').includes(q)
+  ).slice(0, 6);
+  if (!matches.length) { res.innerHTML = '<div style="font-size:11px;color:var(--muted);padding:6px">No match</div>'; return; }
+  res.innerHTML = matches.map(s => `
+    <div onclick="selectBusinessForPlan('${s.id}','${esc(s.name)}')"
+      style="padding:9px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05)"
+      onmouseover="this.style.background='rgba(212,175,55,.07)'"
+      onmouseout="this.style.background=''">
+      <strong>${esc(s.name)}</strong>
+      <span style="font-size:11px;color:var(--muted);margin-right:6px"> · ${esc(s.owner_phone||'')}</span>
+      <span style="font-size:10px;color:var(--gold)">${(s.sub?.plan_name||'free').toUpperCase()}</span>
+    </div>`).join('');
+}
+window.searchBusinessForPlan = searchBusinessForPlan;
+
+function selectBusinessForPlan(id, name) {
+  document.getElementById('custom-plan-shop-id').value = id;
+  document.getElementById('custom-plan-search').value  = name;
+  document.getElementById('custom-plan-results').innerHTML = '';
+}
+window.selectBusinessForPlan = selectBusinessForPlan;
 
 async function applyCustomPlan() {
   const shopId = document.getElementById('custom-plan-shop-id').value.trim();
@@ -746,12 +858,12 @@ async function applyCustomPlan() {
   const days   = parseInt(document.getElementById('custom-plan-days').value) || 30;
   const note   = document.getElementById('custom-plan-note').value.trim();
   const msg    = document.getElementById('custom-plan-msg');
-  if (!shopId) { showToast('Business ID required', 'error'); return; }
+  if (!shopId) { showToast('Select a business first', 'error'); return; }
   try {
     await api('PATCH', `/admin/shops/${shopId}/custom-plan`, { plan_name: plan, duration_days: days, note });
-    msg.style.display = 'block';
-    msg.textContent   = `✓ ${plan.toUpperCase()} plan applied for ${days} days`;
-    showToast('Custom plan applied', 'success');
+    if (msg) { msg.style.display='block'; msg.textContent=`✓ ${plan.toUpperCase()} applied for ${days} days`; }
+    showToast(`✓ Custom plan applied`, 'success');
+    _customPlanShops = []; // reset cache so next search has fresh data
   } catch(e) { showToast(e.message, 'error'); }
 }
 window.applyCustomPlan = applyCustomPlan;
