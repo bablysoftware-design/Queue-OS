@@ -89,3 +89,29 @@ export async function expireStaleSubscriptions(db) {
   // Use the SQL function we defined in the schema
   return db.rpc('expire_subscriptions');
 }
+
+/**
+ * Get full plan features for a shop's active subscription.
+ * Returns plan feature flags + limits.
+ */
+export async function getShopPlanFeatures(db, shopId) {
+  const sub = await getActiveSubscription(db, shopId);
+  if (!sub) return null;
+  const plans = await db.select('plans', `name=eq.${sub.plan_name}&limit=1`);
+  if (!plans?.length) return null;
+  return { sub, plan: plans[0] };
+}
+
+/**
+ * Check if a shop's plan allows a specific feature.
+ * feature: 'priority_call' | 'paid_tokens' | 'voice_notes' | 'analytics' | 'poster'
+ */
+export async function checkFeatureAllowed(db, shopId, feature) {
+  const { valid, sub } = await checkSubscriptionValid(db, shopId);
+  if (!valid) return { allowed: false, reason: 'subscription_invalid' };
+  const plans = await db.select('plans', `name=eq.${sub.plan_name}&limit=1`);
+  if (!plans?.length) return { allowed: false, reason: 'plan_not_found' };
+  const plan = plans[0];
+  const allowed = !!plan[`allow_${feature}`];
+  return { allowed, plan_name: sub.plan_name, reason: allowed ? 'ok' : 'plan_upgrade_required' };
+}

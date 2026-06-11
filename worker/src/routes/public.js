@@ -7,7 +7,7 @@
 
 import { createClient }  from '../utils/db.js';
 import { createToken }   from '../services/tokenService.js';
-import { checkSubscriptionValid } from '../services/subscriptionService.js';
+import { checkSubscriptionValid, checkFeatureAllowed } from '../services/subscriptionService.js';
 import { sanitizeParam, sanitizeSearch, sanitizeName, isRateLimited } from '../utils/sanitize.js';
 import { ok, badRequest, notFound, serverError }       from '../utils/response.js';
 
@@ -151,7 +151,6 @@ export async function joinQueue(request, env) {
     const voice_note_dur    = typeof body.voice_note_duration === 'number'
                               ? Math.min(Math.max(0, body.voice_note_duration), 15) : null;
 
-
     if (!shop_id)                          return badRequest('shop_id ضروری ہے');
     if (!customer_name && !customer_phone) return badRequest('نام یا نمبر ضروری ہے');
 
@@ -181,16 +180,25 @@ export async function joinQueue(request, env) {
       );
     }
 
+    // ── Voice note plan gate ────────────────────────────────
+    // If voice note submitted but shop on free plan, silently strip it
+    let finalVoicePath = voice_note_path;
+    let finalVoiceDur  = voice_note_dur;
+    if (voice_note_path) {
+      const voiceFeat = await checkFeatureAllowed(db, shop_id, 'voice_notes');
+      if (!voiceFeat.allowed) { finalVoicePath = null; finalVoiceDur = null; }
+    }
+
    const result = await createToken(
   db,
   shop_id,
   customer_phone,
   customer_name,
   env,
-  {},              // opts
+  {},
   customer_note,
-  voice_note_path,
-  voice_note_dur
+  finalVoicePath,
+  finalVoiceDur
 );
     return ok({
       token_number:   result.token.token_number,

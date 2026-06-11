@@ -20,6 +20,9 @@ import { createPrioritySession,
          getActivePrioritySession,
          updatePrioritySession,
          announcePrioritySession }              from './routes/priority.js';
+import { listPlans, updatePlan, setCustomPlan,
+         listUpgradeRequests, reviewUpgradeRequest,
+         submitUpgradeRequestHandler }           from './routes/plans.js';
 import { submitRegistration, listRegistrations,
          approveRegistration, rejectRegistration }    from './routes/register.js';
 import { subscribePush, unsubscribePush, requestDelay } from './routes/push.js';
@@ -91,6 +94,14 @@ const ROUTES = [
   { method: 'GET',    path: '/admin/payment-requests',                   handler: listPaymentRequests },
   { method: 'POST',   path: '/admin/payment-requests/:id/approve',       handler: approvePaymentRequest },
   { method: 'POST',   path: '/admin/payment-requests/:id/reject',        handler: rejectPaymentRequest },
+
+  // Plan management (admin)
+  { method: 'GET',    path: '/admin/plans',                         handler: listPlans },
+  { method: 'PATCH',  path: '/admin/plans/:name',                   handler: updatePlan },
+  { method: 'PATCH',  path: '/admin/shops/:id/custom-plan',         handler: setCustomPlan },
+  { method: 'GET',    path: '/admin/upgrade-requests',              handler: listUpgradeRequests },
+  { method: 'PATCH',  path: '/admin/upgrade-requests/:id',          handler: reviewUpgradeRequest },
+  { method: 'POST',   path: '/upgrade-requests',                    handler: submitUpgradeRequestHandler },
 
   // Priority Overlay System (Phase 1+3+4)
   { method: 'POST',   path: '/priority/sessions',              handler: createPrioritySession },

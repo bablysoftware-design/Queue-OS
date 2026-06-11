@@ -195,11 +195,13 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
 
     <!-- Tab bar -->
     <div class="tab-bar">
-      <button class="tab-btn active" id="tab-shops-btn" onclick="switchAdminTab('shops')">🏪 Shops</button>
+      <button class="tab-btn active" id="tab-shops-btn" onclick="switchAdminTab('shops')">🏪 Businesses</button>
       <button class="tab-btn" id="tab-pending-btn" onclick="switchAdminTab('pending')">
         📋 Pending
         <span class="pending-pill" id="pending-badge" style="display:none"></span>
       </button>
+      <button class="tab-btn" id="tab-plans-btn" onclick="switchAdminTab('plans')">💎 Plans</button>
+      <button class="tab-btn" id="tab-upgrades-btn" onclick="switchAdminTab('upgrades')">⬆ Upgrades</button>
       <button class="tab-btn" id="tab-add-btn" onclick="switchAdminTab('add')">➕ Add</button>
     </div>
 
@@ -238,6 +240,38 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
       </div>
     </div>
     </div><!-- end tab-shops -->
+
+    <!-- TAB: Plans -->
+    <div class="tab-pane" id="tab-plans">
+      <div class="section">
+        <div class="section-title">Plan Pricing & Features</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:12px">Edit globally or set custom pricing per business</div>
+        <div id="plans-list"><div class="loading-row">Loading...</div></div>
+      </div>
+      <div class="section" style="margin-top:16px">
+        <div class="section-title">Set Custom Plan for Business</div>
+        <div style="display:flex;flex-direction:column;gap:8px;max-width:400px">
+          <input id="custom-plan-shop-id" type="text" placeholder="Business ID (UUID)" style="padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px"/>
+          <select id="custom-plan-name" style="padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px">
+            <option value="free">Free</option>
+            <option value="basic">Basic</option>
+            <option value="pro">Pro</option>
+          </select>
+          <input id="custom-plan-days" type="number" placeholder="Duration (days, default 30)" value="30" style="padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px"/>
+          <input id="custom-plan-note" type="text" placeholder="Note (optional)" style="padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px"/>
+          <button onclick="applyCustomPlan()" style="padding:10px;border:none;border-radius:10px;background:var(--gold);color:#0d1422;font-weight:700;font-size:13px;cursor:pointer">Apply Custom Plan</button>
+          <div id="custom-plan-msg" style="font-size:11px;color:var(--green);display:none"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Upgrades -->
+    <div class="tab-pane" id="tab-upgrades">
+      <div class="section">
+        <div class="section-title">Upgrade Requests</div>
+        <div id="upgrades-list"><div class="loading-row">Loading...</div></div>
+      </div>
+    </div>
 
     <!-- TAB: Add -->
     <div class="tab-pane" id="tab-add">
@@ -649,13 +683,112 @@ function esc(s) { return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':
 
 let toastT;
 function switchAdminTab(tab) {
-  ['shops','pending','add'].forEach(t => {
-    document.getElementById(`tab-${t}`).classList.toggle('active', t === tab);
-    document.getElementById(`tab-${t}-btn`).classList.toggle('active', t === tab);
+  ['shops','pending','plans','upgrades','add'].forEach(t => {
+    const pane = document.getElementById(`tab-${t}`);
+    const btn  = document.getElementById(`tab-${t}-btn`);
+    if (pane) pane.classList.toggle('active', t === tab);
+    if (btn)  btn.classList.toggle('active', t === tab);
   });
-  if (tab === 'pending') loadRegistrations();
+  if (tab === 'pending')  loadRegistrations();
+  if (tab === 'plans')    loadPlans();
+  if (tab === 'upgrades') loadUpgradeRequests();
 }
 window.switchAdminTab = switchAdminTab;
+
+// ── Plan management ──────────────────────────────────────────
+async function loadPlans() {
+  const el = document.getElementById('plans-list');
+  try {
+    const { data } = await api('GET', '/admin/plans');
+    if (!data?.length) { el.innerHTML = '<div class="empty-row">No plans found</div>'; return; }
+    el.innerHTML = data.map(p => `
+      <div style="border:1px solid rgba(212,175,55,.2);border-radius:14px;padding:16px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div>
+            <span style="font-size:14px;font-weight:700;color:var(--gold)">${p.display_name || p.name.toUpperCase()}</span>
+            <span style="font-size:11px;color:var(--text2);margin-right:8px"> — ${p.description || ''}</span>
+          </div>
+          <span style="font-size:16px;font-weight:800;color:var(--text)">Rs ${p.price}<span style="font-size:10px;color:var(--text2)">/mo</span></span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:11px">
+          <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px">Tokens/day: <strong>${p.max_tokens_per_day >= 9999 ? '∞' : p.max_tokens_per_day}</strong></div>
+          <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px">Queue size: <strong>${p.max_queue_size >= 9999 ? '∞' : p.max_queue_size}</strong></div>
+          <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px">Priority Call: <strong style="color:${p.allow_priority_call?'var(--green)':'var(--red)'}">${p.allow_priority_call?'✓':'✗'}</strong></div>
+          <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px">Paid Tokens: <strong style="color:${p.allow_paid_tokens?'var(--green)':'var(--red)'}">${p.allow_paid_tokens?'✓':'✗'}</strong></div>
+          <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px">Voice Notes: <strong style="color:${p.allow_voice_notes?'var(--green)':'var(--red)'}">${p.allow_voice_notes?'✓':'✗'}</strong></div>
+          <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px">Analytics: <strong style="color:${p.allow_analytics?'var(--green)':'var(--red)'}">${p.allow_analytics?'✓':'✗'}</strong></div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <label style="font-size:11px;color:var(--text2)">Price:</label>
+          <input id="price-${p.name}" type="number" value="${p.price}" style="width:90px;padding:5px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px"/>
+          <label style="font-size:11px;color:var(--text2)">Tokens/day:</label>
+          <input id="tokens-${p.name}" type="number" value="${p.max_tokens_per_day}" style="width:80px;padding:5px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px"/>
+          <button onclick="savePlan('${p.name}')" style="padding:6px 14px;border:none;border-radius:8px;background:var(--gold);color:#0d1422;font-weight:700;font-size:12px;cursor:pointer">Save</button>
+        </div>
+      </div>`).join('');
+  } catch(e) { el.innerHTML = `<div class="empty-row">Error: ${e.message}</div>`; }
+}
+
+async function savePlan(name) {
+  const price  = parseInt(document.getElementById(`price-${name}`)?.value);
+  const tokens = parseInt(document.getElementById(`tokens-${name}`)?.value);
+  try {
+    await api('PATCH', `/admin/plans/${name}`, { price, max_tokens_per_day: tokens });
+    showToast(`✓ ${name} plan updated`, 'success');
+    loadPlans();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+window.savePlan = savePlan;
+
+async function applyCustomPlan() {
+  const shopId = document.getElementById('custom-plan-shop-id').value.trim();
+  const plan   = document.getElementById('custom-plan-name').value;
+  const days   = parseInt(document.getElementById('custom-plan-days').value) || 30;
+  const note   = document.getElementById('custom-plan-note').value.trim();
+  const msg    = document.getElementById('custom-plan-msg');
+  if (!shopId) { showToast('Business ID required', 'error'); return; }
+  try {
+    await api('PATCH', `/admin/shops/${shopId}/custom-plan`, { plan_name: plan, duration_days: days, note });
+    msg.style.display = 'block';
+    msg.textContent   = `✓ ${plan.toUpperCase()} plan applied for ${days} days`;
+    showToast('Custom plan applied', 'success');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+window.applyCustomPlan = applyCustomPlan;
+
+// ── Upgrade requests ─────────────────────────────────────────
+async function loadUpgradeRequests() {
+  const el = document.getElementById('upgrades-list');
+  try {
+    const { data } = await api('GET', '/admin/upgrade-requests');
+    if (!data?.length) { el.innerHTML = '<div class="empty-row">No upgrade requests</div>'; return; }
+    el.innerHTML = data.map((r, i) => `
+      <div style="border:1px solid rgba(212,175,55,.15);border-radius:12px;padding:12px;margin-bottom:8px;animation:fadeIn .3s ease ${i*.05}s both">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+          <div>
+            <div style="font-weight:700;font-size:13px">${esc(r.shop_id?.slice(0,8))}...</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:2px">Plan: <strong style="color:var(--gold)">${r.requested_plan?.toUpperCase()}</strong> · ${new Date(r.created_at).toLocaleDateString()}</div>
+            ${r.payment_ref ? `<div style="font-size:11px;color:var(--text2)">Ref: ${esc(r.payment_ref)}</div>` : ''}
+          </div>
+          <span style="font-size:10px;padding:3px 8px;border-radius:20px;background:rgba(251,191,36,.15);color:#fbbf24">${r.status.toUpperCase()}</span>
+        </div>
+        ${r.status === 'pending' ? `
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button onclick="reviewUpgrade('${r.id}','approved')" style="flex:1;padding:8px;border:none;border-radius:8px;background:var(--gold);color:#0d1422;font-weight:700;font-size:12px;cursor:pointer">✓ Approve</button>
+          <button onclick="reviewUpgrade('${r.id}','rejected')" style="flex:1;padding:8px;border:1px solid rgba(248,113,113,.4);border-radius:8px;background:transparent;color:var(--red);font-size:12px;cursor:pointer">✗ Reject</button>
+        </div>` : ''}
+      </div>`).join('');
+  } catch(e) { el.innerHTML = `<div class="empty-row">Error: ${e.message}</div>`; }
+}
+
+async function reviewUpgrade(id, action) {
+  try {
+    await api('PATCH', `/admin/upgrade-requests/${id}`, { action });
+    showToast(`Request ${action}`, 'success');
+    loadUpgradeRequests();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+window.reviewUpgrade = reviewUpgrade;
 
 function scrollToPending() {
   const sec = document.getElementById('pending-section');

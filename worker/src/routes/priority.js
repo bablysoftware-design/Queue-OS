@@ -12,7 +12,7 @@ import { createClient }           from '../utils/db.js';
 import { requireShopAuth }        from '../utils/auth.js';
 import { ok, badRequest, notFound, serverError } from '../utils/response.js';
 import { isValidUUID }            from '../utils/validation.js';
-import { checkSubscriptionValid } from '../services/subscriptionService.js';
+import { checkSubscriptionValid, checkFeatureAllowed } from '../services/subscriptionService.js';
 
 /**
  * POST /priority/sessions
@@ -55,9 +55,11 @@ export async function createPrioritySession(request, env) {
     if (!isValidUUID(token_id)) return badRequest('Invalid token_id');
     if (auth.shop_id !== shop_id) return badRequest('Unauthorized for this shop');
 
-    // Subscription check
+    // Subscription + feature check
     const sub = await checkSubscriptionValid(db, shop_id);
     if (!sub.valid) return badRequest('Subscription expired — renew to use Priority Call');
+    const feat = await checkFeatureAllowed(db, shop_id, 'priority_call');
+    if (!feat.allowed) return badRequest('Priority Call requires Basic or Pro plan — upgrade to unlock');
 
     // Verify token exists, belongs to this shop, and is waiting
     const tokenRows = await db.select('tokens',

@@ -1134,6 +1134,41 @@ body::after {
         </div>
       </div>
 
+      <!-- Business Profile -->
+      <div class="settings-section">
+        <div class="settings-section-title">Business Profile</div>
+        <div class="settings-field">
+          <label>Address</label>
+          <input id="s-address" type="text" placeholder="Full address"/>
+        </div>
+        <div class="settings-field">
+          <label>Opening Hours</label>
+          <input id="s-hours" type="text" placeholder="e.g. Mon-Sat 9am-6pm"/>
+        </div>
+        <div class="settings-field">
+          <label>Description</label>
+          <textarea id="s-description" rows="2" placeholder="Brief description of your business" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;resize:none"></textarea>
+        </div>
+        <button class="btn-save" onclick="saveProfile()" style="margin-top:6px">Save Profile</button>
+        <div id="profile-msg" style="font-size:11px;color:var(--green);margin-top:4px;display:none"></div>
+      </div>
+
+      <!-- Upgrade Plan -->
+      <div class="settings-section">
+        <div class="settings-section-title">📦 Plan & Upgrade</div>
+        <div id="upgrade-plan-info" style="font-size:12px;color:var(--text2);margin-bottom:10px"></div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <select id="upgrade-plan-select" style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px">
+            <option value="basic">Basic — Rs 999/mo (Priority, Paid Tokens, Voice Notes)</option>
+            <option value="pro">Pro — Rs 2,499/mo (Unlimited + All Features)</option>
+          </select>
+          <input id="upgrade-payment-ref" type="text" placeholder="Payment reference / transaction ID"/>
+          <textarea id="upgrade-note" rows="2" placeholder="Payment method + any note" style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;resize:none"></textarea>
+          <button onclick="submitUpgradeRequest()" style="padding:10px;border:none;border-radius:10px;background:var(--gold);color:#0d1422;font-weight:700;font-size:13px;cursor:pointer">📤 Submit Upgrade Request</button>
+          <div id="upgrade-msg" style="font-size:11px;margin-top:4px;display:none"></div>
+        </div>
+      </div>
+
       <div class="settings-section" style="margin-bottom:0">
         <div class="settings-section-title" id="lbl-change-pin">Change PIN</div>
         <div class="pin-row">
@@ -1629,12 +1664,35 @@ function updateStatusToggle(isOpen) {
 function loadSubscription() {
   api('GET', `/subscriptions?shop_id=${state.shopId}`)
     .then(({ data }) => {
-      const plan = (data.plan_name || 'free').toUpperCase();
+      const plan    = (data.plan_name || 'free').toUpperCase();
+      const expiry  = data.end_date || '';
       document.getElementById('sub-plan-display').textContent = plan;
-      document.getElementById('sub-date-display').textContent = `${t('expiry')}: ${data.end_date}`;
+      document.getElementById('sub-date-display').textContent = `${t('expiry')}: ${expiry}`;
       document.getElementById('sub-plan-r').textContent       = plan;
-      document.getElementById('sub-date-r').textContent       = `${t('expiry')}: ${data.end_date}`;
-      document.getElementById('shop-sub-top').textContent     = `${plan} · ${data.end_date}`;
+      document.getElementById('sub-date-r').textContent       = `${t('expiry')}: ${expiry}`;
+      document.getElementById('shop-sub-top').textContent     = `${plan} · ${expiry}`;
+
+      // Trial expiry banner
+      if (expiry) {
+        const daysLeft = Math.ceil((new Date(expiry) - new Date()) / 86400000);
+        let banner = document.getElementById('trial-expiry-banner');
+        if (!banner) {
+          banner = document.createElement('div');
+          banner.id = 'trial-expiry-banner';
+          const dashScreen = document.getElementById('dash-screen');
+          if (dashScreen) dashScreen.prepend(banner);
+        }
+        if (daysLeft <= 0) {
+          banner.style.cssText = 'background:rgba(239,68,68,.15);border-bottom:1px solid rgba(239,68,68,.3);padding:10px 16px;font-size:12px;color:#f87171;text-align:center;display:block';
+          banner.innerHTML = `⚠️ آپ کا پلان ختم ہو گیا — <strong>ابھی اپگریڈ کریں</strong> تاکہ سروس جاری رہے۔ <a href="mailto:support@waitmate.pk" style="color:var(--gold)">رابطہ کریں</a>`;
+        } else if (daysLeft <= 7) {
+          banner.style.cssText = 'background:rgba(251,191,36,.1);border-bottom:1px solid rgba(251,191,36,.25);padding:8px 16px;font-size:12px;color:#fbbf24;text-align:center;display:block';
+          banner.innerHTML = `⏳ پلان ${daysLeft} دن میں ختم ہو گا — <a href="mailto:support@waitmate.pk" style="color:var(--gold)">اپگریڈ کریں</a>`;
+        } else {
+          banner = banner || null;
+          if (banner) banner.style.display = 'none';
+        }
+      }
     }).catch(() => {});
 }
 
@@ -2024,6 +2082,43 @@ function playAlertSound() {
     if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
   } catch(e) {}
 }
+
+// ── Business profile save ────────────────────────────────────
+async function saveProfile() {
+  const address     = document.getElementById('s-address')?.value.trim() || null;
+  const hours       = document.getElementById('s-hours')?.value.trim()   || null;
+  const description = document.getElementById('s-description')?.value.trim() || null;
+  const msg         = document.getElementById('profile-msg');
+  try {
+    await api('PATCH', `/shops/${state.shopId}/settings`, { address, opening_hours: hours, description });
+    if (msg) { msg.style.display='block'; msg.textContent='✓ Profile saved'; setTimeout(()=>msg.style.display='none',2500); }
+  } catch(e) { showToast(e.message,'error'); }
+}
+window.saveProfile = saveProfile;
+
+// ── Upgrade request ─────────────────────────────────────────
+async function submitUpgradeRequest() {
+  const plan = document.getElementById('upgrade-plan-select')?.value;
+  const ref  = document.getElementById('upgrade-payment-ref')?.value.trim();
+  const note = document.getElementById('upgrade-note')?.value.trim();
+  const msg  = document.getElementById('upgrade-msg');
+  if (!ref) { showToast('Please enter payment reference', 'error'); return; }
+  try {
+    await api('POST', '/upgrade-requests', {
+      shop_id: state.shopId,
+      requested_plan: plan,
+      payment_ref: ref,
+      note,
+    });
+    if (msg) {
+      msg.style.display='block';
+      msg.style.color='var(--green)';
+      msg.textContent='✓ Upgrade request submitted — admin will review within 24 hours';
+    }
+    showToast('Upgrade request submitted', 'success');
+  } catch(e) { showToast(e.message,'error'); }
+}
+window.submitUpgradeRequest = submitUpgradeRequest;
 
 // ── Cancel queue token (shopkeeper) ─────────────────────────
 async function cancelQueueToken(tokenId) {
