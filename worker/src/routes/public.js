@@ -21,6 +21,7 @@ export async function getPublicShops(request, env) {
     const url      = new URL(request.url);
     const area     = sanitizeParam(url.searchParams.get('area'));
     const category = sanitizeParam(url.searchParams.get('category'));
+    const city     = sanitizeParam(url.searchParams.get('city'));
     const search   = sanitizeSearch(url.searchParams.get('search'));
     const limit    = Math.min(parseInt(url.searchParams.get('limit') || '50', 10), 100);
     const offset   = Math.max(parseInt(url.searchParams.get('offset') || '0', 10), 0);
@@ -32,6 +33,7 @@ export async function getPublicShops(request, env) {
     try {
       const result = await db.rpc('get_public_shops', {
         p_area: area || null, p_category: category || null,
+        p_city: city || null,
         p_limit: limit, p_offset: offset,
       });
       const r = Array.isArray(result) ? result[0] : result;
@@ -45,6 +47,7 @@ export async function getPublicShops(request, env) {
       let query = `is_active=eq.true&select=id,name,category,area,city,country,address,description,opening_time,closing_time,is_open,current_token,avg_service_time_mins,token_mode,token_price,owner_phone&order=is_open.desc,name.asc&limit=${limit}&offset=${offset}`;
       if (area)     query += `&area=ilike.*${encodeURIComponent(area)}*`;
       if (category) query += `&category=eq.${category}`;
+      if (city)     query += `&city=ilike.*${encodeURIComponent(city)}*`;
 
       const rawShops = await db.select('shops', query);
 

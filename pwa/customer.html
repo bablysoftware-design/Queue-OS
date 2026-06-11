@@ -1207,11 +1207,12 @@ async function loadShops() {
 
   try {
     // C: city is client-side only — do NOT send to server (Worker ignores it)
-    // area/category/search are server-side params
+    // Server-side params: city, category, search, area
     let url = `${WORKER}/public/shops`;
     const qp = [];
+    if (activeCity)     qp.push(`city=${encodeURIComponent(activeCity)}`);
     if (activeArea)     qp.push(`area=${encodeURIComponent(activeArea)}`);
-    if (activeCategory) qp.push(`category=${activeCategory}`);
+    if (activeCategory) qp.push(`category=${encodeURIComponent(activeCategory)}`);
     if (searchQuery)    qp.push(`search=${encodeURIComponent(searchQuery)}`);
     if (qp.length)      url += '?' + qp.join('&');
 
@@ -1230,7 +1231,9 @@ async function loadShops() {
 
     // A: update allShops then re-apply active filters (preserves user's filter state)
     allShops = data.data?.shops ?? [];
-    renderAreaChips(data.data?.areas ?? []);
+    // Only use server areas when no city filter active
+    // When city active, refreshAreaChips() builds from local filtered data
+    if (!activeCity) renderAreaChips(data.data?.areas ?? []);
     applyFilters(); // applies activeCategory, activeArea, activeCity, searchQuery
 
     // Note: auto-open is handled in boot — no manual scroll needed here
@@ -2606,16 +2609,18 @@ function pickCity(val) {
   if (inp) inp.value = val;
   if (clr) clr.style.display = val ? '' : 'none';
   hideCityDrop();
-  applyFilters();
+  // Re-fetch from server with city param for accurate results
+  loadShops();
 }
 
 function clearCityFilter() {
   activeCity = '';
+  activeArea = '';
   const inp = document.getElementById('city-search-input');
   const clr = document.getElementById('city-clear-btn');
   if (inp) inp.value = '';
   if (clr) clr.style.display = 'none';
-  applyFilters();
+  loadShops(); // reload all shops without city filter
 }
 window.clearCityFilter = clearCityFilter;
 window.pickCity = pickCity;
@@ -2628,7 +2633,7 @@ function onCityInput(q) {
       const results = await fetchCityResults('');
       renderCityDrop(results.slice(0, 10));
     }, 0);
-    if (activeCity) { activeCity = ''; applyFilters(); }
+    if (activeCity) { activeCity = ''; activeArea = ''; loadShops(); }
     const clr = document.getElementById('city-clear-btn');
     if (clr) clr.style.display = 'none';
     return;
@@ -2647,11 +2652,12 @@ function filterCity(city) {
 
 function filterCat(cat) {
   activeCategory = cat;
-  activeArea = ''; // reset area when category changes — area chips will regenerate
+  activeArea = ''; // reset area when category changes
   document.querySelectorAll('#cat-row .cat-chip').forEach(c =>
     c.classList.toggle('active', c.dataset.cat === cat)
   );
-  applyFilters();
+  // Re-fetch from server to get accurate filtered results + areas
+  loadShops();
 }
 
 function filterArea(area) {
