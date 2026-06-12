@@ -49,8 +49,15 @@ export async function updatePlan(request, env) {
 
 /**
  * PATCH /admin/shops/:id/custom-plan
- * Set a custom price override for a specific shop's subscription.
- * Body: { custom_price, note? }
+ * Set a fully custom plan for a specific business.
+ * Any field not provided inherits from the plan defaults.
+ * Body: {
+ *   plan_name, duration_days?,
+ *   max_tokens_per_day?, max_queue_size?,
+ *   allow_priority_call?, allow_paid_tokens?,
+ *   allow_voice_notes?, allow_analytics?, allow_poster?,
+ *   custom_label?, custom_price?, admin_note?
+ * }
  */
 export async function setCustomPlan(request, env) {
   try {
@@ -59,30 +66,71 @@ export async function setCustomPlan(request, env) {
     const url    = new URL(request.url);
     const shopId = url.pathname.split('/')[3];
     if (!isValidUUID(shopId)) return badRequest('Invalid shop_id');
-    const { plan_name, custom_price, duration_days, note } = await request.json();
-    if (!plan_name) return badRequest('plan_name required');
-    const db    = createClient(env);
-    // Update subscription with custom price
+
+    const body = await request.json();
+    const {
+      plan_name        = 'basic',
+      duration_days    = 30,
+      max_tokens_per_day,
+      max_queue_size,
+      allow_priority_call,
+      allow_paid_tokens,
+      allow_voice_notes,
+      allow_analytics,
+      allow_poster,
+      custom_label,
+      custom_price,
+      admin_note,
+    } = body;
+
+    const db      = createClient(env);
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + duration_days);
+    const endStr  = endDate.toISOString().split('T')[0];
+
+    // Build update object — only include fields that were explicitly provided
+    const updateData = {
+      plan_name,
+      end_date:   endStr,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Numeric overrides — fall back to plan defaults if not provided
+    const plans = await db.select('plans', `name=eq.${plan_name}&limit=1`);
+    const plan  = plans?.[0] || {};
+    updateData.max_tokens_per_day = max_tokens_per_day ?? plan.max_tokens_per_day ?? 50;
+    updateData.max_queue_size     = max_queue_size     ?? plan.max_queue_size     ?? 20;
+
+    // Feature overrides — NULL means inherit from plan
+    updateData.allow_priority_call = allow_priority_call ?? null;
+    updateData.allow_paid_tokens   = allow_paid_tokens   ?? null;
+    updateData.allow_voice_notes   = allow_voice_notes   ?? null;
+    updateData.allow_analytics     = allow_analytics     ?? null;
+    updateData.allow_poster        = allow_poster        ?? null;
+    updateData.custom_label        = custom_label        || null;
+    updateData.custom_price        = custom_price        ?? null;
+    updateData.admin_note          = admin_note          || null;
+    updateData.is_active           = true;
+
     const subs = await db.select('subscriptions',
       `shop_id=eq.${shopId}&is_active=eq.true&limit=1`
     );
-    const endDate = new Date();
-    endDate.setDate(endDate.getDate() + (duration_days || 30));
+
+    let result;
     if (subs?.length) {
-      const updated = await db.update('subscriptions',
+      result = await db.update('subscriptions',
         `shop_id=eq.${shopId}&is_active=eq.true`,
-        { plan_name, end_date: endDate.toISOString().split('T')[0], updated_at: new Date().toISOString() }
+        updateData
       );
-      return ok({ updated: updated?.[0], custom_price, note });
     } else {
-      const inserted = await db.insert('subscriptions', {
-        shop_id: shopId, plan_name,
+      result = await db.insert('subscriptions', {
+        ...updateData,
+        shop_id:    shopId,
         start_date: new Date().toISOString().split('T')[0],
-        end_date:   endDate.toISOString().split('T')[0],
-        is_active:  true
       });
-      return ok({ inserted: inserted?.[0], custom_price, note });
     }
+
+    return ok({ subscription: Array.isArray(result) ? result[0] : result });
   } catch(e) { return serverError(e.message); }
 }
 

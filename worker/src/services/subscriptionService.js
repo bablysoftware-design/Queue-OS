@@ -104,14 +104,23 @@ export async function getShopPlanFeatures(db, shopId) {
 
 /**
  * Check if a shop's plan allows a specific feature.
+ * Per-subscription override takes priority over plan default.
  * feature: 'priority_call' | 'paid_tokens' | 'voice_notes' | 'analytics' | 'poster'
  */
 export async function checkFeatureAllowed(db, shopId, feature) {
   const { valid, sub } = await checkSubscriptionValid(db, shopId);
   if (!valid) return { allowed: false, reason: 'subscription_invalid' };
+
+  // Check subscription-level override first (NULL = not overridden)
+  const col = `allow_${feature}`;
+  if (sub[col] !== null && sub[col] !== undefined) {
+    return { allowed: !!sub[col], plan_name: sub.plan_name, reason: sub[col] ? 'ok' : 'plan_upgrade_required' };
+  }
+
+  // Fall back to plan-level default
   const plans = await db.select('plans', `name=eq.${sub.plan_name}&limit=1`);
   if (!plans?.length) return { allowed: false, reason: 'plan_not_found' };
-  const plan = plans[0];
-  const allowed = !!plan[`allow_${feature}`];
+  const plan    = plans[0];
+  const allowed = !!plan[col];
   return { allowed, plan_name: sub.plan_name, reason: allowed ? 'ok' : 'plan_upgrade_required' };
 }

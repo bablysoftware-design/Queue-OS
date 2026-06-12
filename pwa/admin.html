@@ -249,47 +249,112 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
         <div id="plans-list"><div class="loading-row">Loading...</div></div>
       </div>
       <div class="section" style="margin-top:16px">
-        <div class="section-title">Set Custom Plan for Business</div>
-        <div style="font-size:11px;color:var(--text2);margin-bottom:12px">Search a business by name, then assign a plan with custom duration</div>
-        <div style="display:flex;flex-direction:column;gap:8px;max-width:440px">
+        <div class="section-title">🎯 Custom Plan for Individual Business</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:14px">Every field is fully customizable per business — overrides global plan settings</div>
 
-          <!-- Business search -->
+        <!-- Step 1: Search business -->
+        <div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px">
+          <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.05em;margin-bottom:8px">STEP 1 — SELECT BUSINESS</div>
           <div style="position:relative">
-            <input id="custom-plan-search" type="text" placeholder="🔍 Search business by name or phone..."
-              oninput="searchBusinessForPlan()"
-              autocomplete="off"
-              style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;box-sizing:border-box"/>
+            <input id="custom-plan-search" type="text" placeholder="🔍 Type business name or phone number..."
+              oninput="searchBusinessForPlan()" autocomplete="off"
+              style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;box-sizing:border-box"/>
             <div id="custom-plan-results"
-              style="position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid rgba(212,175,55,.2);border-radius:10px;z-index:50;margin-top:4px;max-height:200px;overflow-y:auto;display:block"></div>
+              style="position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid rgba(212,175,55,.25);border-radius:10px;z-index:50;margin-top:4px;max-height:220px;overflow-y:auto"></div>
           </div>
           <input type="hidden" id="custom-plan-shop-id"/>
-
-          <!-- Plan selector -->
-          <select id="custom-plan-name"
-            style="padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px">
-            <option value="free">Free Trial</option>
-            <option value="basic">Basic — Priority + Paid Tokens + Voice Notes</option>
-            <option value="pro">Pro — All Features + Unlimited</option>
-          </select>
-
-          <!-- Duration -->
-          <div style="display:flex;gap:8px;align-items:center">
-            <input id="custom-plan-days" type="number" value="30" min="1" max="365"
-              placeholder="Days"
-              style="width:90px;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px"/>
-            <span style="font-size:12px;color:var(--text2)">days duration</span>
-          </div>
-
-          <!-- Note -->
-          <input id="custom-plan-note" type="text" placeholder="Note (optional — e.g. NGO discount, hospital deal)"
-            style="padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px"/>
-
-          <button onclick="applyCustomPlan()"
-            style="padding:12px;border:none;border-radius:10px;background:var(--gold);color:#0d1422;font-weight:800;font-size:14px;cursor:pointer">
-            ✓ Apply Custom Plan
-          </button>
-          <div id="custom-plan-msg" style="font-size:12px;color:var(--green);display:none;padding:6px 0"></div>
+          <div id="custom-selected-business" style="display:none;margin-top:8px;padding:8px 12px;background:rgba(212,175,55,.08);border:1px solid rgba(212,175,55,.25);border-radius:8px;font-size:12px;color:var(--gold)"></div>
         </div>
+
+        <!-- Step 2: Base plan + duration -->
+        <div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px">
+          <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.05em;margin-bottom:8px">STEP 2 — BASE PLAN & DURATION</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px">Base Plan</label>
+              <select id="custom-plan-name" style="width:100%;padding:9px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px">
+                <option value="free">Free Trial</option>
+                <option value="basic" selected>Basic</option>
+                <option value="pro">Pro</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px">Duration (days)</label>
+              <input id="custom-plan-days" type="number" value="30" min="1" max="730"
+                style="width:100%;padding:9px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;font-weight:700;box-sizing:border-box"/>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+            <div>
+              <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px">Custom Label (optional)</label>
+              <input id="custom-plan-label" type="text" placeholder="e.g. Hospital Deal, NGO"
+                style="width:100%;padding:9px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;box-sizing:border-box"/>
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px">Custom Price (Rs, for records)</label>
+              <input id="custom-plan-price" type="number" placeholder="e.g. 500" min="0"
+                style="width:100%;padding:9px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;box-sizing:border-box"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Custom limits -->
+        <div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px">
+          <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.05em;margin-bottom:8px">STEP 3 — CUSTOM LIMITS <span style="font-weight:400;color:var(--text2)">(leave blank = use plan default)</span></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px">Tokens / day (9999 = unlimited)</label>
+              <input id="custom-plan-tokens" type="number" placeholder="e.g. 500" min="1"
+                style="width:100%;padding:9px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;box-sizing:border-box"/>
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px">Queue size (9999 = unlimited)</label>
+              <input id="custom-plan-qsize" type="number" placeholder="e.g. 200" min="1"
+                style="width:100%;padding:9px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;box-sizing:border-box"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4: Feature overrides -->
+        <div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px">
+          <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.05em;margin-bottom:10px">STEP 4 — FEATURE OVERRIDES <span style="font-weight:400;color:var(--text2)">(3-state: ON / OFF / inherit from plan)</span></div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            ${[
+              ['custom-feat-priority','Priority Call'],
+              ['custom-feat-paid','Paid Tokens'],
+              ['custom-feat-voice','Voice Notes'],
+              ['custom-feat-analytics','Analytics'],
+              ['custom-feat-poster','Poster / QR Print'],
+            ].map(([id,label]) => `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(255,255,255,.03);border-radius:8px">
+              <span style="font-size:12px">${label}</span>
+              <div style="display:flex;gap:6px">
+                <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer">
+                  <input type="radio" name="${id}" value="on" style="accent-color:#22c55e"/> <span style="color:#22c55e">ON</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer">
+                  <input type="radio" name="${id}" value="off" style="accent-color:#f87171"/> <span style="color:#f87171">OFF</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer">
+                  <input type="radio" name="${id}" value="inherit" checked style="accent-color:var(--gold)"/> <span style="color:var(--muted)">Plan</span>
+                </label>
+              </div>
+            </div>`).join('')}
+          </div>
+        </div>
+
+        <!-- Step 5: Admin note + apply -->
+        <div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px">
+          <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.05em;margin-bottom:8px">STEP 5 — INTERNAL NOTE</div>
+          <input id="custom-plan-note" type="text" placeholder="e.g. 50% discount — hospital partner"
+            style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;box-sizing:border-box"/>
+        </div>
+
+        <button onclick="applyCustomPlan()"
+          style="width:100%;padding:13px;border:none;border-radius:12px;background:var(--gold);color:#0d1422;font-weight:800;font-size:14px;cursor:pointer">
+          ✓ Apply Custom Plan to This Business
+        </button>
+        <div id="custom-plan-msg" style="font-size:12px;color:var(--green);display:none;padding:8px 0;text-align:center"></div>
       </div>
     </div>
 
@@ -845,25 +910,82 @@ async function searchBusinessForPlan() {
 }
 window.searchBusinessForPlan = searchBusinessForPlan;
 
+
+
 function selectBusinessForPlan(id, name) {
   document.getElementById('custom-plan-shop-id').value = id;
   document.getElementById('custom-plan-search').value  = name;
   document.getElementById('custom-plan-results').innerHTML = '';
+  const sel = document.getElementById('custom-selected-business');
+  if (sel) { sel.style.display = 'block'; sel.textContent = '✓ Selected: ' + name; }
 }
 window.selectBusinessForPlan = selectBusinessForPlan;
 
+function getFeatureOverride(name) {
+  const val = document.querySelector(`input[name="${name}"]:checked`)?.value;
+  if (val === 'on')  return true;
+  if (val === 'off') return false;
+  return undefined; // inherit — don't send, server uses null
+}
+
 async function applyCustomPlan() {
-  const shopId = document.getElementById('custom-plan-shop-id').value.trim();
-  const plan   = document.getElementById('custom-plan-name').value;
-  const days   = parseInt(document.getElementById('custom-plan-days').value) || 30;
-  const note   = document.getElementById('custom-plan-note').value.trim();
-  const msg    = document.getElementById('custom-plan-msg');
+  const shopId       = document.getElementById('custom-plan-shop-id').value.trim();
+  const plan         = document.getElementById('custom-plan-name').value;
+  const days         = parseInt(document.getElementById('custom-plan-days').value) || 30;
+  const note         = document.getElementById('custom-plan-note').value.trim();
+  const label        = document.getElementById('custom-plan-label')?.value.trim() || undefined;
+  const customPrice  = document.getElementById('custom-plan-price')?.value.trim();
+  const tokensVal    = document.getElementById('custom-plan-tokens')?.value.trim();
+  const qsizeVal     = document.getElementById('custom-plan-qsize')?.value.trim();
+  const msg          = document.getElementById('custom-plan-msg');
+
   if (!shopId) { showToast('Select a business first', 'error'); return; }
+
+  // Build payload — only include overrides that were explicitly set
+  const payload = {
+    plan_name:     plan,
+    duration_days: days,
+    admin_note:    note || undefined,
+    custom_label:  label || undefined,
+    custom_price:  customPrice ? parseFloat(customPrice) : undefined,
+  };
+
+  // Numeric overrides — only if filled in
+  if (tokensVal) payload.max_tokens_per_day = parseInt(tokensVal);
+  if (qsizeVal)  payload.max_queue_size     = parseInt(qsizeVal);
+
+  // Feature overrides — only if not 'inherit'
+  const featMap = {
+    allow_priority_call: getFeatureOverride('custom-feat-priority'),
+    allow_paid_tokens:   getFeatureOverride('custom-feat-paid'),
+    allow_voice_notes:   getFeatureOverride('custom-feat-voice'),
+    allow_analytics:     getFeatureOverride('custom-feat-analytics'),
+    allow_poster:        getFeatureOverride('custom-feat-poster'),
+  };
+  for (const [k, v] of Object.entries(featMap)) {
+    if (v !== undefined) payload[k] = v;
+  }
+
   try {
-    await api('PATCH', `/admin/shops/${shopId}/custom-plan`, { plan_name: plan, duration_days: days, note });
-    if (msg) { msg.style.display='block'; msg.textContent=`✓ ${plan.toUpperCase()} applied for ${days} days`; }
-    showToast(`✓ Custom plan applied`, 'success');
-    _customPlanShops = []; // reset cache so next search has fresh data
+    await api('PATCH', `/admin/shops/${shopId}/custom-plan`, payload);
+
+    const summary = [
+      `Plan: ${plan.toUpperCase()}`,
+      `${days} days`,
+      tokensVal ? `${tokensVal} tokens/day` : '',
+      label || '',
+    ].filter(Boolean).join(' · ');
+
+    if (msg) { msg.style.display='block'; msg.textContent=`✓ Applied — ${summary}`; }
+    showToast('✓ Custom plan applied', 'success');
+    _customPlanShops = []; // reset cache
+
+    // Reset feature radios to inherit
+    ['custom-feat-priority','custom-feat-paid','custom-feat-voice',
+     'custom-feat-analytics','custom-feat-poster'].forEach(n => {
+      const el = document.querySelector(`input[name="${n}"][value="inherit"]`);
+      if (el) el.checked = true;
+    });
   } catch(e) { showToast(e.message, 'error'); }
 }
 window.applyCustomPlan = applyCustomPlan;
