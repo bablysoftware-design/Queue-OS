@@ -319,27 +319,76 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
         <div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px">
           <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.05em;margin-bottom:10px">STEP 4 — FEATURE OVERRIDES <span style="font-weight:400;color:var(--text2)">(3-state: ON / OFF / inherit from plan)</span></div>
           <div style="display:flex;flex-direction:column;gap:8px">
-            ${[
-              ['custom-feat-priority','Priority Call'],
-              ['custom-feat-paid','Paid Tokens'],
-              ['custom-feat-voice','Voice Notes'],
-              ['custom-feat-analytics','Analytics'],
-              ['custom-feat-poster','Poster / QR Print'],
-            ].map(([id,label]) => `
             <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(255,255,255,.03);border-radius:8px">
-              <span style="font-size:12px">${label}</span>
+              <span style="font-size:12px">Priority Call</span>
               <div style="display:flex;gap:6px">
                 <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer">
-                  <input type="radio" name="${id}" value="on" style="accent-color:#22c55e"/> <span style="color:#22c55e">ON</span>
+                  <input type="radio" name="custom-feat-priority" value="on" style="accent-color:#22c55e"/> <span style="color:#22c55e">ON</span>
                 </label>
                 <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer">
-                  <input type="radio" name="${id}" value="off" style="accent-color:#f87171"/> <span style="color:#f87171">OFF</span>
+                  <input type="radio" name="custom-feat-priority" value="off" style="accent-color:#f87171"/> <span style="color:#f87171">OFF</span>
                 </label>
                 <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer">
-                  <input type="radio" name="${id}" value="inherit" checked style="accent-color:var(--gold)"/> <span style="color:var(--muted)">Plan</span>
+                  <input type="radio" name="custom-feat-priority" value="inherit" checked style="accent-color:var(--gold)"/> <span style="color:var(--muted)">Plan</span>
                 </label>
               </div>
-            </div>`).join('')}
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(255,255,255,.03);border-radius:8px">
+              <span style="font-size:12px">Paid Tokens</span>
+              <div style="display:flex;gap:6px">
+                <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer">
+                  <input type="radio" name="custom-feat-paid" value="on" style="accent-color:#22c55e"/> <span style="color:#22c55e">ON</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer">
+                  <input type="radio" name="custom-feat-paid" value="off" style="accent-color:#f87171"/> <span style="color:#f87171">OFF</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer">
+                  <input type="radio" name="custom-feat-paid" value="inherit" checked style="accent-color:var(--gold)"/> <span style="color:var(--muted)">Plan</span>
+                </label>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(255,255,255,.03);border-radius:8px">
+              <span style="font-size:12px">Voice Notes</span>
+              <div style="display:flex;gap:6px">
+                <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer">
+                  <input type="radio" name="custom-feat-voice" value="on" style="accent-color:#22c55e"/> <span style="color:#22c55e">ON</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer">
+                  <input type="radio" name="custom-feat-voice" value="off" style="accent-color:#f87171"/> <span style="color:#f87171">OFF</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer">
+                  <input type="radio" name="custom-feat-voice" value="inherit" checked style="accent-color:var(--gold)"/> <span style="color:var(--muted)">Plan</span>
+                </label>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(255,255,255,.03);border-radius:8px">
+              <span style="font-size:12px">Analytics</span>
+              <div style="display:flex;gap:6px">
+                <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer">
+                  <input type="radio" name="custom-feat-analytics" value="on" style="accent-color:#22c55e"/> <span style="color:#22c55e">ON</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer">
+                  <input type="radio" name="custom-feat-analytics" value="off" style="accent-color:#f87171"/> <span style="color:#f87171">OFF</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer">
+                  <input type="radio" name="custom-feat-analytics" value="inherit" checked style="accent-color:var(--gold)"/> <span style="color:var(--muted)">Plan</span>
+                </label>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(255,255,255,.03);border-radius:8px">
+              <span style="font-size:12px">Poster / QR Print</span>
+              <div style="display:flex;gap:6px">
+                <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer">
+                  <input type="radio" name="custom-feat-poster" value="on" style="accent-color:#22c55e"/> <span style="color:#22c55e">ON</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer">
+                  <input type="radio" name="custom-feat-poster" value="off" style="accent-color:#f87171"/> <span style="color:#f87171">OFF</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer">
+                  <input type="radio" name="custom-feat-poster" value="inherit" checked style="accent-color:var(--gold)"/> <span style="color:var(--muted)">Plan</span>
+                </label>
+              </div>
+            </div>
           </div>
         </div>
 
