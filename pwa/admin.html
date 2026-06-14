@@ -202,6 +202,7 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
       </button>
       <button class="tab-btn" id="tab-plans-btn" onclick="switchAdminTab('plans')">💎 Plans</button>
       <button class="tab-btn" id="tab-upgrades-btn" onclick="switchAdminTab('upgrades')">⬆ Upgrades</button>
+      <button class="tab-btn" id="tab-settings-btn" onclick="switchAdminTab('settings')">⚙ Settings</button>
       <button class="tab-btn" id="tab-add-btn" onclick="switchAdminTab('add')">➕ Add</button>
     </div>
 
@@ -415,6 +416,35 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
       </div>
     </div>
 
+    <!-- TAB: Settings -->
+    <div class="tab-pane" id="tab-settings">
+      <div class="section">
+        <div class="section-title">⚙ Support Settings</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:14px">Shown to businesses and customers across the platform</div>
+        <div style="display:flex;flex-direction:column;gap:10px;max-width:440px">
+          <div>
+            <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px">Support WhatsApp Number</label>
+            <input id="s-wa" type="text" placeholder="923xxxxxxxxx (with country code, no +)"
+              style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;box-sizing:border-box"/>
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px">Support Email</label>
+            <input id="s-email" type="email" placeholder="support@waitmate.pk"
+              style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;box-sizing:border-box"/>
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px">Default Support Message</label>
+            <textarea id="s-msg" rows="3" placeholder="Hi WaitMate Support, I need help with..."
+              style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;resize:vertical;box-sizing:border-box"></textarea>
+          </div>
+          <button onclick="saveSupportSettings()"
+            style="padding:12px;border:none;border-radius:10px;background:var(--gold);color:#0d1422;font-weight:800;font-size:14px;cursor:pointer">
+            💾 Save Settings
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- TAB: Add -->
     <div class="tab-pane" id="tab-add">
     <div class="section">
@@ -523,16 +553,14 @@ async function addLocation() {
   } catch(e) { msg.style.color='var(--red)'; msg.textContent = e.message; }
 }
 
-function loadAll() { loadShops();
-loadSupportSettings(); loadRegistrations(); }
+function loadAll() { loadShops(); loadRegistrations(); }
 
 async function loadShops() {
   document.getElementById('shop-list').innerHTML = '<div class="loading-row">Loading...</div>';
   try {
     const { data } = await api('GET', '/admin/shops');
-    shops = data;
-    const subs = await Promise.allSettled(shops.map(s => api('GET', `/subscriptions?shop_id=${s.id}`)));
-    shops = shops.map((s, i) => ({ ...s, sub: subs[i].status === 'fulfilled' ? subs[i].value.data : null }));
+    // Subscription data now bundled in API response — no N+1 calls
+    shops = data || [];
     renderStats();
     renderShops();
     document.getElementById('last-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
@@ -545,6 +573,9 @@ async function loadShops() {
       document.getElementById('login-err').textContent      = 'Session expired. Please login again.';
     } else {
       document.getElementById('shop-list').innerHTML = `<div class="empty-row">Error: ${e.message}</div>`;
+    }
+  }
+}
     }
   }
 }
@@ -825,7 +856,7 @@ function esc(s) { return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':
 
 let toastT;
 function switchAdminTab(tab) {
-  ['shops','pending','plans','upgrades','add'].forEach(t => {
+  ['shops','pending','plans','upgrades','settings','add'].forEach(t => {
     const pane = document.getElementById(`tab-${t}`);
     const btn  = document.getElementById(`tab-${t}-btn`);
     if (pane) pane.classList.toggle('active', t === tab);
@@ -834,6 +865,7 @@ function switchAdminTab(tab) {
   if (tab === 'pending')  loadRegistrations();
   if (tab === 'plans')    loadPlans();
   if (tab === 'upgrades') loadUpgradeRequests();
+  if (tab === 'settings') loadSupportSettings();
 }
 window.switchAdminTab = switchAdminTab;
 

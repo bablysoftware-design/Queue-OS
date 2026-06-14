@@ -76,12 +76,27 @@ export async function listShopsAdminHandler(request, env) {
   if (authError) return authError;
 
   try {
-    const db = createClient(env);
+    const db    = createClient(env);
     const shops = await db.select(
       'shops',
-      'select=id,name,owner_phone,area,category,is_active,is_open,current_token,created_at&order=created_at.desc'
+      'select=id,name,owner_phone,area,city,country,category,is_active,is_open,current_token,status,token_mode,created_at&order=created_at.desc'
     );
-    return ok(shops);
+
+    // Batch fetch all subscriptions in one query instead of N+1
+    const allSubs = await db.select(
+      'subscriptions',
+      'select=shop_id,plan_name,end_date,is_active,max_tokens_per_day,max_queue_size,custom_label&is_active=eq.true'
+    ).catch(() => []);
+
+    const subMap = {};
+    for (const s of (allSubs || [])) subMap[s.shop_id] = s;
+
+    const result = (shops || []).map(s => ({
+      ...s,
+      sub: subMap[s.id] || null,
+    }));
+
+    return ok(result);
   } catch (err) {
     return serverError(err.message);
   }
