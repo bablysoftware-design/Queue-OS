@@ -57,10 +57,18 @@ export async function assignPlan(db, shopId, planName) {
 
   const fmt = (d) => d.toISOString().split('T')[0];
 
-  // Cancel current active subscription(s).
+  // Cancel current active subscription(s) BEFORE inserting the new one.
   // status is the single source of truth for "which subscription governs
   // this shop" — getActiveSubscription() and checkSubscriptionValid() both
   // select on status='active' only. is_active is not used or maintained here.
+  //
+  // This cancel-then-insert ordering is required by the partial unique
+  // index idx_subscriptions_one_active_per_shop (status='active'):
+  // by the time the INSERT below runs, zero rows for this shop_id have
+  // status='active', so the new row is accepted. If a concurrent
+  // assignPlan/setCustomPlan call for the same shop races this one,
+  // the database rejects whichever INSERT arrives second with a unique
+  // violation rather than allowing two active rows to coexist.
   await db.update(
     'subscriptions',
     `shop_id=eq.${shopId}&status=eq.active`,

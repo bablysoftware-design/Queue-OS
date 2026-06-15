@@ -120,11 +120,17 @@ export async function setCustomPlan(request, env) {
 
     let result;
     if (subs?.length) {
+      // Update the existing active row in place — does not create a
+      // second status='active' row, so the partial unique index
+      // idx_subscriptions_one_active_per_shop is unaffected.
       result = await db.update('subscriptions',
         `id=eq.${subs[0].id}`,
         updateData
       );
     } else {
+      // No status='active' row exists for this shop (subs.length === 0),
+      // so inserting one with status='active' cannot violate
+      // idx_subscriptions_one_active_per_shop.
       result = await db.insert('subscriptions', {
         ...updateData,
         shop_id:    shopId,
@@ -176,10 +182,14 @@ export async function reviewUpgradeRequest(request, env) {
         `shop_id=eq.${req.shop_id}&status=eq.active&order=created_at.desc&limit=1`
       );
       if (subs?.length) {
+        // Update the existing active row in place — no new
+        // status='active' row created, index unaffected.
         await db.update('subscriptions', `id=eq.${subs[0].id}`,
           { plan_name: req.requested_plan, end_date: endDate.toISOString().split('T')[0] }
         );
       } else {
+        // No status='active' row exists for this shop, so inserting
+        // one cannot violate idx_subscriptions_one_active_per_shop.
         await db.insert('subscriptions', {
           shop_id: req.shop_id, plan_name: req.requested_plan,
           status:     'active',
