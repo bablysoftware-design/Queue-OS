@@ -82,14 +82,19 @@ export async function listShopsAdminHandler(request, env) {
       'select=id,name,owner_phone,area,city,country,category,is_active,is_open,current_token,status,token_mode,created_at&order=created_at.desc'
     );
 
-    // Batch fetch all subscriptions in one query instead of N+1
+    // Batch fetch all "active" subscriptions in one query instead of N+1.
+    // A shop may (in theory) have more than one status='active' row;
+    // mirror getActiveSubscription()'s tie-break (newest created_at wins)
+    // by ordering and keeping only the first row seen per shop_id.
     const allSubs = await db.select(
       'subscriptions',
-      'select=shop_id,plan_name,end_date,is_active,max_tokens_per_day,max_queue_size,custom_label&is_active=eq.true'
+      'select=shop_id,plan_name,end_date,max_tokens_per_day,max_queue_size,custom_label,created_at&status=eq.active&order=created_at.desc'
     ).catch(() => []);
 
     const subMap = {};
-    for (const s of (allSubs || [])) subMap[s.shop_id] = s;
+    for (const s of (allSubs || [])) {
+      if (!subMap[s.shop_id]) subMap[s.shop_id] = s; // first = newest, due to order above
+    }
 
     const result = (shops || []).map(s => ({
       ...s,

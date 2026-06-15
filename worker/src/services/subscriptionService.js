@@ -57,14 +57,18 @@ export async function assignPlan(db, shopId, planName) {
 
   const fmt = (d) => d.toISOString().split('T')[0];
 
-  // Cancel current active subscriptions
+  // Cancel current active subscription(s).
+  // status is the single source of truth for "which subscription governs
+  // this shop" — getActiveSubscription() and checkSubscriptionValid() both
+  // select on status='active' only. is_active is not used or maintained here.
   await db.update(
     'subscriptions',
     `shop_id=eq.${shopId}&status=eq.active`,
     { status: 'cancelled' }
   );
 
-  // Create new subscription
+  // Create new subscription — status='active' makes this row the
+  // governing subscription per getActiveSubscription().
   const [newSub] = await db.insert('subscriptions', {
     shop_id:            shopId,
     plan_name:          planName,

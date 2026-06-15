@@ -110,16 +110,18 @@ export async function setCustomPlan(request, env) {
     updateData.custom_label        = custom_label        || null;
     updateData.custom_price        = custom_price        ?? null;
     updateData.admin_note          = admin_note          || null;
-    updateData.is_active           = true;
+    updateData.status               = 'active';
 
+    // Find the governing subscription using the same rule as
+    // getActiveSubscription(): status='active', newest first.
     const subs = await db.select('subscriptions',
-      `shop_id=eq.${shopId}&is_active=eq.true&limit=1`
+      `shop_id=eq.${shopId}&status=eq.active&order=created_at.desc&limit=1`
     );
 
     let result;
     if (subs?.length) {
       result = await db.update('subscriptions',
-        `shop_id=eq.${shopId}&is_active=eq.true`,
+        `id=eq.${subs[0].id}`,
         updateData
       );
     } else {
@@ -168,17 +170,21 @@ export async function reviewUpgradeRequest(request, env) {
     if (action === 'approved') {
       const endDate = new Date();
       endDate.setDate(endDate.getDate() + 30);
-      const subs = await db.select('subscriptions', `shop_id=eq.${req.shop_id}&is_active=eq.true&limit=1`);
+      // Find the governing subscription using the same rule as
+      // getActiveSubscription(): status='active', newest first.
+      const subs = await db.select('subscriptions',
+        `shop_id=eq.${req.shop_id}&status=eq.active&order=created_at.desc&limit=1`
+      );
       if (subs?.length) {
-        await db.update('subscriptions', `shop_id=eq.${req.shop_id}&is_active=eq.true`,
+        await db.update('subscriptions', `id=eq.${subs[0].id}`,
           { plan_name: req.requested_plan, end_date: endDate.toISOString().split('T')[0] }
         );
       } else {
         await db.insert('subscriptions', {
           shop_id: req.shop_id, plan_name: req.requested_plan,
+          status:     'active',
           start_date: new Date().toISOString().split('T')[0],
           end_date:   endDate.toISOString().split('T')[0],
-          is_active:  true
         });
       }
     }
