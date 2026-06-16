@@ -79,7 +79,7 @@ export async function listShopsAdminHandler(request, env) {
     const db    = createClient(env);
     const shops = await db.select(
       'shops',
-      'select=id,name,owner_phone,area,city,country,category,is_active,is_open,current_token,status,token_mode,created_at&order=created_at.desc'
+      'select=id,name,owner_phone,area,city,country,category,is_active,is_open,current_token,token_mode,created_at&order=created_at.desc'
     );
 
     // Batch fetch all "active" subscriptions in one query instead of N+1.
