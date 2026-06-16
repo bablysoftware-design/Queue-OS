@@ -622,9 +622,10 @@ function renderShops() {
     return `<div class="table-row" style="animation-delay:${i*.03}s">
       <div>
         <div class="shop-name">${esc(s.name)}</div>
-        <div class="shop-detail">${esc(s.category||'')} ${s.area ? '· ' + esc(s.area) : ''}</div>
+        <div class="shop-detail">${esc(s.category||'')} ${s.area ? '· ' + esc(s.area) : ''} ${s.city ? '· ' + esc(s.city) : ''}</div>
+        ${s.address ? `<div style="font-size:10px;color:var(--text3);margin-top:2px">📍 ${esc(s.address)}</div>` : ''}
       </div>
-      <div class="shop-phone">${esc(s.owner_phone)}</div>
+      <div class="shop-phone">${esc(s.owner_phone || '—')}</div>
       <div><span class="badge ${s.is_active ? 'active' : 'inactive'}">${s.is_active ? '● Active' : '● Inactive'}</span></div>
       <div><span class="badge ${plan}">${plan.toUpperCase()}</span></div>
       <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2)">${expiry}</div>
