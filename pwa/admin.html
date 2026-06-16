@@ -576,10 +576,7 @@ async function loadShops() {
     }
   }
 }
-    }
-  }
-}
-
+    
 function renderStats() {
   document.getElementById('s-total').textContent   = shops.length;
   document.getElementById('s-active').textContent  = shops.filter(s => s.is_active).length;
