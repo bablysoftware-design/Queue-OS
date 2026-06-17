@@ -6,6 +6,19 @@ import { requireAdmin, requireShopAuth }  from '../utils/auth.js';
 import { ok, badRequest, notFound, serverError } from '../utils/response.js';
 import { isValidUUID }   from '../utils/validation.js';
 
+/** GET /public/plans — public plan pricing for upgrade dropdown (no auth) */
+export async function listPublicPlans(request, env) {
+  try {
+    const db    = createClient(env);
+    const plans = await db.select('plans',
+      'select=name,display_name,price,description&order=price.asc'
+    );
+    // Return only paid plans (exclude free) for the upgrade dropdown
+    const paid = (plans || []).filter(p => p.name !== 'free');
+    return ok(paid);
+  } catch(e) { return serverError(e.message); }
+}
+
 /** GET /admin/plans — list all plans with features */
 export async function listPlans(request, env) {
   try {

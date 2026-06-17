@@ -19,7 +19,7 @@ import { createPrioritySession,
          getActivePrioritySession,
          updatePrioritySession,
          announcePrioritySession }              from './routes/priority.js';
-import { listPlans, updatePlan, setCustomPlan,
+import { listPublicPlans, listPlans, updatePlan, setCustomPlan,
          listUpgradeRequests, reviewUpgradeRequest,
          submitUpgradeRequestHandler }           from './routes/plans.js';
 import { submitRegistration, listRegistrations,
@@ -95,6 +95,7 @@ const ROUTES = [
   { method: 'POST',   path: '/admin/payment-requests/:id/reject',        handler: rejectPaymentRequest },
 
   // Plan management (admin)
+  { method: 'GET',    path: '/public/plans',                        handler: listPublicPlans },
   { method: 'GET',    path: '/admin/plans',                         handler: listPlans },
   { method: 'PATCH',  path: '/admin/plans/:name',                   handler: updatePlan },
   { method: 'PATCH',  path: '/admin/shops/:id/custom-plan',         handler: setCustomPlan },

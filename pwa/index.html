@@ -1159,8 +1159,7 @@ body::after {
         <div id="upgrade-plan-info" style="font-size:12px;color:var(--text2);margin-bottom:10px"></div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <select id="upgrade-plan-select" style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px">
-            <option value="basic">Basic — Rs 999/mo (Priority, Paid Tokens, Voice Notes)</option>
-            <option value="pro">Pro — Rs 2,499/mo (Unlimited + All Features)</option>
+            <option value="">Loading plans...</option>
           </select>
           <input id="upgrade-payment-ref" type="text" placeholder="Payment reference / transaction ID"/>
           <textarea id="upgrade-note" rows="2" placeholder="Payment method + any note" style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;resize:none"></textarea>
@@ -2083,6 +2082,27 @@ function playAlertSound() {
   } catch(e) {}
 }
 
+// ── Upgrade plan dropdown — loads live prices from server ────
+async function loadUpgradePlans() {
+  const sel = document.getElementById('upgrade-plan-select');
+  if (!sel) return;
+  try {
+    const { data } = await fetch(`${WORKER}/public/plans`)
+      .then(r => r.json());
+    if (!data?.length) {
+      sel.innerHTML = '<option value="basic">Basic</option><option value="pro">Pro</option>';
+      return;
+    }
+    sel.innerHTML = data.map(p =>
+      `<option value="${p.name}">${p.display_name || p.name} — Rs ${p.price}/mo${p.description ? ' · ' + p.description : ''}</option>`
+    ).join('');
+  } catch(e) {
+    // fallback to static if fetch fails
+    sel.innerHTML = '<option value="basic">Basic</option><option value="pro">Pro</option>';
+  }
+}
+window.loadUpgradePlans = loadUpgradePlans;
+
 // ── Business profile save ────────────────────────────────────
 async function saveProfile() {
   const address     = document.getElementById('s-address')?.value.trim() || null;
@@ -2413,6 +2433,8 @@ function toggleSettings() {
   if (show) {
     // Scroll settings into view smoothly
     setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    // Load live plan prices into upgrade dropdown
+    loadUpgradePlans();
     api('GET', `/shops/${state.shopId}`)
       .then(({ data }) => {
         if (data.opening_time)          document.getElementById('s-open').value  = data.opening_time;
@@ -2421,10 +2443,13 @@ function toggleSettings() {
           document.getElementById('s-avg').value = data.avg_service_time_mins;
           syncSliderToSettings(data.avg_service_time_mins);
         }
+        // Load profile fields
+        if (data.address)       { const el = document.getElementById('s-address');     if (el) el.value = data.address; }
+        if (data.opening_hours) { const el = document.getElementById('s-hours');       if (el) el.value = data.opening_hours; }
+        if (data.description)   { const el = document.getElementById('s-description'); if (el) el.value = data.description; }
         // Load token mode + price
         const mode = data.token_mode || 'free';
         setShopMode(mode, /*save=*/false);
-        // Use explicit check — 0 is a valid price state (falsy check would leave input blank)
         if (data.token_price !== undefined && data.token_price !== null) {
           const priceEl = document.getElementById('s-token-price');
           if (priceEl) priceEl.value = data.token_price;
