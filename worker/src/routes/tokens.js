@@ -137,6 +137,12 @@ export async function cancelTokenHandler(request, env) {
     const { token_id, shop_id } = await request.json();
     if (!isValidUUID(token_id)) return badRequest('Invalid token_id');
     if (!isValidUUID(shop_id))  return badRequest('Invalid shop_id');
+
+    // Require shop auth — matches sibling routes /tokens/next and /tokens/no-show
+    const auth = await requireShopAuth(request, env);
+    if (auth instanceof Response) return auth;
+    if (auth.shop_id !== shop_id) return badRequest('Unauthorized for this shop');
+
     const db     = createClient(env);
     const result = await cancelToken(db, token_id, shop_id, env);
     return ok(result);

@@ -14,8 +14,7 @@ import { createShopHandler, getScanStats, loginShopHandler,
          updateShopSettingsHandler, changePinHandler } from './routes/shops.js';
 import { assignPlanHandler, getSubscriptionHandler,
          listShopsAdminHandler }                      from './routes/subscriptions.js';
-import { easypaisaWebhook, jazzcashWebhook,
-         manualPayment }                              from './routes/payments.js';
+import { manualPayment }                                        from './routes/payments.js';
 import { createPrioritySession,
          getActivePrioritySession,
          updatePrioritySession,
@@ -133,8 +132,10 @@ const ROUTES = [
   { method: 'GET',    path: '/subscriptions',                   handler: getSubscriptionHandler },
 
   // Payments
-  { method: 'POST',   path: '/payments/easypaisa',              handler: easypaisaWebhook },
-  { method: 'POST',   path: '/payments/jazzcash',               handler: jazzcashWebhook },
+  // NOTE: /payments/easypaisa and /payments/jazzcash removed — had zero
+  // signature verification (HMAC TODO never implemented). Anyone could POST
+  // a fake success and grant free Pro plans to any shop. Routes removed until
+  // real gateway verification exists. Use /payments/manual for now.
   { method: 'POST',   path: '/payments/manual',                 handler: manualPayment },
 
   // Public registration

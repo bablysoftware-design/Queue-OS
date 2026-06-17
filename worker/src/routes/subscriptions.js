@@ -4,6 +4,7 @@
 
 import { assignPlan, getActiveSubscription } from '../services/subscriptionService.js';
 import { createClient } from '../utils/db.js';
+import { requireShopAuth } from '../utils/auth.js';
 import { ok, badRequest, serverError, unauthorized, notFound } from '../utils/response.js';
 import { isValidPlan, isValidUUID } from '../utils/validation.js';
 
@@ -55,6 +56,13 @@ export async function getSubscriptionHandler(request, env) {
     const url    = new URL(request.url);
     const shopId = url.searchParams.get('shop_id');
     if (!isValidUUID(shopId)) return badRequest('Invalid shop_id');
+
+    // Require shop auth — shop can only read its own subscription.
+    // Prevents any caller from fetching custom_price/admin_note
+    // for any shop by guessing a public shop_id.
+    const auth = await requireShopAuth(request, env);
+    if (auth instanceof Response) return auth;
+    if (auth.shop_id !== shopId) return unauthorized('Unauthorized for this shop');
 
     const db  = createClient(env);
     const sub = await getActiveSubscription(db, shopId);

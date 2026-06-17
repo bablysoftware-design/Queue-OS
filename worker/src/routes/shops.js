@@ -9,6 +9,7 @@ import { requireShopAuth, requireAdmin } from '../utils/auth.js';
 import { ok, badRequest, serverError, notFound, unauthorized } from '../utils/response.js';
 import { isValidPin, isValidUUID } from '../utils/validation.js';
 import { notifyShopClosed }     from '../services/tokenService.js';
+import { assignPlan }           from '../services/subscriptionService.js';
 
 /** POST /shops — create shop (admin only) */
 export async function createShopHandler(request, env) {
@@ -40,6 +41,13 @@ export async function createShopHandler(request, env) {
       pin:      String(pin),
       ...(pinHash ? { pin_hash: pinHash } : {}),
     });
+
+    // Assign free trial plan — mirrors register.js approval flow.
+    // Without this, the shop has no subscription row and customers
+    // get "free trial khatam" error immediately on joining.
+    try { await assignPlan(db, shop.id, 'free'); } catch(e) {
+      console.error('[createShop] assignPlan failed:', e.message);
+    }
 
     return ok({ shop, message: '30 din ka free trial shuru ho gaya!' });
   } catch (err) { return serverError(err.message); }
@@ -148,6 +156,7 @@ export async function updateShopSettingsHandler(request, env) {
     const allowed = [
       'opening_time',
       'closing_time',
+      'opening_hours',
       'avg_service_time_mins',
       'description',
       'address',
