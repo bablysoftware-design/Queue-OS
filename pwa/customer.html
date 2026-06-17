@@ -1368,7 +1368,7 @@ function buildShopCard(s, i) {
         <div class="shop-title">${esc(s.name)}${s.owner_phone ? `<a href="https://wa.me/${s.owner_phone.replace(/\D/g,'')}?text=Hi%20${encodeURIComponent(s.name)},%20I%20found%20you%20on%20WaitMate" target="_blank" class="wa-btn">📱</a>` : ''}</div>
         <div class="shop-area">📍 ${esc(s.area||'')}${s.city ? ' · ' + esc(s.city) : ''} &nbsp;·&nbsp; ${catLabel(s.category)}</div>
         ${s.address ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">🏠 ${esc(s.address)}</div>` : ''}
-        ${s.owner_phone ? `<div style="font-size:11px;color:var(--text2);margin-top:3px">📞 ${esc(s.owner_phone)}</div>` : ''}
+        ${s.owner_phone ? `<div style="font-size:11px;color:var(--text2);margin-top:3px">📞 <a href="https://wa.me/${String(s.owner_phone).replace(/\D/g,'')}" target="_blank" style="color:var(--gold);text-decoration:none">${esc(s.owner_phone)}</a></div>` : ''}
       </div>
       ${statusBadge}
     </div>
