@@ -440,6 +440,145 @@ body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-
 .wa-wave span:nth-child(1){height:6px;animation-delay:0s;}.wa-wave span:nth-child(2){height:12px;animation-delay:.15s;}.wa-wave span:nth-child(3){height:8px;animation-delay:.3s;}.wa-wave span:nth-child(4){height:14px;animation-delay:.1s;}.wa-wave span:nth-child(5){height:6px;animation-delay:.25s;}
 @keyframes waWaveBounce{0%,100%{transform:scaleY(1);opacity:.7;}50%{transform:scaleY(1.8);opacity:1;}}
 
+
+/* ═══════════════════════════════════════════════════════
+   ANIMATIONS — customer.html
+   All purely CSS/minimal JS. Zero logic touched.
+═══════════════════════════════════════════════════════ */
+
+/* ── Button press feedback ── */
+button, .btn, [role="button"], .join-btn, .cat-chip, .city-clear-btn {
+  transition: transform .12s cubic-bezier(.16,1,.3,1), box-shadow .12s, opacity .12s;
+}
+button:active, .btn:active, .join-btn:active, .cat-chip:active {
+  transform: scale(.94) !important;
+  opacity: .85;
+}
+
+/* ── Shop card staggered entrance ── */
+@keyframes cardIn {
+  from { opacity:0; transform:translateY(18px) scale(.97); }
+  to   { opacity:1; transform:translateY(0)   scale(1); }
+}
+.shop-card {
+  animation: cardIn .45s cubic-bezier(.16,1,.3,1) both;
+}
+.shop-card:nth-child(1) { animation-delay:.04s; }
+.shop-card:nth-child(2) { animation-delay:.09s; }
+.shop-card:nth-child(3) { animation-delay:.14s; }
+.shop-card:nth-child(4) { animation-delay:.19s; }
+.shop-card:nth-child(5) { animation-delay:.23s; }
+.shop-card:nth-child(6) { animation-delay:.27s; }
+.shop-card:nth-child(7) { animation-delay:.31s; }
+.shop-card:nth-child(8) { animation-delay:.34s; }
+
+/* ── Tracker position number pulse (while waiting) ── */
+@keyframes positionPulse {
+  0%,100% { text-shadow: 0 0 0 rgba(232,184,75,0); }
+  50%     { text-shadow: 0 0 24px rgba(232,184,75,.4); }
+}
+#r-pos {
+  animation: positionPulse 2.5s ease-in-out infinite;
+  transition: all .4s cubic-bezier(.16,1,.3,1);
+}
+
+/* ── Called badge — bounce in ── */
+@keyframes badgeBounceIn {
+  0%   { opacity:0; transform:scale(.5); }
+  60%  { transform:scale(1.12); }
+  80%  { transform:scale(.96); }
+  100% { opacity:1; transform:scale(1); }
+}
+.tracker-badge.called {
+  animation: calledPulse .9s ease-in-out infinite, badgeBounceIn .5s cubic-bezier(.16,1,.3,1) both !important;
+}
+
+/* ── Tracker card entrance ── */
+@keyframes trackerSlideUp {
+  from { opacity:0; transform:translateY(24px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.tracker-card, #tracker-wrap, #r-tracker {
+  animation: trackerSlideUp .5s cubic-bezier(.16,1,.3,1) both;
+}
+
+/* ── Position number count-up shimmer on change ── */
+@keyframes numFlash {
+  0%   { color: var(--gold3); transform:scale(1.25); }
+  100% { color: inherit;       transform:scale(1); }
+}
+.num-flash {
+  animation: numFlash .35s cubic-bezier(.16,1,.3,1) both;
+}
+
+/* ── Search bar focus expand ── */
+#search-input {
+  transition: box-shadow .25s, border-color .25s, width .25s;
+}
+#search-input:focus {
+  box-shadow: 0 0 0 3px rgba(232,184,75,.15);
+}
+
+/* ── Category chip press ── */
+.cat-chip {
+  transition: all .18s cubic-bezier(.16,1,.3,1) !important;
+}
+.cat-chip.active {
+  animation: chipPop .25s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes chipPop {
+  0%   { transform:scale(.9); }
+  60%  { transform:scale(1.06); }
+  100% { transform:scale(1); }
+}
+
+/* ── Stats banner numbers fade-in ── */
+@keyframes statCountIn {
+  from { opacity:0; transform:translateY(6px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.banner-val {
+  animation: statCountIn .5s cubic-bezier(.16,1,.3,1) both;
+}
+.banner-val:nth-child(1) { animation-delay:.1s; }
+.banner-val:nth-child(2) { animation-delay:.2s; }
+.banner-val:nth-child(3) { animation-delay:.3s; }
+
+/* ── Token join success ── */
+@keyframes successPop {
+  0%   { transform:scale(.8) rotate(-3deg); opacity:0; }
+  50%  { transform:scale(1.08) rotate(1deg); opacity:1; }
+  100% { transform:scale(1) rotate(0); opacity:1; }
+}
+.success-anim {
+  animation: successPop .45s cubic-bezier(.16,1,.3,1) both;
+}
+
+/* ── Page entrance ── */
+@keyframes pageIn {
+  from { opacity:0; }
+  to   { opacity:1; }
+}
+body { animation: pageIn .3s ease both; }
+
+/* ── Open badge pulse on shop card ── */
+@keyframes openPing {
+  0%,100% { box-shadow: 0 0 0 0 rgba(52,211,153,.4); }
+  50%     { box-shadow: 0 0 0 6px rgba(52,211,153,0); }
+}
+.status-open {
+  animation: openPing 2s ease-in-out infinite;
+}
+
+/* ── Waiting position number — gentle bob ── */
+@keyframes waitBob {
+  0%,100% { transform:translateY(0); }
+  50%     { transform:translateY(-3px); }
+}
+.tracker-pos-large {
+  animation: waitBob 2s ease-in-out infinite;
+}
+
 </style>
 </head>
 <body>
@@ -2425,7 +2564,16 @@ async function updateTracker() {
 
       const intervalLabel = ahead <= 2 ? '3' : '10';
       sub.textContent   = ahead + ' لوگ آگے · ~' + wait + ' منٹ • ' + intervalLabel + ' سیکنڈ میں اپڈیٹ';
-      if (posEl)  posEl.textContent  = pos;
+      if (posEl) {
+        // Flash animation when position changes
+        const newPos = String(pos);
+        if (posEl.textContent !== newPos && posEl.textContent !== '—') {
+          posEl.classList.remove('num-flash');
+          void posEl.offsetWidth; // reflow to restart animation
+          posEl.classList.add('num-flash');
+        }
+        posEl.textContent = newPos;
+      }
       if (waitEl) waitEl.textContent = wait + ' min';
       updateCountdown(wait, pos);
 

@@ -170,6 +170,130 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
 .sk-cell.narrow{width:35%;height:9px;margin-top:5px;}
 @keyframes skShimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+
+/* ═══════════════════════════════════════════════════════
+   ANIMATIONS — admin.html
+   All purely CSS. Zero JS logic touched.
+═══════════════════════════════════════════════════════ */
+
+/* ── Page entrance ── */
+@keyframes pageIn { from{opacity:0;} to{opacity:1;} }
+body { animation: pageIn .3s ease both; }
+
+/* ── Login card spring in ── */
+@keyframes loginSpring {
+  0%   { opacity:0; transform:translateY(28px) scale(.95); }
+  60%  { transform:translateY(-4px) scale(1.01); }
+  100% { opacity:1; transform:translateY(0) scale(1); }
+}
+.login-card { animation: loginSpring .55s cubic-bezier(.16,1,.3,1) both; }
+
+/* ── Dashboard fade in ── */
+@keyframes dashFade {
+  from { opacity:0; transform:translateY(8px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+#dash { animation: dashFade .4s cubic-bezier(.16,1,.3,1) both; }
+
+/* ── Button press ── */
+button, .btn-primary, .btn-ghost, .btn-danger, .btn-xs {
+  transition: transform .12s cubic-bezier(.16,1,.3,1), box-shadow .12s, opacity .12s !important;
+}
+button:active, .btn-primary:active, .btn-ghost:active, .btn-xs:active {
+  transform: scale(.93) !important;
+  opacity: .82 !important;
+}
+
+/* ── Stat box count flash ── */
+@keyframes statBoxFlash {
+  0%   { background:rgba(232,184,75,.12); }
+  100% { background:linear-gradient(145deg,rgba(17,24,39,.9),rgba(8,12,20,.8)); }
+}
+.stat-flash { animation: statBoxFlash .5s ease both; }
+
+/* ── Table row entrance ── */
+.table-row {
+  animation: rowIn .32s cubic-bezier(.16,1,.3,1) both;
+}
+.table-row:nth-child(1) { animation-delay:.03s; }
+.table-row:nth-child(2) { animation-delay:.07s; }
+.table-row:nth-child(3) { animation-delay:.10s; }
+.table-row:nth-child(4) { animation-delay:.13s; }
+.table-row:nth-child(5) { animation-delay:.16s; }
+.table-row:nth-child(6) { animation-delay:.18s; }
+.table-row:nth-child(7) { animation-delay:.20s; }
+.table-row:nth-child(8) { animation-delay:.22s; }
+
+/* ── Tab active indicator spring ── */
+.tab-btn.active {
+  transition: all .25s cubic-bezier(.16,1,.3,1) !important;
+}
+.tab-btn:not(.active) {
+  transition: all .18s ease !important;
+}
+
+/* ── Modal spring up ── */
+@keyframes sheetSpring {
+  0%   { transform:translateY(100%) scale(.98); opacity:.4; }
+  65%  { transform:translateY(-6px) scale(1.005); opacity:1; }
+  100% { transform:translateY(0) scale(1); opacity:1; }
+}
+.modal-sheet { animation: sheetSpring .45s cubic-bezier(.16,1,.3,1) both !important; }
+
+/* ── Toast ── */
+@keyframes toastPop {
+  0%   { transform:translateX(-50%) translateY(-24px) scale(.9); opacity:0; }
+  60%  { transform:translateX(-50%) translateY(2px) scale(1.02); opacity:1; }
+  100% { transform:translateX(-50%) translateY(0) scale(1); opacity:1; }
+}
+#toast.show { animation: toastPop .35s cubic-bezier(.16,1,.3,1) both; }
+
+/* ── Plans card entrance ── */
+#plans-list > div {
+  animation: rowIn .35s cubic-bezier(.16,1,.3,1) both;
+}
+#plans-list > div:nth-child(1) { animation-delay:.05s; }
+#plans-list > div:nth-child(2) { animation-delay:.12s; }
+#plans-list > div:nth-child(3) { animation-delay:.19s; }
+
+/* ── Upgrades list entrance ── */
+#upgrades-list > div {
+  animation: rowIn .32s cubic-bezier(.16,1,.3,1) both;
+}
+
+/* ── Reg-list entrance ── */
+.reg-row {
+  animation: rowIn .3s cubic-bezier(.16,1,.3,1) both;
+}
+
+/* ── Search input focus ── */
+#admin-shop-search {
+  transition: border-color .2s, box-shadow .25s !important;
+}
+#admin-shop-search:focus {
+  box-shadow: 0 0 0 3px rgba(232,184,75,.15) !important;
+}
+
+/* ── Stat box hover ── */
+.stat-box {
+  transition: transform .2s cubic-bezier(.16,1,.3,1), border-color .2s, box-shadow .2s !important;
+}
+
+/* ── Pending badge pulse ── */
+@keyframes badgePing {
+  0%,100% { box-shadow:0 0 0 0 rgba(251,191,36,.4); }
+  50%     { box-shadow:0 0 0 5px rgba(251,191,36,0); }
+}
+.pending-pill { animation: badgePing 2s ease-in-out infinite; }
+
+/* ── Input focus glow ── */
+.field input, .add-form input, .modal-select {
+  transition: border-color .2s, box-shadow .2s !important;
+}
+.field input:focus, .add-form input:focus {
+  box-shadow: 0 0 0 3px rgba(232,184,75,.12) !important;
+}
+
 </style>
 </head>
 <body>

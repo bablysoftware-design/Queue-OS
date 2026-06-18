@@ -821,6 +821,174 @@ body::after {
 /* Animations */
 @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
 @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+/* ═══════════════════════════════════════════════════════
+   ANIMATIONS — index.html (business dashboard)
+   All purely CSS. Zero logic touched.
+═══════════════════════════════════════════════════════ */
+
+/* ── Page entrance ── */
+@keyframes pageIn { from{opacity:0;} to{opacity:1;} }
+body { animation: pageIn .3s ease both; }
+
+/* ── Dashboard screen slide in ── */
+@keyframes dashIn {
+  from { opacity:0; transform:translateY(10px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+#dash-screen { animation: dashIn .4s cubic-bezier(.16,1,.3,1) both; }
+
+/* ── Login card entrance ── */
+@keyframes loginIn {
+  from { opacity:0; transform:translateY(20px) scale(.97); }
+  to   { opacity:1; transform:translateY(0) scale(1); }
+}
+#login-screen > * { animation: loginIn .5s cubic-bezier(.16,1,.3,1) both; }
+
+/* ── Button press feedback ── */
+button, .bar-btn, .btn-save, .btn-ghost-sm {
+  transition: transform .12s cubic-bezier(.16,1,.3,1), box-shadow .12s, opacity .12s !important;
+}
+button:active:not(:disabled), .bar-btn:active, .btn-save:active {
+  transform: scale(.93) !important;
+  opacity: .82 !important;
+}
+
+/* ── Ripple on action buttons ── */
+.btn-action-wrap { position:relative; overflow:hidden; }
+@keyframes ripple {
+  to { transform:scale(4); opacity:0; }
+}
+.ripple-effect {
+  position:absolute; border-radius:50%;
+  background:rgba(255,255,255,.25);
+  width:20px; height:20px;
+  animation:ripple .5s ease-out forwards;
+  pointer-events:none; transform:scale(0);
+}
+
+/* ── Queue token slide-in ── */
+.q-item {
+  animation: queueItemIn .35s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes queueItemIn {
+  from { opacity:0; transform:translateX(16px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+.q-item:nth-child(1) { animation-delay:.03s; }
+.q-item:nth-child(2) { animation-delay:.07s; }
+.q-item:nth-child(3) { animation-delay:.11s; }
+.q-item:nth-child(4) { animation-delay:.15s; }
+.q-item:nth-child(5) { animation-delay:.18s; }
+.q-item:nth-child(6) { animation-delay:.21s; }
+.q-item:nth-child(7) { animation-delay:.24s; }
+.q-item:nth-child(8) { animation-delay:.27s; }
+
+/* ── Stats count-up flash ── */
+@keyframes statFlash {
+  0%   { color:var(--gold3); transform:scale(1.15); }
+  100% { color:inherit; transform:scale(1); }
+}
+.stat-flash { animation: statFlash .4s cubic-bezier(.16,1,.3,1) both; }
+
+/* ── Serving number change ── */
+@keyframes serveFlip {
+  0%   { opacity:0; transform:translateY(-8px) scale(.9); }
+  100% { opacity:1; transform:translateY(0) scale(1); }
+}
+.serve-flip { animation: serveFlip .3s cubic-bezier(.16,1,.3,1) both; }
+
+/* ── Priority button pulse ── */
+@keyframes priorityPulse {
+  0%,100% { box-shadow:0 0 0 0 rgba(248,113,113,.5); }
+  50%     { box-shadow:0 0 0 8px rgba(248,113,113,0); }
+}
+.priority-btn-pulse,
+button[style*="color:#f87171"] {
+  animation: priorityPulse 1.5s ease-in-out infinite;
+}
+
+/* ── Priority overlay entrance ── */
+@keyframes overlayIn {
+  from { opacity:0; transform:translateY(-12px) scale(.97); }
+  to   { opacity:1; transform:translateY(0) scale(1); }
+}
+#priority-overlay > div {
+  animation: overlayIn .4s cubic-bezier(.16,1,.3,1) both;
+}
+
+/* ── Toast slide down ── */
+@keyframes toastIn {
+  from { transform:translateX(-50%) translateY(-20px); opacity:0; }
+  to   { transform:translateX(-50%) translateY(0); opacity:1; }
+}
+#toast.show { animation: toastIn .3s cubic-bezier(.16,1,.3,1) both; }
+
+/* ── Settings panel slide up ── */
+@keyframes settingsSlideUp {
+  from { opacity:0; transform:translateY(20px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+#settings-panel { 
+  transition: opacity .25s, transform .25s;
+}
+#settings-panel[style*="block"] {
+  animation: settingsSlideUp .35s cubic-bezier(.16,1,.3,1) both;
+}
+
+/* ── Stat card hover lift ── */
+.stat-card {
+  transition: transform .2s cubic-bezier(.16,1,.3,1), box-shadow .2s !important;
+}
+.stat-card:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 8px 24px rgba(232,184,75,.12) !important;
+}
+
+/* ── Toggle open/close spring ── */
+@keyframes toggleSpring {
+  0%   { transform:scale(.85); }
+  55%  { transform:scale(1.08); }
+  80%  { transform:scale(.97); }
+  100% { transform:scale(1); }
+}
+.toggle-spring { animation: toggleSpring .35s cubic-bezier(.16,1,.3,1) both; }
+
+/* ── Walk-in add success ── */
+@keyframes addSuccess {
+  0%   { transform:scale(.9); opacity:0; }
+  60%  { transform:scale(1.05); opacity:1; }
+  100% { transform:scale(1); }
+}
+.add-success { animation: addSuccess .35s cubic-bezier(.16,1,.3,1) both; }
+
+/* ── Bar bottom nav active indicator ── */
+.bar-btn.active::after {
+  content:'';
+  position:absolute; bottom:-2px; left:50%; transform:translateX(-50%);
+  width:16px; height:2px;
+  background:var(--gold);
+  border-radius:100px;
+  animation: navDot .3s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes navDot {
+  from { width:0; opacity:0; }
+  to   { width:16px; opacity:1; }
+}
+.bar-btn { position:relative; }
+
+/* ── Currently serving number ── */
+#currently-serving-num {
+  transition: all .4s cubic-bezier(.16,1,.3,1);
+}
+
+/* ── Subscription expiry banner slide down ── */
+@keyframes bannerSlide {
+  from { opacity:0; transform:translateY(-8px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+#trial-expiry-banner { animation: bannerSlide .4s cubic-bezier(.16,1,.3,1) both; }
+
 </style>
 </head>
 <body>
@@ -1725,7 +1893,15 @@ function loadStats() {
   ]).then(([statsRes, analyticsRes]) => {
     const set = (id, val, suffix='') => {
       const el = document.getElementById(id);
-      if (el) { el.textContent = (val ?? '—') + suffix; el.style.opacity = '1'; }
+      if (!el) return;
+      const newVal = (val ?? '—') + suffix;
+      if (el.textContent !== newVal && el.textContent !== '—') {
+        el.classList.remove('stat-flash');
+        void el.offsetWidth;
+        el.classList.add('stat-flash');
+      }
+      el.textContent = newVal;
+      el.style.opacity = '1';
     };
 
     // Today basics (from legacy stats — always available)
