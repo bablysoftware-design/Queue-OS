@@ -9,7 +9,7 @@ import { requireShopAuth, requireAdmin } from '../utils/auth.js';
 import { ok, badRequest, serverError, notFound, unauthorized } from '../utils/response.js';
 import { isValidPin, isValidUUID } from '../utils/validation.js';
 import { notifyShopClosed }     from '../services/tokenService.js';
-import { assignPlan }           from '../services/subscriptionService.js';
+import { assignPlan, getActiveSubscription } from '../services/subscriptionService.js';
 
 /** POST /shops — create shop (admin only) */
 export async function createShopHandler(request, env) {
@@ -251,8 +251,36 @@ export async function activateShopHandler(request, env) {
     if (!isValidUUID(shopId)) return badRequest('Invalid shop_id');
     const { is_active } = await request.json();
     const db = createClient(env);
-    await db.update('shops', `id=eq.${shopId}`, { is_active });
-    return ok({ is_active });
+
+    if (is_active) {
+      // Activating: ensure a valid (non-expired) subscription exists.
+      // assignPlan() already sets shops.is_active=true at the end of
+      // its own execution, so no separate write is needed on those paths.
+      const existing = await getActiveSubscription(db, shopId);
+      const today    = new Date().toISOString().split('T')[0];
+
+      if (!existing) {
+        // No subscription at all — create a fresh free-plan subscription.
+        await assignPlan(db, shopId, 'free');
+        return ok({ is_active: true, subscription_created: true });
+      }
+
+      if (existing.end_date < today) {
+        // Subscription exists but has already expired — renew on the
+        // same plan it was on (so a Pro shop stays Pro, not downgraded).
+        await assignPlan(db, shopId, existing.plan_name || 'free');
+        return ok({ is_active: true, subscription_renewed: true });
+      }
+
+      // Valid, future-dated subscription already exists — do not touch
+      // subscriptions at all, just unhide the shop.
+      await db.update('shops', `id=eq.${shopId}`, { is_active: true });
+      return ok({ is_active: true });
+    }
+
+    // Deactivation path — unchanged. Only toggles shops.is_active.
+    await db.update('shops', `id=eq.${shopId}`, { is_active: false });
+    return ok({ is_active: false });
   } catch (err) { return serverError(err.message); }
 }
 
