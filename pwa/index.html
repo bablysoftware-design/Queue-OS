@@ -1608,6 +1608,10 @@ function applyLanguage() {
   document.getElementById('lbl-in-queue').textContent       = t('queueIn');
   document.getElementById('lbl-served-today').textContent   = t('servedToday');
   document.getElementById('lbl-queue').textContent          = t('queueList');
+  const onbSub = document.getElementById('onboard-sub-text');
+  if (onbSub) onbSub.textContent = t('onboardSub');
+  const onbBtn = document.getElementById('onboard-btn-text');
+  if (onbBtn) onbBtn.textContent = t('onboardBtn');
   document.getElementById('lbl-served').textContent         = t('servedLabel');
   document.getElementById('lbl-noshow').textContent         = t('noShowLabel');
   document.getElementById('lbl-waiting').textContent        = t('waitingLabel');
@@ -1773,11 +1777,11 @@ function refreshQueue() {
         // Toast
         const latest = queue[queue.length - 1];
         const name = latest?.customer_name ? ` — ${latest.customer_name}` : '';
-        showToast(`🔔 نیا ٹوکن${name} (#${latest?.token_number || ''})`, 'success');
+        showToast(`🔔 ${t('newTokenToast')}${name} (#${latest?.token_number || ''})`, 'success');
         // Browser notification
         if (Notification.permission === 'granted') {
-          new Notification('WaitMate — نیا ٹوکن', {
-            body: `${newCount} نیا گاہک قطار میں شامل ہوا${name}`,
+          new Notification(t('newTokenTitle'), {
+            body: `${newCount} ${t('newTokenBody')}${name}`,
             icon: '/icons/icon-192.png',
             tag: 'new-token',
             silent: false,
@@ -2026,10 +2030,10 @@ function loadSubscription() {
         }
         if (daysLeft <= 0) {
           banner.style.cssText = 'background:rgba(239,68,68,.15);border-bottom:1px solid rgba(239,68,68,.3);padding:10px 16px;font-size:12px;color:#f87171;text-align:center;display:block';
-          banner.innerHTML = `⚠️ آپ کا پلان ختم ہو گیا — <strong>ابھی اپگریڈ کریں</strong> تاکہ سروس جاری رہے۔ <a href="mailto:support@waitmate.pk" style="color:var(--gold)">رابطہ کریں</a>`;
+          banner.innerHTML = `⚠️ ${t('trialExpired')}<strong>${t('trialExpiredCta')}</strong>${t('trialExpiredEnd')} <a href="mailto:support@waitmate.pk" style="color:var(--gold)">${t('contactUs')}</a>`;
         } else if (daysLeft <= 7) {
           banner.style.cssText = 'background:rgba(251,191,36,.1);border-bottom:1px solid rgba(251,191,36,.25);padding:8px 16px;font-size:12px;color:#fbbf24;text-align:center;display:block';
-          banner.innerHTML = `⏳ پلان ${daysLeft} دن میں ختم ہو گا — <a href="mailto:support@waitmate.pk" style="color:var(--gold)">اپگریڈ کریں</a>`;
+          banner.innerHTML = `⏳ ${t('trialExpiringIn', daysLeft)}<a href="mailto:support@waitmate.pk" style="color:var(--gold)">${t('trialExpiringCta')}</a>`;
         } else {
           banner = banner || null;
           if (banner) banner.style.display = 'none';
@@ -2146,11 +2150,11 @@ async function shareShopLink() {
   const shopUrl   = `${location.origin}/customer.html?shop=${state.shopId}`;
   // Practical invitation — sounds like a person, not an app
   const waMessage = encodeURIComponent(
-    `*${state.shopName}* اب WaitMate پر ہے 🏪\n\n` +
-    `گھر بیٹھے ٹوکن لیں — باری آنے پر آئیں\n` +
-    `لائن میں کھڑے ہونے کی ضرورت نہیں\n\n` +
-    `📱 ابھی ٹوکن لیں:\n${shopUrl}\n\n` +
-    `_اس لنک کو محفوظ کریں — ہر بار کام آئے گا_`
+    `*${state.shopName}* ${t('waShareLine1')} 🏪\n\n` +
+    `${t('waShareLine2')}\n` +
+    `${t('waShareLine3')}\n\n` +
+    `📱 ${t('waShareLine4')}\n${shopUrl}\n\n` +
+    `_${t('waShareLine5')}_`
   );
   const waUrl = `https://wa.me/?text=${waMessage}`;
 
@@ -2224,7 +2228,7 @@ async function applyWaitOverride() {
 // ── Payment Requests (paid token mode) ───────────────────────
 function renderPaymentRequests(pending) {
   const countEl = document.getElementById('pr-count');
-  if (countEl) countEl.textContent = pending.length + ' زیر التواء';
+  if (countEl) countEl.textContent = pending.length + ' ' + t('pendingCount');
   document.getElementById('pr-list').innerHTML = pending.map(r => `
     <div style="border:1px solid rgba(212,175,55,.2);border-radius:12px;padding:12px;margin-bottom:8px;animation:fadeIn .3s ease both">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
@@ -2234,12 +2238,12 @@ function renderPaymentRequests(pending) {
           <div style="font-size:10px;color:var(--muted);margin-top:2px">${new Date(r.created_at).toLocaleTimeString('ur-PK',{hour:'2-digit',minute:'2-digit'})}</div>
 
           ${r.screenshot_url && r.screenshot_url !== 'base64_uploaded' && r.screenshot_url !== '[screenshot_uploaded]'
-            ? `<button class="ss-view-btn" data-url="${esc(r.screenshot_url)}" style="display:block;margin-top:6px;padding:5px 10px;border:1px solid rgba(212,175,55,.3);border-radius:8px;background:transparent;color:var(--gold);font-size:11px;cursor:pointer">📸 Screenshot دیکھیں</button>`
+            ? `<button class="ss-view-btn" data-url="${esc(r.screenshot_url)}" style="display:block;margin-top:6px;padding:5px 10px;border:1px solid rgba(212,175,55,.3);border-radius:8px;background:transparent;color:var(--gold);font-size:11px;cursor:pointer">📸 ${t('viewScreenshot')}</button>`
             : ''}
 
           ${r.customer_note
             ? `<div style="margin-top:8px;padding:7px 10px;background:rgba(255,255,255,.04);border-radius:8px;border:1px solid rgba(255,255,255,.07)">
-                 <div style="font-size:10px;color:var(--muted);margin-bottom:3px;letter-spacing:.5px">📝 نوٹ</div>
+                 <div style="font-size:10px;color:var(--muted);margin-bottom:3px;letter-spacing:.5px">📝 ${t('noteLabel')}</div>
                  <div style="font-size:12px;color:var(--text)">${esc(r.customer_note)}</div>
                </div>`
             : ''}
@@ -2248,7 +2252,7 @@ function renderPaymentRequests(pending) {
             ? `<div style="margin-top:8px;display:flex;align-items:center;gap:8px">
                  <button onclick="playAdminVoiceNote('${r.voice_note_path}', this)"
                    style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border:1px solid rgba(212,175,55,.3);border-radius:20px;background:rgba(212,175,55,.06);color:var(--gold);font-size:11px;cursor:pointer;font-family:inherit">
-                   🎤 آواز سنیں${r.voice_note_duration ? ' (' + r.voice_note_duration + 's)' : ''}
+                   🎤 ${t('listenVoice')}${r.voice_note_duration ? ' (' + r.voice_note_duration + 's)' : ''}
                  </button>
                </div>`
             : ''}
@@ -2256,11 +2260,11 @@ function renderPaymentRequests(pending) {
         <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
           <button onclick="approvePayment('${r.id}')"
             style="padding:10px 18px;border:none;border-radius:10px;background:var(--gold);color:#0d1422;font-weight:800;font-size:13px;cursor:pointer">
-            ✓ منظور کریں
+            ✓ ${t('approveBtn')}
           </button>
           <button onclick="rejectPayment('${r.id}')"
             style="padding:8px 18px;border:1px solid rgba(248,113,113,.4);border-radius:10px;background:transparent;color:var(--red);font-size:12px;cursor:pointer">
-            ✗ رد کریں
+            ✗ ${t('rejectBtn')}
           </button>
         </div>
       </div>
@@ -2295,7 +2299,7 @@ async function approvePayment(requestId) {
     });
     const json = await res.json();
     if (!json.success) throw new Error(json.error);
-    showToast(`✓ ٹوکن #${json.data.token_number} جاری ہو گیا`, 'success');
+    showToast(`✓ ${t('tokenIssued', json.data.token_number)}`, 'success');
     loadPaymentRequests(); // refresh payment list
     refreshQueue();        // refresh queue so new token appears
   } catch(e) { showToast(e.message, 'error'); }
@@ -2305,27 +2309,27 @@ async function playAdminVoiceNote(path, btn) {
   // Fetch signed URL then play inline — same pattern as queue voice notes
   try {
     btn.disabled = true;
-    btn.textContent = '⏳ لوڈ ہو رہا ہے...';
+    btn.textContent = '⏳ ' + t('voiceLoading');
     const res  = await fetch(`${WORKER}/public/voice-note?path=${encodeURIComponent(path)}`, {
       headers: { 'x-session-token': state.sessionToken }
     });
     const json = await res.json();
-    if (!json.success || !json.data?.url) throw new Error('آواز نہیں ملی');
+    if (!json.success || !json.data?.url) throw new Error(t('voiceError'));
     const audio = new Audio(json.data.url);
     audio.play();
-    btn.textContent = '🔊 چل رہا ہے...';
-    audio.onended = () => { btn.disabled = false; btn.innerHTML = '🎤 آواز سنیں'; };
-    audio.onerror = () => { btn.disabled = false; btn.innerHTML = '🎤 آواز سنیں'; showToast('آواز چلانے میں خرابی', 'error'); };
+    btn.textContent = '🔊 ' + t('voicePlaying');
+    audio.onended = () => { btn.disabled = false; btn.innerHTML = '🎤 ' + t('listenVoice'); };
+    audio.onerror = () => { btn.disabled = false; btn.innerHTML = '🎤 ' + t('listenVoice'); showToast(t('voiceError'), 'error'); };
   } catch(e) {
     btn.disabled = false;
-    btn.innerHTML = '🎤 آواز سنیں';
+    btn.innerHTML = '🎤 ' + t('listenVoice');
     showToast(e.message, 'error');
   }
 }
 window.playAdminVoiceNote = playAdminVoiceNote;
 
 async function rejectPayment(requestId) {
-  if (!confirm('یہ payment request رد کریں؟')) return;
+  if (!confirm(t('rejectConfirm'))) return;
   try {
     const res  = await fetch(`${WORKER}/admin/payment-requests/${requestId}/reject`, {
       method: 'POST',
@@ -2333,7 +2337,7 @@ async function rejectPayment(requestId) {
     });
     const json = await res.json();
     if (!json.success) throw new Error(json.error);
-    showToast('Request رد ہو گئی', 'success');
+    showToast(t('requestRejected'), 'success');
     loadPaymentRequests();
   } catch(e) { showToast(e.message, 'error'); }
 }
@@ -2393,11 +2397,11 @@ async function checkNewPaymentRequests() {
     if (count > _lastPaymentCount) {
       // New request arrived — alert business
       playAlertSound();
-      showToast(`🔔 نئی ادائیگی کی درخواست! (${count}) — دیکھیں`, 'success', () => { togglePaymentPanel(); });
+      showToast(`🔔 ${t('newPaymentToast', count)}`, 'success', () => { togglePaymentPanel(); });
       // Show notification if permission granted
       if (Notification.permission === 'granted') {
-        new Notification('WaitMate — نئی ادائیگی درخواست', {
-          body: `${count} درخواست منظوری کی منتظر ہے`,
+        new Notification(t('newPaymentTitle'), {
+          body: t('newPaymentBody', count),
           icon: '/icons/icon-192.png',
           tag: 'payment-request',
         });
@@ -2754,7 +2758,7 @@ document.addEventListener('click', e => {
 function viewScreenshot(url) {
   // If it's a marker string (old format), show error message
   if (url === 'base64_uploaded') {
-    alert('یہ پرانا ریکارڈ ہے — Screenshot دوبارہ جمع کروائیں');
+    alert(t('oldRecordAlert'));
     return;
   }
   let modal = document.getElementById('ss-modal');
@@ -2770,7 +2774,7 @@ function viewScreenshot(url) {
     document.body.appendChild(modal);
   }
   modal.innerHTML = `
-    <div style="font-size:13px;color:#94a3b8">ٹیپ کریں بند کرنے کے لیے</div>
+    <div style="font-size:13px;color:#94a3b8">${t('tapToClose')}</div>
     <img src="${url}" style="max-width:100%;max-height:75vh;border-radius:12px;object-fit:contain" onerror="this.parentElement.innerHTML='<div style=color:#f87171;padding:20px>Image load nahi ho saki. URL check karein.</div>'"/>
     <a href="${url}" target="_blank" style="color:var(--gold);font-size:12px;text-decoration:none">🔗 Original link kholein</a>`;
   modal.style.display = 'flex';
@@ -3412,7 +3416,7 @@ document.addEventListener('click', e => {
   <div class="onboard-card">
     <div class="onboard-icon">🎉</div>
     <div class="onboard-title">Welcome to WaitMate!</div>
-    <div class="onboard-sub">آپ کی دکان تیار ہے — یہ 3 آسان قدم مکمل کریں</div>
+    <div class="onboard-sub" id="onboard-sub-text">Your shop is ready — complete these 3 easy steps</div>
     <div class="onboard-steps">
       <div class="onboard-step">
         <div class="step-num">1</div>
@@ -3436,7 +3440,7 @@ document.addEventListener('click', e => {
         </div>
       </div>
     </div>
-    <button class="onboard-btn" onclick="dismissOnboarding()">سمجھ گیا — شروع کریں 🚀</button>
+    <button class="onboard-btn" onclick="dismissOnboarding()" id="onboard-btn-text">Got it — let's start 🚀</button>
   </div>
 </div>
 

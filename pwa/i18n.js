@@ -7,7 +7,8 @@ const STRINGS = {
   en: {
     // App
     appName:        'WaitMate',
-    appTagline:     'Your Smart Queue Partner',    langSwitch:     'اردو',
+    appTagline:     'Your Smart Queue Partner',
+    langSwitch:     'اردو',
 
     // Login
     shopLogin:      'Business Login',
@@ -130,12 +131,114 @@ const STRINGS = {
     minutes:        'min',
     nameRequired:   'Name is required',
     alreadyIn:      'You\'re already in the queue. Token: #{n}',
+
+    // New token notification
+    newTokenTitle:   'WaitMate — New Token',
+    newTokenToast:   'New token',
+    newTokenBody:    'A new customer joined the queue',
+
+    // Trial expiry banner
+    trialExpired:    'Your plan has expired — ',
+    trialExpiredCta: 'upgrade now',
+    trialExpiredEnd: ' to keep the service running.',
+    trialExpiringIn: 'Plan expires in #{n} days — ',
+    trialExpiringCta:'upgrade',
+    contactUs:       'contact us',
+
+    // WhatsApp share message
+    waShareLine1:    'is now on WaitMate',
+    waShareLine2:    'Get a token from home — come in when it\'s your turn',
+    waShareLine3:    'No need to stand in line',
+    waShareLine4:    'Get your token now:',
+    waShareLine5:    'Save this link — you\'ll need it every time',
+
+    // Payment requests
+    pendingCount:    'pending',
+    noteLabel:       'Note',
+    listenVoice:     'Listen to voice note',
+    voiceLoading:    'Loading...',
+    voicePlaying:    'Playing...',
+    voiceError:      'Could not play voice note',
+    approveBtn:      'Approve',
+    rejectBtn:       'Reject',
+    rejectConfirm:    'Reject this payment request?',
+    requestRejected: 'Request rejected',
+    tokenIssued:     'Token #{n} issued',
+    viewScreenshot:  'View Screenshot',
+
+    // Payment notification
+    newPaymentToast: 'New payment request! (#{n}) — view',
+    newPaymentTitle: 'WaitMate — New Payment Request',
+    newPaymentBody:  '#{n} request(s) awaiting approval',
+
+    // Onboarding
+    onboardSub:      'Your shop is ready — complete these 3 easy steps',
+    onboardBtn:       'Got it — let\'s start 🚀',
+
+    // QR poster
+    qrScanLine:      'Scan this QR code and<br/>get your token without standing in line<br/>',
+    qrTagline:       'WaitMate — Your Turn, On Your Time',
+
+    // Misc
+    oldRecordAlert:  'This is an old record — please resubmit the screenshot',
+    tapToClose:      'Tap to close',
   },
 
   ur: {
     appName:        'سف کیو',
     appTagline:     'سمارٹ قطار انتظام',
     langSwitch:     'English',
+
+    // New token notification
+    newTokenTitle:   'WaitMate — نیا ٹوکن',
+    newTokenToast:   'نیا ٹوکن',
+    newTokenBody:    'نیا گاہک قطار میں شامل ہوا',
+
+    // Trial expiry banner
+    trialExpired:    'آپ کا پلان ختم ہو گیا — ',
+    trialExpiredCta: 'ابھی اپگریڈ کریں',
+    trialExpiredEnd: ' تاکہ سروس جاری رہے۔',
+    trialExpiringIn: 'پلان #{n} دن میں ختم ہو گا — ',
+    trialExpiringCta:'اپگریڈ کریں',
+    contactUs:       'رابطہ کریں',
+
+    // WhatsApp share message
+    waShareLine1:    'اب WaitMate پر ہے',
+    waShareLine2:    'گھر بیٹھے ٹوکن لیں — باری آنے پر آئیں',
+    waShareLine3:    'لائن میں کھڑے ہونے کی ضرورت نہیں',
+    waShareLine4:    'ابھی ٹوکن لیں:',
+    waShareLine5:    'اس لنک کو محفوظ کریں — ہر بار کام آئے گا',
+
+    // Payment requests
+    pendingCount:    'زیر التواء',
+    noteLabel:       'نوٹ',
+    listenVoice:     'آواز سنیں',
+    voiceLoading:    'لوڈ ہو رہا ہے...',
+    voicePlaying:    'چل رہا ہے...',
+    voiceError:      'آواز چلانے میں مسئلہ',
+    approveBtn:      'منظور کریں',
+    rejectBtn:       'رد کریں',
+    rejectConfirm:    'یہ payment request رد کریں؟',
+    requestRejected: 'Request رد ہو گئی',
+    tokenIssued:     'ٹوکن #{n} جاری ہو گیا',
+    viewScreenshot:  'Screenshot دیکھیں',
+
+    // Payment notification
+    newPaymentToast: 'نئی ادائیگی کی درخواست! (#{n}) — دیکھیں',
+    newPaymentTitle: 'WaitMate — نئی ادائیگی درخواست',
+    newPaymentBody:  '#{n} درخواست منظوری کی منتظر ہے',
+
+    // Onboarding
+    onboardSub:      'آپ کی دکان تیار ہے — یہ 3 آسان قدم مکمل کریں',
+    onboardBtn:       'سمجھ گیا — شروع کریں 🚀',
+
+    // QR poster
+    qrScanLine:      '📱 اس QR کو اسکین کریں اور<br/>لائن میں لگے بغیر اپنا ٹوکن لیں<br/>',
+    qrTagline:       'WaitMate — آپ کی باری، آپ کے وقت پر',
+
+    // Misc
+    oldRecordAlert:  'یہ پرانا ریکارڈ ہے — Screenshot دوبارہ جمع کروائیں',
+    tapToClose:      'ٹیپ کریں بند کرنے کے لیے',
 
     shopLogin:      'کاروبار لاگ ان',
     whatsappNum:    'واٹس ایپ نمبر',

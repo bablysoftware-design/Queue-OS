@@ -1354,8 +1354,7 @@ async function loadShops() {
   }
 
   try {
-    // C: city is client-side only — do NOT send to server (Worker ignores it)
-    // Server-side params: city, category, search, area
+    // Server-side params: city, area, category, search — all sent to worker
     let url = `${WORKER}/public/shops`;
     const qp = [];
     if (activeCity)     qp.push(`city=${encodeURIComponent(activeCity)}`);
@@ -2914,11 +2913,14 @@ function catIcon(cat) {
 }
 
 function catLabel(cat) {
+  const lang = localStorage.getItem('sq_lang') || 'en';
   if (!window.catDisplay) {
-    const fb = {barber:'حجام',clinic:'کلینک',pharmacy:'فارمیسی',bank:'بینک',govt:'سرکاری',tailor:'درزی'};
-    return fb[cat] || cat || 'دیگر';
+    const fbUr = {barber:'حجام',clinic:'کلینک',pharmacy:'فارمیسی',bank:'بینک',govt:'سرکاری',tailor:'درزی'};
+    const fbEn = {barber:'Barber',clinic:'Clinic',pharmacy:'Pharmacy',bank:'Bank',govt:'Government',tailor:'Tailor'};
+    const fb = lang === 'ur' ? fbUr : fbEn;
+    return fb[cat] || cat || (lang === 'ur' ? 'دیگر' : 'Other');
   }
-  return window.catDisplay(cat, localStorage.getItem('sq_lang') || 'en');
+  return window.catDisplay(cat, lang);
 }
 
 function esc(s) {
