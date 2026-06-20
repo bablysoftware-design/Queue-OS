@@ -212,3 +212,33 @@ export async function checkPaymentStatus(request, env) {
     return ok({ status: pr.status, token_id: pr.token_id || null, token_number, shop_id: pr.shop_id || null });
   } catch(err) { return serverError(err.message); }
 }
+
+/**
+ * POST /public/payment-request/:id/cancel
+ * Customer cancels their own pending payment request before approval.
+ * Only allowed while status='pending' — once approved/rejected by
+ * the business, this can no longer be cancelled by the customer.
+ * No customer auth token exists for this flow (same as /public/cancel
+ * for free tokens), so request_id itself (a UUID, not guessable/public)
+ * functions as the access credential, matching the existing pattern.
+ */
+export async function cancelPaymentRequest(request, env) {
+  try {
+    const id = new URL(request.url).pathname.split('/')[3];
+    if (!id || !/^[0-9a-f-]{36}$/i.test(id)) return badRequest('Invalid request id');
+
+    const db   = createClient(env);
+    const rows = await db.select('payment_requests',
+      `select=id,status&id=eq.${id}&limit=1`
+    );
+    if (!rows?.length) return notFound('Request nahi mili');
+    if (rows[0].status !== 'pending') {
+      return badRequest('صرف زیر التواء درخواست منسوخ ہو سکتی ہے');
+    }
+
+    await db.update('payment_requests', `id=eq.${id}`, {
+      status: 'cancelled',
+    });
+    return ok({ cancelled: true });
+  } catch (err) { return serverError(err.message); }
+}

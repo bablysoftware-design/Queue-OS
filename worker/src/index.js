@@ -33,7 +33,7 @@ import { getShareLink, getShopBySlug,
 import { searchLocations, searchCategories }          from './routes/search.js';
 import { submitPaymentRequest, listPaymentRequests,
          approvePaymentRequest, rejectPaymentRequest,
-         checkPaymentStatus } from './routes/payments_manual.js';
+         checkPaymentStatus, cancelPaymentRequest } from './routes/payments_manual.js';
 import { ttsHandler }                        from './routes/tts.js';
 import { uploadVoiceNote, getVoiceNoteUrl, deleteVoiceNotePublic, cleanupOrphanVoiceNotes } from './routes/voice_notes.js';
 import { getPublicSettings, updateSettings } from './routes/settings.js';
@@ -89,6 +89,7 @@ const ROUTES = [
 
   // Manual payment (paid token mode)
   { method: 'POST',   path: '/public/payment-request',                   handler: submitPaymentRequest },
+  { method: 'POST',   path: '/public/payment-request/:id/cancel',        handler: cancelPaymentRequest },
   { method: 'GET',    path: '/public/payment-status',                     handler: checkPaymentStatus },
   { method: 'GET',    path: '/admin/payment-requests',                   handler: listPaymentRequests },
   { method: 'POST',   path: '/admin/payment-requests/:id/approve',       handler: approvePaymentRequest },

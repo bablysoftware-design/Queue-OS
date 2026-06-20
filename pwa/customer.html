@@ -820,6 +820,9 @@ body { animation: pageIn .3s ease both; }
         <span style="font-size:20px">🎫</span>
       </button>
       <div class="sheet-err" id="sheet-err"></div>
+      <button id="cancel-pending-btn" onclick="cancelPendingPayment()" style="display:none;width:100%;padding:12px;border:1px solid rgba(248,113,113,.3);border-radius:12px;background:rgba(248,113,113,.06);color:var(--red);font-family:'Sora',sans-serif;font-size:13px;font-weight:600;cursor:pointer;margin-top:10px" data-en="Cancel Request" data-ur="درخواست منسوخ کریں">
+        Cancel Request
+      </button>
       <button class="btn-cancel" onclick="closeModal()">Cancel</button>
     </div>
 
@@ -1842,6 +1845,8 @@ function startPaymentPolling(requestId, customerName, customerPhone) {
         const lbl = document.getElementById('join-btn-label');
         if (btn) btn.disabled = false;
         if (lbl) lbl.textContent = t('retryBtn');
+        const cpb = document.getElementById('cancel-pending-btn');
+        if (cpb) cpb.style.display = 'none';
       }
     } catch(e) { /* silent — keep polling */ }
   }, 5000); // check every 5 seconds
@@ -1884,6 +1889,11 @@ async function submitJoin() {
       errEl.textContent = t('requestReceived');
       btn.disabled = true;
       document.getElementById('join-btn-label').textContent = t('waitingApproval');
+      const cancelPendingBtn = document.getElementById('cancel-pending-btn');
+      if (cancelPendingBtn) {
+        cancelPendingBtn.style.display = 'block';
+        cancelPendingBtn.dataset.requestId = data.request_id;
+      }
       // Save so restore works on refresh
       localStorage.setItem('saf_pending_payment', JSON.stringify({
         reqId: data.request_id, shopData: selectedShop
@@ -2007,6 +2017,40 @@ async function enableNotifications() {
   } else {
     if (prompt) prompt.style.display = 'none';
   }
+}
+
+// Cancel a pending PAID token payment request (before business approves).
+// Separate from cancelMyToken()/_doCancel() which only handle an
+// already-approved, real queue token. This handles the earlier stage:
+// the payment_requests row created by submitJoin()'s paid-mode branch.
+function cancelPendingPayment() {
+  const btn = document.getElementById('cancel-pending-btn');
+  const reqId = btn?.dataset.requestId;
+  if (!reqId) return;
+  if (!confirm(t('pendingCancelConfirm'))) return;
+  _doCancelPendingPayment(reqId);
+}
+window.cancelPendingPayment = cancelPendingPayment;
+
+async function _doCancelPendingPayment(reqId) {
+  try {
+    const res  = await fetch(`${WORKER}/public/payment-request/${reqId}/cancel`, { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      clearInterval(_payPollTimer);
+      localStorage.removeItem('saf_pending_payment');
+      const btn = document.getElementById('cancel-pending-btn');
+      if (btn) btn.style.display = 'none';
+      const errEl = document.getElementById('sheet-err');
+      if (errEl) { errEl.style.color = 'var(--muted)'; errEl.textContent = t('pendingRequestCancelled'); }
+      const jbtn = document.getElementById('join-btn');
+      const lbl  = document.getElementById('join-btn-label');
+      if (jbtn) jbtn.disabled = false;
+      if (lbl)  lbl.textContent = t('payRequestBtn', {n: selectedShop?.token_price || 0});
+    } else {
+      alert(data.error || t('couldNotCancel'));
+    }
+  } catch(e) { alert(t('couldNotCancel')); }
 }
 
 function cancelMyToken() {
