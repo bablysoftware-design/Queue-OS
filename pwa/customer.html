@@ -881,6 +881,9 @@ body { animation: pageIn .3s ease both; }
           </div>
           <div class="tracker-badge waiting" id="tracker-badge">Waiting in queue</div>
           <div class="tracker-sub" id="tracker-sub">Updates every 10 seconds</div>
+          <button id="tracker-done-btn" onclick="closeModal()" style="display:none;width:100%;margin-top:12px;padding:13px;border:none;border-radius:14px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0d1422;font-family:'Sora',sans-serif;font-size:14px;font-weight:800;cursor:pointer">
+            ← دکانوں کی فہرست پر واپس جائیں
+          </button>
         </div>
 
         <!-- Hidden system panels -->
@@ -2042,7 +2045,7 @@ async function _doCancel() {
       const sub   = document.getElementById('tracker-sub');
       if (badge) { badge.className='tracker-badge done'; badge.textContent='❌ منسوخ'; }
       if (sub)   sub.textContent = 'آپ کا ٹوکن منسوخ ہو گیا';
-      document.getElementById('cancel-token-btn').style.display = 'none';
+      showTrackerDone();
     }
   } catch(e) { alert('منسوخ نہیں ہو سکا'); }
 }
@@ -2462,6 +2465,25 @@ function startTracker() {
   trackerTimer = setInterval(updateTracker, 5000); // 5s base — faster priority detection
 }
 
+// Hides position/wait/countdown/cancel elements and shows a clear
+// "back to list" prompt when the token reaches a terminal state
+// (completed, cancelled, no_show, expired, shop_closed). Safe to
+// call multiple times — all operations are idempotent.
+function showTrackerDone() {
+  const posEl   = document.getElementById('r-pos');
+  const waitEl  = document.getElementById('r-wait-val');
+  const cdWrap  = document.getElementById('countdown-wrap');
+  const cancelBtn = document.getElementById('cancel-token-btn');
+  const graceEl = document.getElementById('grace-timer');
+  const doneBtn = document.getElementById('tracker-done-btn');
+  if (posEl)    posEl.textContent  = '—';
+  if (waitEl)   waitEl.textContent = '—';
+  if (cdWrap)   cdWrap.style.display = 'none';
+  if (cancelBtn) cancelBtn.style.display = 'none';
+  if (graceEl)  graceEl.style.display = 'none';
+  if (doneBtn)  doneBtn.style.display = 'block';
+}
+
 async function updateTracker() {
   if (!myTokenId || !selectedShop) return;
   try {
@@ -2528,6 +2550,7 @@ async function updateTracker() {
       sub.textContent   = 'آپ کا ٹوکن منسوخ ہو گیا';
       clearInterval(trackerTimer);
       clearTokenStorage();
+      showTrackerDone();
       const cb = document.getElementById('cancel-token-btn');
       if (cb) cb.style.display = 'none';
 
@@ -2537,6 +2560,7 @@ async function updateTracker() {
       sub.textContent   = 'آپ کا ٹوکن منسوخ ہو گیا';
       clearInterval(trackerTimer);
       clearTokenStorage();
+      showTrackerDone();
 
     } else if (data.status === 'completed') {
       badge.className   = 'tracker-badge done';
@@ -2544,6 +2568,7 @@ async function updateTracker() {
       sub.textContent   = 'آپ کی سروس ہو گئی';
       clearInterval(trackerTimer);
       clearTokenStorage();
+      showTrackerDone();
 
     } else if (data.status === 'waiting') {
       const pos   = data.position       || 0;
