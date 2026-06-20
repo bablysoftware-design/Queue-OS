@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
 <meta name="theme-color" content="#050810"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<title>ویٹ میٹ — ٹوکن لیں</title>
+<title id="page-title">WaitMate — Get Token</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Noto+Nastaliq+Urdu:wght@400;600;700&family=Orbitron:wght@700;900&family=Dancing+Script:wght@700&display=swap" rel="stylesheet"/>
 <style>
 :root{
@@ -620,7 +620,7 @@ body { animation: pageIn .3s ease both; }
   <!-- ── SEARCH + FILTERS ── -->
   <div class="search-wrap">
     <div class="search-box">
-      <input class="search-input" id="search-input" type="text" placeholder="دکان یا علاقہ تلاش کریں..." oninput="onSearch()"/>
+      <input class="search-input" id="search-input" type="text" placeholder="Search shops or areas..." oninput="onSearch()"/>
       <button class="search-btn" onclick="loadShops()">🔍</button>
     </div>
 
@@ -654,7 +654,7 @@ body { animation: pageIn .3s ease both; }
         style="width:100%;padding:13px 16px;border:none;border-radius:14px;background:linear-gradient(135deg,rgba(212,175,55,.18),rgba(212,175,55,.08));border:1px solid rgba(212,175,55,.35);color:var(--gold);font-family:'Sora',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s;box-shadow:0 2px 12px rgba(212,175,55,.1)">
         <span style="font-size:20px">🏪</span>
         <div style="text-align:right">
-          <div>اپنا کاروبار شامل کریں</div>
+          <div data-en="Add Your Business" data-ur="اپنا کاروبار شامل کریں">Add Your Business</div>
           <div style="font-size:10px;font-weight:400;color:rgba(212,175,55,.7);margin-top:1px">Apna Business Add Karein →</div>
         </div>
       </button>
@@ -671,7 +671,7 @@ body { animation: pageIn .3s ease both; }
 
     <!-- Relevant suggestions strip -->
     <div class="suggestions-strip" id="suggestions-strip" style="display:none">
-      <div class="sec-lbl" style="margin-top:18px;margin-bottom:10px" id="suggest-label">متعلقہ دکانیں</div>
+      <div class="sec-lbl" style="margin-top:18px;margin-bottom:10px" id="suggest-label" data-en="Related Shops" data-ur="متعلقہ دکانیں">Related Shops</div>
       <div class="suggestions-scroll" id="suggestions-scroll"></div>
     </div>
 
@@ -692,17 +692,17 @@ body { animation: pageIn .3s ease both; }
     <div id="shops-container" style="display:none">
       <!-- Stats banner -->
       <div class="stats-banner">
-        <div class="banner-stat"><div class="banner-val" id="b-open">0</div><div class="banner-lbl">کھلی دکانیں</div></div>
-        <div class="banner-stat"><div class="banner-val" id="b-total">0</div><div class="banner-lbl">کل دکانیں</div></div>
-        <div class="banner-stat"><div class="banner-val" id="b-tokens">0</div><div class="banner-lbl">قطار میں</div></div>
+        <div class="banner-stat"><div class="banner-val" id="b-open">0</div><div class="banner-lbl" data-en="Open" data-ur="کھلی دکانیں">کھلی دکانیں</div></div>
+        <div class="banner-stat"><div class="banner-val" id="b-total">0</div><div class="banner-lbl" data-en="Total" data-ur="کل دکانیں">کل دکانیں</div></div>
+        <div class="banner-stat"><div class="banner-val" id="b-tokens">0</div><div class="banner-lbl" data-en="In Queue" data-ur="قطار میں">قطار میں</div></div>
       </div>
       <!-- Recent shops — shown when customer has history -->
       <div id="recent-shops-wrap" style="display:none;margin-bottom:4px">
-        <div class="sec-lbl">⏱ حال ہی میں</div>
+        <div class="sec-lbl" data-en="⏱ Recently Viewed" data-ur="⏱ حال ہی میں">⏱ حال ہی میں</div>
         <div id="recent-shops-list"></div>
       </div>
 
-      <div class="sec-lbl" id="shops-section-label">تمام دکانیں</div>
+      <div class="sec-lbl" id="shops-section-label" data-en="All Shops" data-ur="تمام دکانیں">تمام دکانیں</div>
       <div class="shop-list" id="shop-list"></div>
     </div>
     <div class="empty-state" id="empty-state" style="display:none">
@@ -712,7 +712,7 @@ body { animation: pageIn .3s ease both; }
 
     <!-- Related shops — shown when arriving via shared link -->
     <div id="related-shops-section" style="display:none;margin-top:24px;padding:0 4px">
-      <div class="sec-lbl" style="margin-bottom:10px">🏪 قریبی دکانیں</div>
+      <div class="sec-lbl" style="margin-bottom:10px" data-en="🏪 Nearby Shops" data-ur="🏪 قریبی دکانیں">🏪 قریبی دکانیں</div>
       <div id="related-shops-list" class="shop-list"></div>
     </div>
   </div>
@@ -793,17 +793,17 @@ body { animation: pageIn .3s ease both; }
 
       <!-- Paid token section — shown dynamically -->
       <div id="paid-token-section" style="display:none;margin:12px 18px 0;background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.25);border-radius:14px;padding:14px">
-        <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:4px">💳 ادائیگی ضروری ہے</div>
+        <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:4px" data-en="💳 Payment Required" data-ur="💳 ادائیگی ضروری ہے">💳 ادائیگی ضروری ہے</div>
         <div id="paid-amount-txt" style="font-size:13px;color:var(--text);margin-bottom:12px;font-weight:600"></div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.5">Easypaisa / JazzCash پر ادائیگی کریں، پھر اسکرین شاٹ یہاں اپلوڈ کریں:</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.5" data-en="Pay via Easypaisa / JazzCash, then upload screenshot here:" data-ur="Easypaisa / JazzCash پر ادائیگی کریں، پھر اسکرین شاٹ یہاں اپلوڈ کریں:">Easypaisa / JazzCash پر ادائیگی کریں، پھر اسکرین شاٹ یہاں اپلوڈ کریں:</div>
         <div class="sheet-field" style="margin-bottom:8px;padding:0">
-          <label style="font-size:11px;color:var(--gold);font-weight:600;margin-bottom:6px;display:block">📸 پیمنٹ اسکرین شاٹ اپلوڈ کریں</label>
+          <label style="font-size:11px;color:var(--gold);font-weight:600;margin-bottom:6px;display:block" data-en="📸 Upload Payment Screenshot" data-ur="📸 پیمنٹ اسکرین شاٹ اپلوڈ کریں">📸 پیمنٹ اسکرین شاٹ اپلوڈ کریں</label>
           <input id="c-screenshot-file" type="file" accept="image/*" onchange="previewScreenshot(this)" style="display:none"/>
           <div onclick="document.getElementById('c-screenshot-file').click()" id="screenshot-drop"
             style="border:1.5px dashed rgba(212,175,55,.4);border-radius:10px;padding:18px;text-align:center;cursor:pointer;transition:all .2s;background:rgba(212,175,55,.03)"
             onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='rgba(212,175,55,.4)'">
             <div style="font-size:24px;margin-bottom:4px">📷</div>
-            <div style="font-size:12px;color:var(--muted)">تصویر منتخب کریں یا یہاں ٹیپ کریں</div>
+            <div style="font-size:12px;color:var(--muted)" data-en="Select an image or tap here" data-ur="تصویر منتخب کریں یا یہاں ٹیپ کریں">تصویر منتخب کریں یا یہاں ٹیپ کریں</div>
           </div>
           <div id="screenshot-preview" style="display:none;margin-top:8px;position:relative">
             <img id="screenshot-img" style="width:100%;border-radius:8px;max-height:140px;object-fit:cover;border:1px solid rgba(212,175,55,.2)"/>
@@ -811,7 +811,7 @@ body { animation: pageIn .3s ease both; }
           </div>
         </div>
         <input type="hidden" id="c-screenshot-data"/>
-        <div style="font-size:10px;color:var(--muted);margin-top:6px">اسکرین شاٹ لگانے کے بعد درخواست دیں — بزنس منظور کرے گی تو فوری ٹوکن ملے گا</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:6px" data-en="After uploading screenshot, submit — you'll get a token once business approves" data-ur="اسکرین شاٹ لگانے کے بعد درخواست دیں — بزنس منظور کرے گی تو فوری ٹوکن ملے گا">اسکرین شاٹ لگانے کے بعد درخواست دیں — بزنس منظور کرے گی تو فوری ٹوکن ملے گا</div>
       </div>
 
       <!-- Submit -->
@@ -882,7 +882,7 @@ body { animation: pageIn .3s ease both; }
           <div class="tracker-badge waiting" id="tracker-badge">Waiting in queue</div>
           <div class="tracker-sub" id="tracker-sub">Updates every 10 seconds</div>
           <button id="tracker-done-btn" onclick="closeModal()" style="display:none;width:100%;margin-top:12px;padding:13px;border:none;border-radius:14px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0d1422;font-family:'Sora',sans-serif;font-size:14px;font-weight:800;cursor:pointer">
-            ← دکانوں کی فہرست پر واپس جائیں
+            <span data-en="← Back to Shop List" data-ur="← دکانوں کی فہرست پر واپس جائیں">← دکانوں کی فہرست پر واپس جائیں</span>
           </button>
         </div>
 
@@ -921,8 +921,8 @@ body { animation: pageIn .3s ease both; }
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
             <span style="font-size:20px">👨‍👩‍👧</span>
             <div>
-              <div style="font-size:13px;font-weight:700;color:#25d366">گھر والوں کو بتائیں</div>
-              <div style="font-size:11px;color:var(--muted);margin-top:2px">وہ آپ کی باری گھر بیٹھے دیکھ سکتے ہیں</div>
+              <div style="font-size:13px;font-weight:700;color:#25d366" data-en="Notify Family" data-ur="گھر والوں کو بتائیں">گھر والوں کو بتائیں</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px" data-en="They can track your turn from home" data-ur="وہ آپ کی باری گھر بیٹھے دیکھ سکتے ہیں">وہ آپ کی باری گھر بیٹھے دیکھ سکتے ہیں</div>
             </div>
           </div>
           <button onclick="shareShopLink()" style="width:100%;padding:12px;border:none;border-radius:12px;background:#25d366;color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit">
@@ -950,6 +950,7 @@ body { animation: pageIn .3s ease both; }
 </div>
 
 <script src="/categories.js"></script>
+<script src="/i18n.js"></script>
 <script>
 // ── Debug flag — set true only for local debugging ──────────
 const DEBUG = false;
@@ -1197,7 +1198,7 @@ async function loadFeaturedShop(shopId) {
     if (!data) return;
 
     // Update page title
-    document.title = `${data.name} — ویٹ میٹ`;
+    document.title = `${data.name} — ${window.t ? t('shopPageTitleSuffix') : 'WaitMate'}`;
     document.querySelector('.topbar-sub').textContent = data.name;
 
     renderFeaturedHero(data);
@@ -1222,17 +1223,17 @@ function renderFeaturedHero(shop) {
   const fillCls = pct > 75 ? 'high' : pct > 40 ? 'mid' : 'low';
 
   let statusBadge;
-  if (!isOpen)       statusBadge = `<span class="status-badge closed"><span class="s-dot"></span>ابھی بند</span>`;
-  else if (isBusy)   statusBadge = `<span class="status-badge busy"><span class="s-dot"></span>مصروف</span>`;
-  else               statusBadge = `<span class="status-badge open"><span class="s-dot"></span>کھلی ہے</span>`;
+  if (!isOpen)       statusBadge = `<span class="status-badge closed"><span class="s-dot"></span>${t('statusClosed')}</span>`;
+  else if (isBusy)   statusBadge = `<span class="status-badge busy"><span class="s-dot"></span>${t('statusBusy')}</span>`;
+  else               statusBadge = `<span class="status-badge open"><span class="s-dot"></span>${t('statusOpen')}</span>`;
 
   let heroBody;
   if (isOpen) {
     heroBody = `
       <div class="featured-bar-wrap">
         <div class="featured-bar-labels">
-          <span>قطار: ${qLen} لوگ</span>
-          <span>~${shop.estimated_wait} منٹ انتظار</span>
+          <span>${t('queueLabel')} ${qLen} ${t('peopleWord')}</span>
+          <span>~${shop.estimated_wait} ${t('waitMinSuffix')}</span>
         </div>
         <div class="featured-bar-track">
           <div class="featured-bar-fill ${fillCls}" style="width:${pct}%"></div>
@@ -1241,37 +1242,37 @@ function renderFeaturedHero(shop) {
       <div class="featured-stats">
         <div class="featured-stat">
           <div class="featured-stat-val">${shop.current_serving ?? '—'}</div>
-          <div class="featured-stat-lbl">ابھی نمبر</div>
+          <div class="featured-stat-lbl">${t('currentNum')}</div>
         </div>
         <div class="featured-stat">
           <div class="featured-stat-val">${qLen}</div>
-          <div class="featured-stat-lbl">قطار میں</div>
+          <div class="featured-stat-lbl">${t('inQueueLbl')}</div>
         </div>
         <div class="featured-stat">
           <div class="featured-stat-val">${shop.estimated_wait}m</div>
-          <div class="featured-stat-lbl">انتظار</div>
+          <div class="featured-stat-lbl">${t('waitLbl')}</div>
         </div>
       </div>
       <button class="featured-btn" onclick="openShop('${shop.id}')">
         <span class="featured-btn-arrow">←</span>
-        ٹوکن لیں — ابھی قطار میں شامل ہوں
+        ${t('getTokenCta')}
       </button>`;
   } else {
     heroBody = `
       <div class="featured-closed-banner">
-        <div class="featured-closed-title">🔒 دکان ابھی بند ہے</div>
-        <div class="featured-closed-sub">کھلنے پر دوبارہ آئیں اور ٹوکن لیں</div>
+        <div class="featured-closed-title">${t('shopClosedNowTitle')}</div>
+        <div class="featured-closed-sub">${t('shopClosedNowSub')}</div>
         <div class="featured-closed-hours">
-          ⏰ عام طور پر صبح کھلتی ہے
+          ${t('usuallyOpensMorning')}
         </div>
       </div>
       <button class="featured-btn" disabled>
-        ابھی ٹوکن نہیں لیا جا سکتا
+        ${t('cannotGetTokenNow')}
       </button>`;
   }
 
   document.getElementById('featured-hero').innerHTML = `
-    <div class="featured-badge">⭐ آپ کی دکان</div>
+    <div class="featured-badge">${t('yourShopBadge')}</div>
     <div class="featured-top">
       <div class="featured-icon">${catIcon(shop.category)}</div>
       <div class="featured-info">
@@ -1281,7 +1282,7 @@ function renderFeaturedHero(shop) {
     </div>
     <div class="featured-status-row">
       ${statusBadge}
-      <span style="font-size:10px;color:var(--muted)">لائیو اعداد و شمار</span>
+      <span style="font-size:10px;color:var(--muted)">${t('liveStats')}</span>
     </div>
     ${heroBody}
   `;
@@ -1306,8 +1307,8 @@ function renderSuggestions(featuredShop) {
   if (!suggestions.length) return;
 
   const label = featuredShop.is_open
-    ? `دیگر ${catLabel(featuredShop.category)} دکانیں`
-    : `متبادل ${catLabel(featuredShop.category)} دکانیں`;
+    ? t('otherCatShops', {cat: catLabel(featuredShop.category)})
+    : t('altCatShops', {cat: catLabel(featuredShop.category)});
 
   document.getElementById('suggest-label').textContent = label;
   document.getElementById('suggestions-strip').style.display = 'block';
@@ -1318,15 +1319,15 @@ function renderSuggestions(featuredShop) {
     const isOpen = s.is_open;
     const tag = isSameCatId.has(s.id)
       ? `<span class="suggest-tag-chip same-cat">${catLabel(s.category)}</span>`
-      : `<span class="suggest-tag-chip near">قریبی</span>`;
+      : `<span class="suggest-tag-chip near">${t('nearbyTag')}</span>`;
 
     let queueTxt, queueCls, clickable;
     if (!isOpen) {
-      queueTxt = 'بند'; queueCls = 'closed-txt'; clickable = false;
+      queueTxt = t('statusClosedShort'); queueCls = 'closed-txt'; clickable = false;
     } else if (s.is_busy) {
-      queueTxt = `${s.queue_length} لوگ — مصروف`; queueCls = 'busy'; clickable = true;
+      queueTxt = `${s.queue_length} ${t('busyPeopleSuffix')}`; queueCls = 'busy'; clickable = true;
     } else {
-      queueTxt = s.queue_length ? `${s.queue_length} لوگ قطار میں` : 'ابھی خالی ✓'; queueCls = 'open'; clickable = true;
+      queueTxt = s.queue_length ? `${s.queue_length} ${t('queuePeopleSuffix')}` : t('emptyCheckmark'); queueCls = 'open'; clickable = true;
     }
 
     return `<div class="suggest-card ${isOpen ? '' : 'closed'}" 
@@ -1392,15 +1393,15 @@ async function loadShops() {
     console.error('[WM] loadShops failed:', e.message);
     listEl.innerHTML = `<div style="text-align:center;padding:32px 20px">
       <div style="font-size:36px;margin-bottom:12px">📡</div>
-      <div style="font-size:14px;color:var(--muted);margin-bottom:16px">Could not load shops.<br/>انٹرنیٹ چیک کریں۔</div>
-      <button onclick="loadShops()" style="padding:10px 24px;border:1.5px solid rgba(212,175,55,.4);border-radius:10px;background:rgba(212,175,55,.08);color:var(--gold);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">↺ Try Again</button>
+      <div style="font-size:14px;color:var(--muted);margin-bottom:16px">${t('couldNotLoadShops')}</div>
+      <button onclick="loadShops()" style="padding:10px 24px;border:1.5px solid rgba(212,175,55,.4);border-radius:10px;background:rgba(212,175,55,.08);color:var(--gold);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">↺ ${t('retry')}</button>
     </div>`;
     document.getElementById('loading-state').innerHTML =
       `<div style="color:var(--red);padding:40px;text-align:center">
         <div style="font-size:20px;margin-bottom:8px">⚠️</div>
-        <div>لوڈ نہیں ہو سکا</div>
+        <div>${t('couldNotLoad')}</div>
         <div style="font-size:11px;opacity:0.6;margin-top:6px;direction:ltr">${e.message}</div>
-        <button onclick="location.reload()" style="margin-top:16px;padding:8px 20px;border:1px solid var(--gold);border-radius:20px;background:transparent;color:var(--gold);font-family:inherit;cursor:pointer;">دوبارہ کوشش کریں</button>
+        <button onclick="location.reload()" style="margin-top:16px;padding:8px 20px;border:1px solid var(--gold);border-radius:20px;background:transparent;color:var(--gold);font-family:inherit;cursor:pointer;">${t('retry')}</button>
       </div>`;
   } finally {
     _loadingShops = false;
@@ -1428,7 +1429,7 @@ function renderShops() {
   document.getElementById('b-tokens').textContent = totalQueue;
 
   // Label
-  const label = activeCategory ? catLabel(activeCategory) : activeArea ? activeArea : 'تمام دکانیں';
+  const label = activeCategory ? catLabel(activeCategory) : activeArea ? activeArea : t('allShops');
   const labelEl = document.getElementById('shops-section-label') || document.getElementById('shops-label');
   if (labelEl) labelEl.textContent = label;
 
@@ -1454,7 +1455,7 @@ function renderShops() {
     const pinnedHtml = pinned.map((s, i) =>
       `<div style="border:2px solid var(--gold);border-radius:18px;box-shadow:0 0 20px rgba(212,175,55,.25);margin-bottom:6px">
         <div style="background:rgba(212,175,55,.08);border-radius:16px 16px 0 0;padding:6px 14px;font-size:10px;font-weight:700;color:var(--gold);letter-spacing:1px">
-          🔗 آپ نے یہ لنک کھولا — یہاں ٹوکن لیں
+          🔗 ${t('openedThisLink')}
         </div>
         ${buildShopCard(s, i)}
       </div>`
@@ -1476,13 +1477,13 @@ function buildShopCard(s, i) {
 
   let statusBadge, cardClass;
   if (!isOpen) {
-    statusBadge = `<span class="status-badge closed"><span class="s-dot"></span>بند</span>`;
+    statusBadge = `<span class="status-badge closed"><span class="s-dot"></span>${t('statusClosedShort')}</span>`;
     cardClass   = 'closed';
   } else if (isBusy) {
-    statusBadge = `<span class="status-badge busy"><span class="s-dot"></span>مصروف</span>`;
+    statusBadge = `<span class="status-badge busy"><span class="s-dot"></span>${t('statusBusy')}</span>`;
     cardClass   = 'open busy';
   } else {
-    statusBadge = `<span class="status-badge open"><span class="s-dot"></span>کھلی</span>`;
+    statusBadge = `<span class="status-badge open"><span class="s-dot"></span>${t('statusOpen')}</span>`;
     cardClass   = 'open';
   }
 
@@ -1494,18 +1495,18 @@ function buildShopCard(s, i) {
     // Find open alternative in same category
     const alt = allShops.find(a => a.id !== s.id && a.category === s.category && a.is_open);
     if (alt) {
-      suggestion = `<div class="suggestion-tag alt">💡 متبادل: ${esc(alt.name)} کھلی ہے</div>`;
+      suggestion = `<div class="suggestion-tag alt">${t('altSuggestion', {name: esc(alt.name)})}</div>`;
     }
-    suggestion += `<div class="timing-info">⏰ <strong>اگلی بار:</strong> دکان کھلنے پر دوبارہ چیک کریں</div>`;
+    suggestion += `<div class="timing-info">${t('nextTimeTip')}</div>`;
   } else if (isBusy) {
     const quieter = allShops.find(a => a.id !== s.id && a.category === s.category && a.is_open && !a.is_busy);
     if (quieter) {
-      suggestion = `<div class="suggestion-tag alt">💡 کم قطار: ${esc(quieter.name)} — ${quieter.queue_length} لوگ</div>`;
+      suggestion = `<div class="suggestion-tag alt">${t('quieterSuggestion', {name: esc(quieter.name), n: quieter.queue_length})}</div>`;
     } else {
-      suggestion = `<div class="suggestion-tag warn">⚠️ قطار لمبی ہے — انتظار ہو سکتا ہے</div>`;
+      suggestion = `<div class="suggestion-tag warn">${t('longQueueWarning')}</div>`;
     }
   } else {
-    suggestion = `<div class="suggestion-tag go">✅ ابھی ٹوکن لینے کا اچھا وقت ہے</div>`;
+    suggestion = `<div class="suggestion-tag go">${t('goodTimeToGo')}</div>`;
   }
 
   const clickHandler = isOpen ? `onclick="openShop('${s.id}')"` : '';
@@ -1526,17 +1527,17 @@ function buildShopCard(s, i) {
     ${isOpen ? `
     <div class="queue-bar-wrap">
       <div class="queue-bar-labels">
-        <span>قطار: ${qLen} لوگ</span>
-        <span>~${s.estimated_wait} منٹ</span>
+        <span>${t('queueLabel')} ${qLen} ${t('peopleWord')}</span>
+        <span>~${s.estimated_wait} ${t('minutes')}</span>
       </div>
       <div class="queue-bar-track">
         <div class="queue-bar-fill ${fillClass}" style="width:${fillPct}%"></div>
       </div>
     </div>
     <div class="card-stats">
-      <div class="c-stat"><div class="c-stat-val">${s.current_serving??'—'}</div><div class="c-stat-lbl">ابھی نمبر</div></div>
-      <div class="c-stat"><div class="c-stat-val">${qLen}</div><div class="c-stat-lbl">قطار میں</div></div>
-      <div class="c-stat"><div class="c-stat-val">${s.estimated_wait}m</div><div class="c-stat-lbl">انتظار</div></div>
+      <div class="c-stat"><div class="c-stat-val">${s.current_serving??'—'}</div><div class="c-stat-lbl">${t('currentNum')}</div></div>
+      <div class="c-stat"><div class="c-stat-val">${qLen}</div><div class="c-stat-lbl">${t('inQueueLbl')}</div></div>
+      <div class="c-stat"><div class="c-stat-val">${s.estimated_wait}m</div><div class="c-stat-lbl">${t('waitLbl')}</div></div>
     </div>` : ''}
 
     ${suggestion}
@@ -1580,7 +1581,7 @@ async function openShop(shopId) {
       selectedShop = { ...selectedShop, ...data };
     }).catch(() => {});
         document.getElementById('r-num').textContent = myTokenNum || '?';
-        document.getElementById('r-greeting').textContent = `${selectedShop.name} — آپ کا ٹوکن`;
+        document.getElementById('r-greeting').textContent = `${selectedShop.name} — ${t('yourToken')}`;
         showWaBtn(selectedShop, myTokenNum || '?');
         return;
       }
@@ -1609,11 +1610,11 @@ async function openShop(shopId) {
     const amtEl = document.getElementById('paid-amount-txt');
     if (amtEl) amtEl.innerHTML =
       `<span style="font-size:20px;color:var(--gold);font-weight:800">Rs ${selectedShop.token_price}</span>` +
-      `<span style="font-size:11px;color:var(--muted);margin-right:6px"> — ${esc(selectedShop.name)} کو ادا کریں</span>`;
+      `<span style="font-size:11px;color:var(--muted);margin-right:6px">${t('payToShop', {shop: esc(selectedShop.name)})}</span>`;
   }
   document.getElementById('join-btn-label').textContent = isPaid
-    ? `ادائیگی کی درخواست دیں — Rs ${selectedShop.token_price}`
-    : 'ٹوکن لیں';
+    ? t('payRequestBtn', {n: selectedShop.token_price})
+    : t('getTokenBtn');
 
   // Populate
   document.getElementById('m-shop-name').textContent = selectedShop.name;
@@ -1730,7 +1731,7 @@ function _showPaidTokenCard(tokenNum) {
   document.getElementById('join-form-wrap').style.display = 'none';
   document.getElementById('result-wrap').style.display    = 'block';
   document.getElementById('r-num').textContent            = tokenNum || '✓';
-  document.getElementById('r-greeting').textContent       = `🎉 منظور! ${selectedShop?.name || ''} — آپ قطار میں ہیں`;
+  document.getElementById('r-greeting').textContent       = t('approvedJoined', {shop: selectedShop?.name || ''});
   showWaBtn(selectedShop, tokenNum || '✓');
 
   // Clear payment form
@@ -1762,11 +1763,11 @@ function startPaymentPolling(requestId, customerName, customerPhone) {
     if (attempts > maxAttempts) {
       clearInterval(_payPollTimer);
       const errEl = document.getElementById('sheet-err');
-      if (errEl) { errEl.style.color = ''; errEl.textContent = 'وقت ختم — براہ کرم دوبارہ کوشش کریں'; }
+      if (errEl) { errEl.style.color = ''; errEl.textContent = t('timeUpRetry'); }
       const btn = document.getElementById('join-btn');
       const lbl = document.getElementById('join-btn-label');
       if (btn) btn.disabled = false;
-      if (lbl) lbl.textContent = 'دوبارہ کوشش کریں';
+      if (lbl) lbl.textContent = t('retryBtn');
       return;
     }
 
@@ -1836,11 +1837,11 @@ function startPaymentPolling(requestId, customerName, customerPhone) {
         clearInterval(_payPollTimer);
         localStorage.removeItem('saf_pending_payment');
         const errEl = document.getElementById('sheet-err');
-        if (errEl) { errEl.style.color = 'var(--red)'; errEl.textContent = '❌ ادائیگی رد کر دی گئی — براہ کرم دوبارہ کوشش کریں'; }
+        if (errEl) { errEl.style.color = 'var(--red)'; errEl.textContent = t('paymentRejected'); }
         const btn = document.getElementById('join-btn');
         const lbl = document.getElementById('join-btn-label');
         if (btn) btn.disabled = false;
-        if (lbl) lbl.textContent = 'دوبارہ کوشش کریں';
+        if (lbl) lbl.textContent = t('retryBtn');
       }
     } catch(e) { /* silent — keep polling */ }
   }, 5000); // check every 5 seconds
@@ -1854,7 +1855,7 @@ async function submitJoin() {
   const btn   = document.getElementById('join-btn');
   errEl.textContent = '';
 
-  if (!name) { errEl.textContent = 'نام ضروری ہے'; return; }
+  if (!name) { errEl.textContent = t('nameRequired'); return; }
 
   btn.disabled = true;
   document.getElementById('join-btn-label').textContent = '...';
@@ -1862,7 +1863,7 @@ async function submitJoin() {
   // ── Paid mode: submit payment request instead ─────────
   if (selectedShop.token_mode === 'paid') {
     const screenshot = document.getElementById('c-screenshot-data')?.value || null;
-    if (!phone) { errEl.textContent = 'ادائیگی کے لیے فون نمبر ضروری ہے'; btn.disabled=false; document.getElementById('join-btn-label').textContent=`ادائیگی کی درخواست دیں — Rs ${selectedShop.token_price}`; return; }
+    if (!phone) { errEl.textContent = t('phoneRequiredPay'); btn.disabled=false; document.getElementById('join-btn-label').textContent=t('payRequestBtn', {n: selectedShop.token_price}); return; }
     try {
       const res  = await fetch(`${WORKER}/public/payment-request`, {
         method: 'POST',
@@ -1880,9 +1881,9 @@ async function submitJoin() {
       const { success, data, error } = await res.json();
       if (!success) throw new Error(error);
       errEl.style.color = 'var(--green)';
-      errEl.textContent = '✓ درخواست موصول! دکان منظور کرے گی تو خودبخود ٹوکن ملے گا...';
+      errEl.textContent = t('requestReceived');
       btn.disabled = true;
-      document.getElementById('join-btn-label').textContent = '⏳ منظوری کا انتظار...';
+      document.getElementById('join-btn-label').textContent = t('waitingApproval');
       // Save so restore works on refresh
       localStorage.setItem('saf_pending_payment', JSON.stringify({
         reqId: data.request_id, shopData: selectedShop
@@ -1893,7 +1894,7 @@ async function submitJoin() {
       errEl.style.color = '';
       errEl.textContent = e.message;
       btn.disabled = false;
-      document.getElementById('join-btn-label').textContent = `ادائیگی کی درخواست دیں — Rs ${selectedShop.token_price}`;
+      document.getElementById('join-btn-label').textContent = t('payRequestBtn', {n: selectedShop.token_price});
     }
     return;
   }
@@ -1904,7 +1905,7 @@ async function submitJoin() {
       document.getElementById('join-btn-label').textContent = 'Saving voice...';
       stopVoiceRecord();
       if (_uploadPromise) await _uploadPromise;
-      document.getElementById('join-btn-label').textContent = 'ٹوکن لیں';
+      document.getElementById('join-btn-label').textContent = t('getTokenBtn');
     }
 
     const _note      = (document.getElementById('c-note')?.value||'').trim().slice(0,200)||null;
@@ -1983,10 +1984,10 @@ async function submitJoin() {
     const ctx = selectedShop
       ? `Hi WaitMate Support, I couldn't get a token. Shop: ${selectedShop.name} (ID: ${selectedShop.id}), Error: ${e.message || 'unknown'}`
       : `Hi WaitMate Support, I couldn't get a token. Error: ${e.message || 'unknown'}`;
-    errEl.innerHTML = (e.message || 'خرابی') +
+    errEl.innerHTML = (e.message || t('genericError')) +
       ` — <a href="${waSupport(ctx)}" target="_blank" rel="noopener" style="color:#25D366;font-size:11px;white-space:nowrap">💬 Support</a>`;
     btn.disabled = false;
-    document.getElementById('join-btn-label').textContent = 'ٹوکن لیں';
+    document.getElementById('join-btn-label').textContent = t('getTokenBtn');
   }
 }
 
@@ -2016,11 +2017,11 @@ function cancelMyToken() {
   overlay.innerHTML = `
     <div style="background:#0d1424;border:1px solid rgba(248,113,113,.3);border-radius:20px;padding:28px 24px;max-width:320px;width:100%;text-align:center">
       <div style="font-size:40px;margin-bottom:14px">🎫</div>
-      <div style="font-size:16px;font-weight:700;color:#EDE8D0;margin-bottom:8px">ٹوکن منسوخ کریں؟</div>
-      <div style="font-size:13px;color:rgba(237,232,208,.5);margin-bottom:24px;line-height:1.6">آپ کی جگہ قطار سے ہٹ جائے گی۔<br>دوبارہ ٹوکن لینا ہوگا۔</div>
+      <div style="font-size:16px;font-weight:700;color:#EDE8D0;margin-bottom:8px">${t('cancelTokenTitle')}</div>
+      <div style="font-size:13px;color:rgba(237,232,208,.5);margin-bottom:24px;line-height:1.6">${t('cancelTokenSub')}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <button id="_cn" style="padding:13px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:transparent;color:rgba(237,232,208,.6);font-family:'Sora',sans-serif;font-size:13px;font-weight:600;cursor:pointer">نہیں رہنے دیں</button>
-        <button id="_cy" style="padding:13px;border:1px solid rgba(248,113,113,.4);border-radius:12px;background:rgba(248,113,113,.12);color:#f87171;font-family:'Sora',sans-serif;font-size:13px;font-weight:700;cursor:pointer">ہاں منسوخ کریں</button>
+        <button id="_cn" style="padding:13px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:transparent;color:rgba(237,232,208,.6);font-family:'Sora',sans-serif;font-size:13px;font-weight:600;cursor:pointer">${t('keepIt')}</button>
+        <button id="_cy" style="padding:13px;border:1px solid rgba(248,113,113,.4);border-radius:12px;background:rgba(248,113,113,.12);color:#f87171;font-family:'Sora',sans-serif;font-size:13px;font-weight:700;cursor:pointer">${t('yesCancelIt')}</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
@@ -2043,11 +2044,11 @@ async function _doCancel() {
       myTokenId = null; myTokenNum = null;
       const badge = document.getElementById('tracker-badge');
       const sub   = document.getElementById('tracker-sub');
-      if (badge) { badge.className='tracker-badge done'; badge.textContent='❌ منسوخ'; }
-      if (sub)   sub.textContent = 'آپ کا ٹوکن منسوخ ہو گیا';
+      if (badge) { badge.className='tracker-badge done'; badge.textContent=t('cancelledBadge'); }
+      if (sub)   sub.textContent = t('tokenCancelledMsg');
       showTrackerDone();
     }
-  } catch(e) { alert('منسوخ نہیں ہو سکا'); }
+  } catch(e) { alert(t('couldNotCancel')); }
 }
 
 
@@ -2407,13 +2408,13 @@ function triggerAlert(stage) {
   // Each entry: [English, Urdu]
   const messages = {
     5: ['5 people ahead of you. Please be ready soon.',
-        'آپ سے پہلے 5 لوگ ہیں۔ تیار رہیں۔'],
+        t('peopleAheadOf5')],
     3: ['3 people remaining. Please start making your way.',
-        'صرف 3 لوگ باقی ہیں۔ آنا شروع کریں۔'],
+        t('peopleAheadOf3')],
     1: ['Only 1 person left. Your turn is coming right now.',
-        'صرف ایک شخص باقی ہے۔ آپ کی باری آنے والی ہے۔'],
+        t('peopleAheadOf1')],
     0: ['It is your turn now. Please come to the counter immediately.',
-        'آپ کی باری آ گئی۔ ابھی کاؤنٹر پر آئیں۔'],
+        t('yourTurnArrived')],
   };
 
   const beeps = {
@@ -2451,7 +2452,7 @@ document.addEventListener('visibilitychange', () => {
     _pendingCalledAlert = false;
     playAlarm('called');
     playVoice('It is your turn now. Please come to the counter immediately.',
-              'آپ کی باری آ گئی۔ ابھی کاؤنٹر پر آئیں۔', true);
+              t('yourTurnArrived'), true);
     if (navigator.vibrate) navigator.vibrate([400, 150, 400, 150, 600]);
   }
 });
@@ -2501,8 +2502,8 @@ async function updateTracker() {
     // Show go-to-counter alert, play isolated alert — tracker math unchanged
     if (data.status === 'waiting' && data.priority_active) {
       badge.className   = 'tracker-badge called';
-      badge.textContent = '🚨 ابھی کاؤنٹر پر آئیں!';
-      sub.textContent   = 'آپ کو ترجیحی بنیاد پر بلایا گیا ہے';
+      badge.textContent = t('priorityCalledBadge');
+      sub.textContent   = t('priorityCalledSub');
       if (posEl)  posEl.textContent  = '🚨';
       if (waitEl) waitEl.textContent = '0 min';
       // Fire customer-side alert — isolated, one-time via sessionStorage dedup
@@ -2513,8 +2514,8 @@ async function updateTracker() {
 
     if (data.status === 'called') {
       badge.className   = 'tracker-badge called';
-      badge.textContent = '🔔 آپ کی باری آ گئی!';
-      sub.textContent   = 'ابھی کاؤنٹر پر آئیں!';
+      badge.textContent = t('yourTurnBadge');
+      sub.textContent   = t('comeToCounterNow');
       if (posEl)  posEl.textContent  = '🎯';
       if (waitEl) waitEl.textContent = '0 min';
       clearInterval(trackerTimer);
@@ -2527,7 +2528,7 @@ async function updateTracker() {
           }
         }, 9000);
         if (Notification.permission === 'granted') {
-          new Notification('آپ کی باری آ گئی! 🔔', { body: 'ابھی کاؤنٹر پر آئیں!', icon: '/icons/icon-192.png', tag: 'saf-called' });
+          new Notification(t('yourTurnNotifTitle'), { body: t('cameToCounterNow'), icon: '/icons/icon-192.png', tag: 'saf-called' });
         }
       }
       const graceEl = document.getElementById('grace-timer');
@@ -2546,8 +2547,8 @@ async function updateTracker() {
 
     } else if (data.status === 'shop_closed') {
       badge.className   = 'tracker-badge done';
-      badge.textContent = '🔒 دکان بند ہو گئی';
-      sub.textContent   = 'آپ کا ٹوکن منسوخ ہو گیا';
+      badge.textContent = t('shopClosedBadge');
+      sub.textContent   = t('tokenCancelledMsg');
       clearInterval(trackerTimer);
       clearTokenStorage();
       showTrackerDone();
@@ -2556,16 +2557,16 @@ async function updateTracker() {
 
     } else if (['cancelled','no_show','expired'].includes(data.status)) {
       badge.className   = 'tracker-badge done';
-      badge.textContent = '❌ منسوخ';
-      sub.textContent   = 'آپ کا ٹوکن منسوخ ہو گیا';
+      badge.textContent = t('cancelledBadge');
+      sub.textContent   = t('tokenCancelledMsg');
       clearInterval(trackerTimer);
       clearTokenStorage();
       showTrackerDone();
 
     } else if (data.status === 'completed') {
       badge.className   = 'tracker-badge done';
-      badge.textContent = '✅ مکمل';
-      sub.textContent   = 'آپ کی سروس ہو گئی';
+      badge.textContent = t('completedBadge');
+      sub.textContent   = t('serviceDoneMsg');
       clearInterval(trackerTimer);
       clearTokenStorage();
       showTrackerDone();
@@ -2576,7 +2577,7 @@ async function updateTracker() {
       const wait  = data.estimated_wait || 0;
 
       badge.className   = 'tracker-badge waiting';
-      badge.textContent = 'انتظار — نمبر #' + pos;
+      badge.textContent = t('waitingBadgePrefix') + pos;
 
       // Bug 4 fix: adaptive poll interval — faster when close to front
       const targetInterval = ahead <= 2 ? 3000 : 8000;
@@ -2587,7 +2588,7 @@ async function updateTracker() {
       }
 
       const intervalLabel = ahead <= 2 ? '3' : '10';
-      sub.textContent   = ahead + ' لوگ آگے · ~' + wait + ' منٹ • ' + intervalLabel + ' سیکنڈ میں اپڈیٹ';
+      sub.textContent   = ahead + ' ' + t('peopleAheadSuffix').replace('{w}', wait) + ' • ' + intervalLabel + ' ' + t('secWord') + ' ' + t('updatingIn');
       if (posEl) {
         // Flash animation when position changes
         const newPos = String(pos);
@@ -2642,8 +2643,8 @@ function saveShopLink() {
       .then(() => {
         const btn = document.querySelector('[onclick="saveShopLink()"]');
         if (btn) {
-          btn.textContent = '✅ لنک کاپی ہو گیا!';
-          setTimeout(() => { btn.innerHTML = '🔖 <span>یہ لنک محفوظ کریں — اگلی بار بھی کام آئے گا</span>'; }, 2000);
+          btn.textContent = t('linkCopied');
+          setTimeout(() => { btn.innerHTML = `🔖 <span>${t('saveLinkBtnLabel')}</span>`; }, 2000);
         }
       });
   }
@@ -2982,9 +2983,13 @@ function applyPageLanguage() {
     el.textContent = el.dataset[key];
   });
 
+  // Page title
+  const titleEl = document.getElementById('page-title');
+  if (titleEl && window.t) document.title = t('pageTitle');
+
   // Search placeholder
   const si = document.getElementById('search-input');
-  if (si) si.placeholder = isUr ? 'دکان یا علاقہ تلاش کریں...' : 'Search shops or areas...';
+  if (si && window.t) si.placeholder = t('searchPlaceholder');
 }
 
 // Apply immediately on load
@@ -3081,9 +3086,9 @@ function scrollToShopCard(shopId) {
         const btn = document.getElementById('join-btn');
         const lbl = document.getElementById('join-btn-label');
         if (btn) btn.disabled = true;
-        if (lbl) lbl.textContent = '⏳ منظوری کا انتظار...';
+        if (lbl) lbl.textContent = t('awaitingApprovalShort');
         const errEl = document.getElementById('sheet-err');
-        if (errEl) { errEl.style.color = 'var(--green)'; errEl.textContent = '✓ درخواست موصول! ہر 5 سیکنڈ میں چیک ہو رہا ہے...'; }
+        if (errEl) { errEl.style.color = 'var(--green)'; errEl.textContent = t('requestReceivedRetry'); }
         startPaymentPolling(reqId, '', '');
       }
     } catch(e) { localStorage.removeItem('saf_pending_payment'); }
@@ -3107,7 +3112,7 @@ function scrollToShopCard(shopId) {
         const ra = document.getElementById('r-shop-area');
         if (rn && selectedShop) rn.textContent = selectedShop.name || '';
         if (ra && selectedShop) ra.textContent = selectedShop.area || '';
-        document.getElementById('r-greeting').textContent      = `${selectedShop.name} — ٹوکن بحال`;
+        document.getElementById('r-greeting').textContent      = `${selectedShop.name} — ${t('tokenRestored')}`;
         showWaBtn(selectedShop, myTokenNum || '?');
         document.getElementById('join-form-wrap').style.display = 'none';
         document.getElementById('result-wrap').style.display    = 'block';
@@ -3194,10 +3199,10 @@ function showManualInstallBanner() {
     banner = document.createElement('div');
     banner.id = 'install-banner';
     const msg = isIOS
-      ? `<div style="font-weight:700;font-size:14px;color:var(--gold)">📲 ایپ انسٹال کریں</div>
-         <div style="font-size:11px;color:var(--muted);margin-top:4px">Safari menu → <b>Add to Home Screen</b> دبائیں</div>`
-      : `<div style="font-weight:700;font-size:14px;color:var(--gold)">📲 ایپ انسٹال کریں</div>
-         <div style="font-size:11px;color:var(--muted);margin-top:4px">Browser menu → <b>Add to Home Screen</b> دبائیں</div>`;
+      ? `<div style="font-weight:700;font-size:14px;color:var(--gold)">${t('installAppTitle')}</div>
+         <div style="font-size:11px;color:var(--muted);margin-top:4px">${t('installAppIosHint')}</div>`
+      : `<div style="font-weight:700;font-size:14px;color:var(--gold)">${t('installAppTitle')}</div>
+         <div style="font-size:11px;color:var(--muted);margin-top:4px">${t('installAppAndroidHint')}</div>`;
     banner.innerHTML = `<div style="display:flex;align-items:flex-start;gap:12px">
       <div style="flex:1">${msg}</div>
       <button onclick="hideInstallBanner();localStorage.setItem('${INSTALL_KEY}','1')" 
@@ -3229,7 +3234,7 @@ function showInstallBanner() {
       <div style="display:flex;align-items:center;gap:12px">
         <span style="font-size:28px">📲</span>
         <div style="flex:1">
-          <div style="font-weight:700;font-size:14px;color:var(--gold)">ایپ انسٹال کریں</div>
+          <div style="font-weight:700;font-size:14px;color:var(--gold)">${t('installApp')}</div>
           <div style="font-size:12px;color:var(--muted);margin-top:2px">WaitMate — Your Smart Queue Partner</div>
         </div>
         <button onclick="doInstall()" style="background:var(--gold);color:#000;border:none;border-radius:20px;padding:8px 18px;font-weight:700;font-size:13px;cursor:pointer;flex-shrink:0">Install</button>
