@@ -56,7 +56,30 @@ export async function updatePlan(request, env) {
     const db      = createClient(env);
     const updated = await db.update('plans', `name=eq.${planName}`, update);
     if (!updated?.length) return notFound('Plan not found');
-    return ok(updated[0]);
+
+    // Optional: propagate new token/queue limits to existing active
+    // subscriptions on this plan. Off by default — admin must pass
+    // apply_to_existing:true explicitly, since subscriptions.max_*
+    // fields are an intentional per-row snapshot (this is what makes
+    // Custom Plan per-business overrides possible — propagating
+    // unconditionally on every plan edit would silently erase those
+    // overrides). Only touches limit fields, never plan_name, status,
+    // dates, or feature-override columns — those remain untouched.
+    let subscriptionsUpdated = 0;
+    if (body.apply_to_existing === true) {
+      const limitUpdate = {};
+      if (update.max_tokens_per_day !== undefined) limitUpdate.max_tokens_per_day = update.max_tokens_per_day;
+      if (update.max_queue_size     !== undefined) limitUpdate.max_queue_size     = update.max_queue_size;
+      if (Object.keys(limitUpdate).length) {
+        const rows = await db.update('subscriptions',
+          `plan_name=eq.${planName}&status=eq.active`,
+          limitUpdate
+        );
+        subscriptionsUpdated = rows?.length || 0;
+      }
+    }
+
+    return ok({ ...updated[0], subscriptions_updated: subscriptionsUpdated });
   } catch(e) { return serverError(e.message); }
 }
 
@@ -234,5 +257,30 @@ export async function submitUpgradeRequestHandler(request, env) {
       payment_method: payment_method || null, note: note || null,
     });
     return ok(Array.isArray(row) ? row[0] : row);
+  } catch(e) { return serverError(e.message); }
+}
+
+/**
+ * GET /upgrade-requests/status?shop_id=X
+ * Business checks the status of its own most recent upgrade request.
+ * Lets the dashboard replace the static 'submitted, review within
+ * 24 hours' message with the real outcome once admin has acted —
+ * that message previously had no way to ever update or clear.
+ */
+export async function getMyUpgradeRequestStatus(request, env) {
+  try {
+    const auth = await requireShopAuth(request, env);
+    if (auth instanceof Response) return auth;
+    const url    = new URL(request.url);
+    const shopId = url.searchParams.get('shop_id');
+    if (!shopId) return badRequest('shop_id required');
+    if (auth.shop_id !== shopId) return badRequest('Unauthorized');
+
+    const db   = createClient(env);
+    const rows = await db.select('upgrade_requests',
+      `shop_id=eq.${shopId}&order=created_at.desc&limit=1`
+    );
+    if (!rows?.length) return ok({ request: null });
+    return ok({ request: rows[0] });
   } catch(e) { return serverError(e.message); }
 }

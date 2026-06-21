@@ -21,7 +21,8 @@ import { createPrioritySession,
          announcePrioritySession }              from './routes/priority.js';
 import { listPublicPlans, listPlans, updatePlan, setCustomPlan,
          listUpgradeRequests, reviewUpgradeRequest,
-         submitUpgradeRequestHandler }           from './routes/plans.js';
+         submitUpgradeRequestHandler,
+         getMyUpgradeRequestStatus }            from './routes/plans.js';
 import { submitRegistration, listRegistrations,
          approveRegistration, rejectRegistration }    from './routes/register.js';
 import { subscribePush, unsubscribePush, requestDelay } from './routes/push.js';
@@ -103,6 +104,7 @@ const ROUTES = [
   { method: 'GET',    path: '/admin/upgrade-requests',              handler: listUpgradeRequests },
   { method: 'PATCH',  path: '/admin/upgrade-requests/:id',          handler: reviewUpgradeRequest },
   { method: 'POST',   path: '/upgrade-requests',                    handler: submitUpgradeRequestHandler },
+  { method: 'GET',    path: '/upgrade-requests/status',              handler: getMyUpgradeRequestStatus },
 
   // Priority Overlay System (Phase 1+3+4)
   { method: 'POST',   path: '/priority/sessions',              handler: createPrioritySession },

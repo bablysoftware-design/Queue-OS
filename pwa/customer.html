@@ -2571,8 +2571,10 @@ async function updateTracker() {
             playAlarm('called');
           }
         }, 9000);
-        if (Notification.permission === 'granted') {
-          new Notification(t('yourTurnNotifTitle'), { body: t('cameToCounterNow'), icon: '/icons/icon-192.png', tag: 'saf-called' });
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+          try {
+            new Notification(t('yourTurnNotifTitle'), { body: t('cameToCounterNow'), icon: '/icons/icon-192.png', tag: 'saf-called' });
+          } catch(e) { /* never block tracker render */ }
         }
       }
       const graceEl = document.getElementById('grace-timer');
@@ -3165,7 +3167,9 @@ function scrollToShopCard(shopId) {
         const overlay = document.getElementById('modal-overlay') || document.querySelector('.modal-overlay');
         if (modal) modal.classList.add('show');
         if (overlay) overlay.classList.add('show');
-        if (Notification.permission === 'default') Notification.requestPermission();
+        if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+          try { Notification.requestPermission(); } catch(e) {}
+        }
         startTracker();
       } else {
         clearTokenStorage();

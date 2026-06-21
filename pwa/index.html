@@ -1463,6 +1463,7 @@ button[style*="color:#f87171"] {
       <div class="settings-section">
         <div class="settings-section-title">📦 Plan & Upgrade</div>
         <div id="upgrade-plan-info" style="font-size:12px;color:var(--text2);margin-bottom:10px"></div>
+        <div id="upgrade-pay-instructions" style="display:none;background:rgba(232,184,75,.08);border:1px solid rgba(232,184,75,.25);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12px;line-height:1.5"></div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <select id="upgrade-plan-select" style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px">
             <option value="">Loading plans...</option>
@@ -1778,14 +1779,21 @@ function refreshQueue() {
         const latest = queue[queue.length - 1];
         const name = latest?.customer_name ? ` — ${latest.customer_name}` : '';
         showToast(`🔔 ${t('newTokenToast')}${name} (#${latest?.token_number || ''})`, 'success');
-        // Browser notification
-        if (Notification.permission === 'granted') {
-          new Notification(t('newTokenTitle'), {
-            body: `${newCount} ${t('newTokenBody')}${name}`,
-            icon: '/icons/icon-192.png',
-            tag: 'new-token',
-            silent: false,
-          });
+        // Browser notification — guarded: Notification API doesn't exist
+        // in all browsers/WebViews (notably some Android in-app browsers
+        // and older iOS Safari). An unguarded reference here throws a
+        // ReferenceError that was silently swallowed by the outer .catch,
+        // freezing the queue list render (which runs after this block)
+        // on every queue-length change — i.e. every add/cancel action.
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+          try {
+            new Notification(t('newTokenTitle'), {
+              body: `${newCount} ${t('newTokenBody')}${name}`,
+              icon: '/icons/icon-192.png',
+              tag: 'new-token',
+              silent: false,
+            });
+          } catch(e) { /* notification construction failed — never block queue render */ }
         }
       }
       window._lastQueueLength = queueLength;
@@ -2287,7 +2295,9 @@ async function loadPaymentRequests() {
     renderPaymentRequests(pending);
 
     // Ask for notification permission silently on first load
-    if (Notification.permission === 'default') Notification.requestPermission();
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+      try { Notification.requestPermission(); } catch(e) {}
+    }
   } catch(e) {}
 }
 
@@ -2399,12 +2409,14 @@ async function checkNewPaymentRequests() {
       playAlertSound();
       showToast(`🔔 ${t('newPaymentToast', count)}`, 'success', () => { togglePaymentPanel(); });
       // Show notification if permission granted
-      if (Notification.permission === 'granted') {
-        new Notification(t('newPaymentTitle'), {
-          body: t('newPaymentBody', count),
-          icon: '/icons/icon-192.png',
-          tag: 'payment-request',
-        });
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        try {
+          new Notification(t('newPaymentTitle'), {
+            body: t('newPaymentBody', count),
+            icon: '/icons/icon-192.png',
+            tag: 'payment-request',
+          });
+        } catch(e) { /* never block payment card render */ }
       }
       // Re-render the payment card
       renderPaymentRequests(pending);
@@ -2488,12 +2500,54 @@ async function submitUpgradeRequest() {
     if (msg) {
       msg.style.display='block';
       msg.style.color='var(--green)';
-      msg.textContent='✓ Upgrade request submitted — admin will review within 24 hours';
+      msg.textContent=`✓ ${t('upgradeSubmittedMsg')}`;
     }
     showToast('Upgrade request submitted', 'success');
   } catch(e) { showToast(e.message,'error'); }
 }
 window.submitUpgradeRequest = submitUpgradeRequest;
+
+async function loadPaymentInstructions() {
+  const box = document.getElementById('upgrade-pay-instructions');
+  if (!box) return;
+  try {
+    const res  = await fetch(`${WORKER}/public/settings`);
+    const json = await res.json();
+    const data = json.data;
+    const num  = data?.payment_number;
+    const ins  = data?.payment_instructions;
+    if (!num && !ins) { box.style.display = 'none'; return; }
+    box.style.display = 'block';
+    box.innerHTML = `
+      <div style="font-weight:700;color:var(--gold);margin-bottom:4px">💳 ${t('payInstructionsTitle')}</div>
+      ${num ? `<div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">${esc(num)}</div>` : ''}
+      <div style="color:var(--text2)">${esc(ins || t('payInstructionsBody'))}</div>
+    `;
+  } catch(e) { box.style.display = 'none'; }
+}
+window.loadPaymentInstructions = loadPaymentInstructions;
+
+async function checkMyUpgradeStatus() {
+  const msg = document.getElementById('upgrade-msg');
+  if (!msg) return;
+  try {
+    const { data } = await api('GET', `/upgrade-requests/status?shop_id=${state.shopId}`);
+    const req = data?.request;
+    if (!req) { msg.style.display = 'none'; return; }
+
+    msg.style.display = 'block';
+    if (req.status === 'approved') {
+      msg.style.color = 'var(--green)';
+      msg.textContent = `✓ ${t('upgradeApproved')}`;
+    } else if (req.status === 'rejected') {
+      msg.style.color = 'var(--red)';
+      msg.textContent = `✗ ${t('upgradeRejected')}`;
+    } else {
+      msg.style.color = 'var(--gold)';
+      msg.textContent = `⏳ ${t('upgradeSubmittedMsg')}`;
+    }
+  } catch(e) { /* silent — keep whatever the panel was already showing */ }
+}
 
 // ── Cancel queue token (shopkeeper) ─────────────────────────
 async function cancelQueueToken(tokenId) {
@@ -2790,6 +2844,11 @@ function toggleSettings() {
     setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
     // Load live plan prices into upgrade dropdown
     loadUpgradePlans();
+    // Check status of any previously-submitted upgrade request —
+    // replaces the static 'submitted, review within 24h' message
+    // once admin has actually approved/rejected it.
+    checkMyUpgradeStatus();
+    loadPaymentInstructions();
     api('GET', `/shops/${state.shopId}`)
       .then(({ data }) => {
         if (data.opening_time)          document.getElementById('s-open').value  = data.opening_time;

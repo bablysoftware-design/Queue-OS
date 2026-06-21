@@ -164,6 +164,12 @@ const STRINGS = {
     rejectConfirm:    'Reject this payment request?',
     requestRejected: 'Request rejected',
     tokenIssued:     'Token #{n} issued',
+    upgradeApproved: 'Your upgrade was approved! Your plan is now active.',
+    upgradeRejected: 'Your upgrade request was declined. Contact support for details.',
+    upgradeSubmittedMsg: 'Upgrade request submitted — admin will review within 24 hours',
+    payInstructionsTitle: 'How to Pay',
+    payInstructionsBody: 'Send payment via Easypaisa or JazzCash to the number below, then enter the transaction ID as your reference.',
+    supportPayNumber: 'Payment number',
     viewScreenshot:  'View Screenshot',
 
     // ── Customer page ──────────────────────────────────────
@@ -327,6 +333,12 @@ const STRINGS = {
     rejectConfirm:    'یہ payment request رد کریں؟',
     requestRejected: 'Request رد ہو گئی',
     tokenIssued:     'ٹوکن #{n} جاری ہو گیا',
+    upgradeApproved: 'آپ کا اپگریڈ منظور ہو گیا! آپ کا پلان اب فعال ہے۔',
+    upgradeRejected: 'آپ کی اپگریڈ درخواست مسترد کر دی گئی۔ تفصیلات کے لیے سپورٹ سے رابطہ کریں۔',
+    upgradeSubmittedMsg: 'اپگریڈ درخواست جمع ہو گئی — ایڈمن 24 گھنٹوں میں جائزہ لے گا',
+    payInstructionsTitle: 'ادائیگی کیسے کریں',
+    payInstructionsBody: 'نیچے دیے گئے نمبر پر Easypaisa یا JazzCash کے ذریعے ادائیگی کریں، پھر transaction ID بطور حوالہ درج کریں۔',
+    supportPayNumber: 'ادائیگی نمبر',
     viewScreenshot:  'Screenshot دیکھیں',
 
     // ── Customer page ──────────────────────────────────────

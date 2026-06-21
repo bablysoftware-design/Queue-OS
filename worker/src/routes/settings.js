@@ -19,6 +19,8 @@ export async function getPublicSettings(request, env) {
       support_whatsapp: '',
       support_email:    '',
       support_message:  'Need help? Contact us!',
+      payment_number:        '',
+      payment_instructions:  '',
     });
   }
 }
@@ -30,7 +32,8 @@ export async function updateSettings(request, env) {
   try {
     const body = await request.json();
     const db   = createClient(env);
-    const allowed = ['support_whatsapp','support_email','support_message'];
+    const allowed = ['support_whatsapp','support_email','support_message',
+                      'payment_number','payment_instructions'];
     for (const key of allowed) {
       if (body[key] !== undefined) {
         await db.upsert('app_settings', { key, value: String(body[key]), updated_at: new Date().toISOString() }, 'key');

@@ -350,7 +350,10 @@ button:active, .btn-primary:active, .btn-ghost:active, .btn-xs:active {
         <span class="pending-pill" id="pending-badge" style="display:none"></span>
       </button>
       <button class="tab-btn" id="tab-plans-btn" onclick="switchAdminTab('plans')">💎 Plans</button>
-      <button class="tab-btn" id="tab-upgrades-btn" onclick="switchAdminTab('upgrades')">⬆ Upgrades</button>
+      <button class="tab-btn" id="tab-upgrades-btn" onclick="switchAdminTab('upgrades')">
+        ⬆ Upgrades
+        <span class="pending-pill" id="upgrades-badge" style="display:none"></span>
+      </button>
       <button class="tab-btn" id="tab-settings-btn" onclick="switchAdminTab('settings')">⚙ Settings</button>
       <button class="tab-btn" id="tab-add-btn" onclick="switchAdminTab('add')">➕ Add</button>
     </div>
@@ -586,6 +589,15 @@ button:active, .btn-primary:active, .btn-ghost:active, .btn-xs:active {
             <textarea id="s-msg" rows="3" placeholder="Hi WaitMate Support, I need help with..."
               style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;resize:vertical;box-sizing:border-box"></textarea>
           </div>
+          <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px">
+            <div style="font-size:11px;font-weight:700;color:#fbbf24;letter-spacing:.05em;margin-bottom:10px">UPGRADE PAYMENT INSTRUCTIONS — shown to businesses before they pay for a plan upgrade</div>
+            <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px">Payment Number (Easypaisa / JazzCash)</label>
+            <input id="s-pay-number" type="text" placeholder="0300-1234567"
+              style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;box-sizing:border-box;margin-bottom:10px"/>
+            <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px">Payment Instructions</label>
+            <textarea id="s-pay-instructions" rows="2" placeholder="e.g. Send via Easypaisa to the number above, save your transaction ID"
+              style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;resize:vertical;box-sizing:border-box"></textarea>
+          </div>
           <button onclick="saveSupportSettings()"
             style="padding:12px;border:none;border-radius:10px;background:var(--gold);color:#0d1422;font-weight:800;font-size:14px;cursor:pointer">
             💾 Save Settings
@@ -669,6 +681,8 @@ function doLogin() {
       localStorage.setItem('admin_secret', s);
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('dash').style.display         = 'block';
+      startRegPolling();
+      startUpgradePolling();
       loadAll();
     })
     .catch(() => {
@@ -888,6 +902,10 @@ async function loadSupportSettings() {
     document.getElementById('s-wa').value  = data.support_whatsapp || '';
     document.getElementById('s-email').value = data.support_email || '';
     document.getElementById('s-msg').value = data.support_message || '';
+    const payNumEl = document.getElementById('s-pay-number');
+    const payInsEl = document.getElementById('s-pay-instructions');
+    if (payNumEl) payNumEl.value = data.payment_number || '';
+    if (payInsEl) payInsEl.value = data.payment_instructions || '';
   } catch(e) {}
 }
 
@@ -895,11 +913,16 @@ async function saveSupportSettings() {
   const wa  = document.getElementById('s-wa').value.trim();
   const em  = document.getElementById('s-email').value.trim();
   const msg = document.getElementById('s-msg').value.trim();
+  const payNum = document.getElementById('s-pay-number')?.value.trim() || '';
+  const payIns = document.getElementById('s-pay-instructions')?.value.trim() || '';
   try {
     const res = await fetch(`${WORKER}/admin/settings`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', 'x-admin-secret': SECRET },
-      body: JSON.stringify({ support_whatsapp: wa, support_email: em, support_message: msg })
+      body: JSON.stringify({
+        support_whatsapp: wa, support_email: em, support_message: msg,
+        payment_number: payNum, payment_instructions: payIns,
+      })
     });
     const data = await res.json();
     if (data.success) showToast('✅ Support settings saved', 'success');
@@ -1012,7 +1035,7 @@ function switchAdminTab(tab) {
   });
   if (tab === 'pending')  loadRegistrations();
   if (tab === 'plans')    loadPlans();
-  if (tab === 'upgrades') loadUpgradeRequests();
+  if (tab === 'upgrades') { loadUpgradeRequests(); checkUpgradeBadge(); }
   if (tab === 'settings') loadSupportSettings();
 }
 window.switchAdminTab = switchAdminTab;
@@ -1080,6 +1103,14 @@ async function loadPlans() {
             style="width:100%;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:12px"/>
         </div>
 
+        <label style="display:flex;align-items:flex-start;gap:8px;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.2);border-radius:10px;padding:10px 12px;margin-bottom:12px;cursor:pointer">
+          <input type="checkbox" id="apply-existing-${p.name}" style="margin-top:2px;width:15px;height:15px;accent-color:#fbbf24;flex-shrink:0"/>
+          <span style="font-size:11px;line-height:1.5;color:var(--text2)">
+            <strong style="color:#fbbf24">Also apply new token/queue limits to businesses already on this plan.</strong>
+            By default, limit changes here only affect <em>new</em> subscriptions — businesses who already have an active ${p.display_name||p.name} subscription keep their current limits unless you check this. Price and feature toggles always apply going forward regardless.
+          </span>
+        </label>
+
         <button onclick="savePlan('${p.name}')"
           style="width:100%;padding:11px;border:none;border-radius:10px;background:var(--gold);color:#0d1422;font-weight:800;font-size:13px;cursor:pointer">
           💾 Save ${p.display_name||p.name.toUpperCase()} Plan
@@ -1095,6 +1126,7 @@ async function savePlan(name) {
   const qsize   = parseInt(document.getElementById(`qsize-${name}`)?.value) || 20;
   const devices = parseInt(document.getElementById(`devices-${name}`)?.value) || 1;
   const desc    = document.getElementById(`desc-${name}`)?.value.trim() || null;
+  const applyExisting = document.getElementById(`apply-existing-${name}`)?.checked || false;
   const feat = {
     allow_priority_call: document.getElementById(`feat-${name}-priority_call`)?.checked || false,
     allow_paid_tokens:   document.getElementById(`feat-${name}-paid_tokens`)?.checked   || false,
@@ -1103,11 +1135,17 @@ async function savePlan(name) {
     allow_poster:        document.getElementById(`feat-${name}-poster`)?.checked        || false,
   };
   try {
-    await api('PATCH', `/admin/plans/${name}`, {
+    const { data } = await api('PATCH', `/admin/plans/${name}`, {
       price, max_tokens_per_day: tokens, max_queue_size: qsize,
-      max_devices: devices, description: desc, ...feat
+      max_devices: devices, description: desc, apply_to_existing: applyExisting, ...feat
     });
-    showToast(`✓ ${name.toUpperCase()} plan saved`, 'success');
+    const propagated = data?.subscriptions_updated || 0;
+    showToast(
+      applyExisting
+        ? `✓ ${name.toUpperCase()} plan saved — ${propagated} existing business${propagated===1?'':'es'} updated`
+        : `✓ ${name.toUpperCase()} plan saved (new businesses only — existing ones unchanged)`,
+      'success'
+    );
     loadPlans();
   } catch(e) { showToast(e.message, 'error'); }
 }
@@ -1249,6 +1287,7 @@ async function reviewUpgrade(id, action) {
     await api('PATCH', `/admin/upgrade-requests/${id}`, { action });
     showToast(`Request ${action}`, 'success');
     loadUpgradeRequests();
+    checkUpgradeBadge();
   } catch(e) { showToast(e.message, 'error'); }
 }
 window.reviewUpgrade = reviewUpgrade;
@@ -1307,6 +1346,33 @@ function startRegPolling() {
   }, 60000); // every 60 seconds
 }
 
+let _lastUpgradeCount = 0;
+let _upgradePollTimer = null;
+
+function startUpgradePolling() {
+  if (_upgradePollTimer) return; // already running
+  // Run once immediately so the badge is correct right after login,
+  // not just after the first 60s interval tick.
+  checkUpgradeBadge();
+  _upgradePollTimer = setInterval(checkUpgradeBadge, 60000);
+}
+
+async function checkUpgradeBadge() {
+  try {
+    const { data } = await api('GET', '/admin/upgrade-requests');
+    const pending  = (data || []).filter(r => r.status === 'pending');
+    const count    = pending.length;
+    const badge    = document.getElementById('upgrades-badge');
+    if (badge) { badge.textContent = count || ''; badge.style.display = count ? 'inline-block' : 'none'; }
+
+    if (count > _lastUpgradeCount) {
+      const diff = count - _lastUpgradeCount;
+      showToast(`📦 ${diff} new upgrade request${diff > 1 ? 's' : ''}`, 'success');
+    }
+    _lastUpgradeCount = count;
+  } catch(e) { /* silent — don't spam on network error */ }
+}
+
 function stopRegPolling() {
   clearInterval(_regPollTimer);
   _regPollTimer = null;
@@ -1322,6 +1388,7 @@ function stopRegPolling() {
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('dash').style.display         = 'block';
         startRegPolling();
+        startUpgradePolling();
         loadAll();
       })
       .catch(err => {
