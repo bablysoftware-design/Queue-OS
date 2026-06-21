@@ -1,4 +1,4 @@
--- ============================================================
+ -- ============================================================
 -- payment_request_cancel.sql
 -- Allows customers to cancel their own pending payment request.
 -- SAFE TO RUN MULTIPLE TIMES (idempotent).
