@@ -280,6 +280,21 @@ button:active, .btn-primary:active, .btn-ghost:active, .btn-xs:active {
 }
 
 /* ── Pending badge pulse ── */
+/* ── Persistent Action Bar ── */
+.action-item {
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 12px;border-radius:10px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
+  gap:12px;cursor:pointer;transition:all .2s;
+}
+.action-item:hover { background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.25); }
+.action-item-left { display:flex;align-items:center;gap:10px;flex:1; }
+.action-item-icon { font-size:16px;flex-shrink:0; }
+.action-item-text { font-size:12px;color:var(--text2);line-height:1.4; }
+.action-item-text strong { color:var(--text);font-size:13px;display:block; }
+.action-item-cta { font-size:11px;font-weight:700;color:#fbbf24;border:1px solid rgba(251,191,36,.4);border-radius:100px;padding:4px 10px;white-space:nowrap;transition:all .2s; }
+.action-item:hover .action-item-cta { background:rgba(251,191,36,.15); }
+
 @keyframes badgePing {
   0%,100% { box-shadow:0 0 0 0 rgba(251,191,36,.4); }
   50%     { box-shadow:0 0 0 5px rgba(251,191,36,0); }
@@ -333,6 +348,19 @@ button:active, .btn-primary:active, .btn-ghost:active, .btn-xs:active {
   </div>
 
   <div class="content">
+
+  <!-- ── Persistent Action Bar ───────────────────────────────────────
+       Stays visible until ALL pending counts reach zero.
+       Never dismissable manually — disappears only when resolved.
+  ──────────────────────────────────────────────────────────────────── -->
+  <div id="action-bar" style="display:none;margin-bottom:16px;border-radius:14px;overflow:hidden;border:1px solid rgba(251,191,36,.35);background:linear-gradient(135deg,rgba(251,191,36,.1),rgba(251,191,36,.04));animation:bannerSlide .4s cubic-bezier(.16,1,.3,1) both">
+    <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid rgba(251,191,36,.15)">
+      <span style="font-size:18px;animation:badgePing 2s ease-in-out infinite;display:inline-block">🔔</span>
+      <span style="font-weight:700;font-size:13px;color:#fbbf24;flex:1">Action Required</span>
+      <span id="action-bar-time" style="font-size:10px;color:var(--text3)"></span>
+    </div>
+    <div id="action-bar-items" style="padding:10px 16px;display:flex;flex-direction:column;gap:8px"></div>
+  </div>
 
     <!-- Stats -->
     <div class="stats-row">
@@ -1002,6 +1030,8 @@ async function approveReg(id) {
     await api('POST', `/admin/registrations/${id}/approve`);
     showToast('✅ Shop approved and registered', 'success');
     loadAll();
+    // Update counts immediately without waiting for next poll
+    try { const {data} = await api('GET','/admin/registrations'); _pendingRegsCount=(data||[]).filter(r=>r.status==='pending').length; const b=document.getElementById('pending-badge'); if(b){b.textContent=_pendingRegsCount||'';b.style.display=_pendingRegsCount?'inline-block':'none';} updateActionBar(); } catch(e){}
   } catch(e) { showToast(e.message, 'error'); }
 }
 
@@ -1011,6 +1041,7 @@ async function rejectReg(id) {
     await api('POST', `/admin/registrations/${id}/reject`);
     showToast('Registration rejected', '');
     loadRegistrations();
+    try { const {data} = await api('GET','/admin/registrations'); _pendingRegsCount=(data||[]).filter(r=>r.status==='pending').length; const b=document.getElementById('pending-badge'); if(b){b.textContent=_pendingRegsCount||'';b.style.display=_pendingRegsCount?'inline-block':'none';} updateActionBar(); } catch(e){}
   } catch(e) { showToast(e.message, 'error'); }
 }
 
@@ -1306,44 +1337,108 @@ function showToast(msg, type = '') {
 document.getElementById('secret-input').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
 // ── Auto-poll for new registrations every 60s ─────────────────
-let _lastPendingCount = 0;
+let _lastPendingCount = -1; // -1 = first load, never fire "new request" toast
 let _regPollTimer     = null;
 let _titleFlash       = null;
 
+// ── Persistent Action Bar ─────────────────────────────────────────
+// Called after every poll cycle. Never manually dismissable —
+// disappears only when all pending counts reach zero.
+let _pendingRegsCount    = 0;
+let _pendingUpgradesCount = 0;
+
+function updateActionBar() {
+  const bar   = document.getElementById('action-bar');
+  const items = document.getElementById('action-bar-items');
+  const time  = document.getElementById('action-bar-time');
+  if (!bar || !items) return;
+
+  const rows = [];
+
+  if (_pendingRegsCount > 0) {
+    rows.push(`
+      <div class="action-item" onclick="switchAdminTab('pending');scrollToPending()">
+        <div class="action-item-left">
+          <span class="action-item-icon">🏪</span>
+          <div class="action-item-text">
+            <strong>${_pendingRegsCount} Business Registration${_pendingRegsCount > 1 ? 's' : ''} Pending</strong>
+            Approve or reject new businesses waiting to go live
+          </div>
+        </div>
+        <span class="action-item-cta">Review →</span>
+      </div>`);
+  }
+
+  if (_pendingUpgradesCount > 0) {
+    rows.push(`
+      <div class="action-item" onclick="switchAdminTab('upgrades')">
+        <div class="action-item-left">
+          <span class="action-item-icon">📦</span>
+          <div class="action-item-text">
+            <strong>${_pendingUpgradesCount} Upgrade Request${_pendingUpgradesCount > 1 ? 's' : ''} Pending</strong>
+            Businesses waiting for plan upgrade approval
+          </div>
+        </div>
+        <span class="action-item-cta">Review →</span>
+      </div>`);
+  }
+
+  if (rows.length === 0) {
+    bar.style.display = 'none';
+    return;
+  }
+
+  items.innerHTML = rows.join('');
+  if (time) time.textContent = 'Updated ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  if (bar.style.display === 'none') {
+    // Re-animate entrance when bar first appears or reappears
+    bar.style.animation = 'none';
+    void bar.offsetWidth;
+    bar.style.animation = '';
+    bar.style.display = 'block';
+  }
+}
+window.updateActionBar = updateActionBar;
+
 function startRegPolling() {
   if (_regPollTimer) return; // already running
-  _regPollTimer = setInterval(async () => {
-    try {
-      const { data } = await api('GET', '/admin/registrations');
-      const pending  = data.filter(r => r.status === 'pending');
-      const count    = pending.length;
-      const badge    = document.getElementById('pending-badge');
-      if (badge) { badge.textContent = count || ''; badge.style.display = count ? 'inline-block' : 'none'; }
+  checkRegBadge(); // run immediately so bar appears right after login
+  _regPollTimer = setInterval(checkRegBadge, 60000);
+}
 
-      // New registrations arrived since last check
-      if (count > _lastPendingCount) {
-        const diff = count - _lastPendingCount;
-        showToast(`🔔 ${diff} new registration request${diff > 1 ? 's' : ''}`, 'success');
-        // Flash tab title
+async function checkRegBadge() {
+  try {
+    const { data } = await api('GET', '/admin/registrations');
+    const pending  = data.filter(r => r.status === 'pending');
+    const count    = pending.length;
+    const badge    = document.getElementById('pending-badge');
+    if (badge) { badge.textContent = count || ''; badge.style.display = count ? 'inline-block' : 'none'; }
+
+    // New registrations arrived since last check
+    if (count > _lastPendingCount && _lastPendingCount >= 0) {
+      const diff = count - _lastPendingCount;
+      showToast(`🔔 ${diff} new registration request${diff > 1 ? 's' : ''}`, 'success');
+      // Flash tab title
+      clearInterval(_titleFlash);
+      let on = true;
+      const orig = document.title;
+      _titleFlash = setInterval(() => {
+        document.title = on ? `🔔 (${count}) New Request — Admin` : orig;
+        on = !on;
+      }, 900);
+      // Stop flashing after 15s
+      setTimeout(() => {
         clearInterval(_titleFlash);
-        let on = true;
-        const orig = document.title;
-        _titleFlash = setInterval(() => {
-          document.title = on ? `🔔 (${count}) New Request — Admin` : orig;
-          on = !on;
-        }, 900);
-        // Stop flashing after 15s
-        setTimeout(() => {
-          clearInterval(_titleFlash);
-          document.title = `(${count}) Pending — Admin`;
-        }, 15000);
+        document.title = `(${count}) Pending — Admin`;
+      }, 15000);
 
-        // Switch to pending tab + reload
-        switchAdminTab('pending');
-      }
-      _lastPendingCount = count;
-    } catch(e) { /* silent — don't spam on network error */ }
-  }, 60000); // every 60 seconds
+      // Switch to pending tab + reload
+      switchAdminTab('pending');
+    }
+    _lastPendingCount = count;
+    _pendingRegsCount = count;
+    updateActionBar();
+  } catch(e) { /* silent */ }
 }
 
 let _lastUpgradeCount = 0;
@@ -1370,6 +1465,8 @@ async function checkUpgradeBadge() {
       showToast(`📦 ${diff} new upgrade request${diff > 1 ? 's' : ''}`, 'success');
     }
     _lastUpgradeCount = count;
+    _pendingUpgradesCount = count;
+    updateActionBar();
   } catch(e) { /* silent — don't spam on network error */ }
 }
 
