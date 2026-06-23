@@ -1459,18 +1459,38 @@ button[style*="color:#f87171"] {
         <div id="profile-msg" style="font-size:11px;color:var(--green);margin-top:4px;display:none"></div>
       </div>
 
-      <!-- Upgrade Plan -->
+      <!-- Plan & Upgrade / Renewal -->
       <div class="settings-section">
-        <div class="settings-section-title">📦 Plan & Upgrade</div>
-        <div id="upgrade-plan-info" style="font-size:12px;color:var(--text2);margin-bottom:10px"></div>
+        <div class="settings-section-title" id="upgrade-section-title">📦 Plan & Upgrade</div>
+
+        <!-- Current plan status (populated by checkMyUpgradeStatus + loadSubscriptionInfo) -->
+        <div id="current-plan-badge" style="display:none;background:rgba(232,184,75,.08);border:1px solid rgba(232,184,75,.2);border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:12px;display:flex;align-items:center;gap:8px">
+          <span style="font-size:16px">📋</span>
+          <div>
+            <div id="current-plan-name" style="font-weight:700;color:var(--gold)"></div>
+            <div id="current-plan-expiry" style="color:var(--text2);font-size:11px;margin-top:2px"></div>
+          </div>
+        </div>
+
+        <!-- Payment instructions from admin settings -->
         <div id="upgrade-pay-instructions" style="display:none;background:rgba(232,184,75,.08);border:1px solid rgba(232,184,75,.25);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12px;line-height:1.5"></div>
+
         <div style="display:flex;flex-direction:column;gap:8px">
-          <select id="upgrade-plan-select" style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px">
+          <div style="font-size:11px;color:var(--text2)" id="upgrade-plan-label">Select plan</div>
+          <select id="upgrade-plan-select" style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px" onchange="onUpgradePlanChange()">
             <option value="">Loading plans...</option>
           </select>
-          <input id="upgrade-payment-ref" type="text" placeholder="Payment reference / transaction ID"/>
-          <textarea id="upgrade-note" rows="2" placeholder="Payment method + any note" style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;resize:none"></textarea>
-          <button onclick="submitUpgradeRequest()" style="padding:10px;border:none;border-radius:10px;background:var(--gold);color:#0d1422;font-weight:700;font-size:13px;cursor:pointer">📤 Submit Upgrade Request</button>
+
+          <input id="upgrade-payment-ref" type="text" placeholder="Payment reference / transaction ID (required)"/>
+
+          <!-- Screenshot upload — same mechanism as paid token payment proof -->
+          <div id="upgrade-screenshot-wrap" style="border:1.5px dashed rgba(232,184,75,.3);border-radius:10px;padding:10px;text-align:center;cursor:pointer;background:rgba(232,184,75,.03)" onclick="document.getElementById('upgrade-screenshot-input').click()">
+            <input id="upgrade-screenshot-input" type="file" accept="image/*" style="display:none" onchange="onUpgradeScreenshot(this)"/>
+            <div id="upgrade-screenshot-preview" style="font-size:12px;color:var(--text2)">📸 Tap to attach payment screenshot <span style="color:var(--text3)">(recommended)</span></div>
+          </div>
+
+          <textarea id="upgrade-note" rows="2" placeholder="Any additional note" style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;resize:none"></textarea>
+          <button id="upgrade-submit-btn" onclick="submitUpgradeRequest()" style="padding:10px;border:none;border-radius:10px;background:var(--gold);color:#0d1422;font-weight:700;font-size:13px;cursor:pointer">📤 Submit Request</button>
           <div id="upgrade-msg" style="font-size:11px;margin-top:4px;display:none"></div>
         </div>
       </div>
@@ -2484,26 +2504,122 @@ async function saveProfile() {
 window.saveProfile = saveProfile;
 
 // ── Upgrade request ─────────────────────────────────────────
+// ── Upgrade screenshot handler ──────────────────────────────────
+function onUpgradeScreenshot(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const preview = document.getElementById('upgrade-screenshot-preview');
+    if (preview) {
+      preview.innerHTML = `<img src="${e.target.result}" style="max-width:100%;max-height:120px;border-radius:8px;margin-bottom:4px"><br><span style="font-size:10px;color:var(--green)">✓ Screenshot ready to upload</span>`;
+    }
+    // Store base64 for submission
+    input.dataset.base64 = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+window.onUpgradeScreenshot = onUpgradeScreenshot;
+
+// ── Plan change: update button label (Renew vs Upgrade) ─────────
+function onUpgradePlanChange() {
+  const sel  = document.getElementById('upgrade-plan-select');
+  const btn  = document.getElementById('upgrade-submit-btn');
+  const lbl  = document.getElementById('upgrade-plan-label');
+  const title = document.getElementById('upgrade-section-title');
+  if (!sel || !btn) return;
+  const selected = sel.value;
+  const current  = state.currentPlan || 'free';
+  const isRenewal = selected && selected === current;
+  if (isRenewal) {
+    if (btn)   btn.textContent   = '🔄 Submit Renewal Request';
+    if (lbl)   lbl.textContent   = `Renewing your current ${selected.toUpperCase()} plan`;
+    if (title) title.textContent = '🔄 Renew Plan';
+  } else if (selected && selected !== current) {
+    if (btn)   btn.textContent   = '📤 Submit Upgrade Request';
+    if (lbl)   lbl.textContent   = `Upgrading from ${current.toUpperCase()} → ${selected.toUpperCase()}`;
+    if (title) title.textContent = '📦 Upgrade Plan';
+  } else {
+    if (btn)   btn.textContent   = '📤 Submit Request';
+    if (lbl)   lbl.textContent   = 'Select plan';
+    if (title) title.textContent = '📦 Plan & Upgrade';
+  }
+}
+window.onUpgradePlanChange = onUpgradePlanChange;
+
+// ── Load current subscription info into settings panel ──────────
+async function loadSubscriptionInfo() {
+  try {
+    const { data } = await api('GET', `/subscriptions?shop_id=${state.shopId}`);
+    if (!data) return;
+    state.currentPlan = data.plan_name || 'free';
+    const badge    = document.getElementById('current-plan-badge');
+    const nameEl   = document.getElementById('current-plan-name');
+    const expiryEl = document.getElementById('current-plan-expiry');
+    if (badge)  badge.style.display  = 'flex';
+    if (nameEl) nameEl.textContent   = `${data.plan_name?.toUpperCase() || 'FREE'} Plan`;
+    if (expiryEl) {
+      const end = data.end_date ? new Date(data.end_date) : null;
+      const today = new Date();
+      if (end) {
+        const daysLeft = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
+        if (daysLeft <= 0) {
+          expiryEl.textContent = '⚠️ Expired — renew to continue';
+          expiryEl.style.color = 'var(--red)';
+        } else if (daysLeft <= 7) {
+          expiryEl.textContent = `⏰ Expires in ${daysLeft} day${daysLeft===1?'':'s'}`;
+          expiryEl.style.color = 'var(--amber)';
+        } else {
+          expiryEl.textContent = `Valid until ${end.toLocaleDateString()}`;
+          expiryEl.style.color = 'var(--text2)';
+        }
+      }
+    }
+    // Pre-select current plan in dropdown to default to renewal
+    const sel = document.getElementById('upgrade-plan-select');
+    if (sel && data.plan_name) {
+      for (const opt of sel.options) {
+        if (opt.value === data.plan_name) { opt.selected = true; break; }
+      }
+      onUpgradePlanChange(); // update button label
+    }
+  } catch(e) { /* silent — sub info is cosmetic */ }
+}
+window.loadSubscriptionInfo = loadSubscriptionInfo;
+
 async function submitUpgradeRequest() {
   const plan = document.getElementById('upgrade-plan-select')?.value;
   const ref  = document.getElementById('upgrade-payment-ref')?.value.trim();
   const note = document.getElementById('upgrade-note')?.value.trim();
   const msg  = document.getElementById('upgrade-msg');
-  if (!ref) { showToast('Please enter payment reference', 'error'); return; }
+  const screenshotInput = document.getElementById('upgrade-screenshot-input');
+  const screenshot = screenshotInput?.dataset.base64 || null;
+
+  if (!plan) { showToast('Please select a plan', 'error'); return; }
+  if (!ref)  { showToast('Please enter payment reference', 'error'); return; }
+
+  const btn = document.getElementById('upgrade-submit-btn');
+  if (btn) btn.disabled = true;
+
   try {
     await api('POST', '/upgrade-requests', {
-      shop_id: state.shopId,
+      shop_id:        state.shopId,
       requested_plan: plan,
-      payment_ref: ref,
-      note,
+      payment_ref:    ref,
+      note:           note || null,
+      screenshot_url: screenshot,
     });
     if (msg) {
-      msg.style.display='block';
-      msg.style.color='var(--green)';
-      msg.textContent=`✓ ${t('upgradeSubmittedMsg')}`;
+      msg.style.display = 'block';
+      msg.style.color   = 'var(--green)';
+      msg.textContent   = `✓ ${t('upgradeSubmittedMsg')}`;
     }
-    showToast('Upgrade request submitted', 'success');
-  } catch(e) { showToast(e.message,'error'); }
+    showToast(plan === (state.currentPlan || '') ? 'Renewal request submitted' : 'Upgrade request submitted', 'success');
+  } catch(e) {
+    showToast(e.message, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 window.submitUpgradeRequest = submitUpgradeRequest;
 
@@ -2842,11 +2958,8 @@ function toggleSettings() {
   if (show) {
     // Scroll settings into view smoothly
     setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
-    // Load live plan prices into upgrade dropdown
-    loadUpgradePlans();
-    // Check status of any previously-submitted upgrade request —
-    // replaces the static 'submitted, review within 24h' message
-    // once admin has actually approved/rejected it.
+    // Load live plan prices, then load subscription info to pre-select current plan
+    loadUpgradePlans().then(() => { loadSubscriptionInfo(); });
     checkMyUpgradeStatus();
     loadPaymentInstructions();
     api('GET', `/shops/${state.shopId}`)

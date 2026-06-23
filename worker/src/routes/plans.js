@@ -187,7 +187,35 @@ export async function listUpgradeRequests(request, env) {
     const rows = await db.select('upgrade_requests',
       'order=created_at.desc&limit=100'
     );
-    return ok(rows || []);
+    if (!rows?.length) return ok([]);
+
+    // Batch fetch shop names to avoid N+1
+    const shopIds = [...new Set(rows.map(r => r.shop_id))];
+    const shops   = await db.select('shops',
+      `id=in.(${shopIds.join(',')})&select=id,name,owner_phone`
+    ).catch(() => []);
+    const shopMap = {};
+    for (const s of (shops || [])) shopMap[s.id] = s;
+
+    // Also batch fetch current subscription for each shop so admin
+    // can see current_plan vs requested_plan (renewal vs upgrade)
+    const subs = await db.select('subscriptions',
+      `shop_id=in.(${shopIds.join(',')})&status=eq.active&order=created_at.desc`
+    ).catch(() => []);
+    const subMap = {};
+    for (const s of (subs || [])) {
+      if (!subMap[s.shop_id]) subMap[s.shop_id] = s;
+    }
+
+    const enriched = rows.map(r => ({
+      ...r,
+      shop_name:    shopMap[r.shop_id]?.name    || r.shop_id?.slice(0,8),
+      shop_phone:   shopMap[r.shop_id]?.owner_phone || null,
+      current_plan: subMap[r.shop_id]?.plan_name || 'free',
+      request_type: (subMap[r.shop_id]?.plan_name || 'free') === r.requested_plan ? 'renewal' : 'upgrade',
+    }));
+
+    return ok(enriched);
   } catch(e) { return serverError(e.message); }
 }
 
@@ -247,16 +275,33 @@ export async function submitUpgradeRequestHandler(request, env) {
     const auth = await requireShopAuth(request, env);
     if (auth instanceof Response) return auth;
     const body = await request.json();
-    const { shop_id, requested_plan, payment_ref, note, payment_method } = body;
+    const { shop_id, requested_plan, payment_ref, note, payment_method, screenshot_url } = body;
     if (!shop_id || !requested_plan) return badRequest('shop_id and requested_plan required');
     if (auth.shop_id !== shop_id) return badRequest('Unauthorized');
-    if (!['basic','pro'].includes(requested_plan)) return badRequest('Invalid plan');
-    const db  = createClient(env);
+    if (!['free','basic','pro'].includes(requested_plan)) return badRequest('Invalid plan');
+
+    const db = createClient(env);
+
+    // Determine if this is a renewal (same plan) or upgrade (different plan)
+    const existing = await db.select('subscriptions',
+      `shop_id=eq.${shop_id}&status=eq.active&order=created_at.desc&limit=1`
+    );
+    const currentPlan = existing?.[0]?.plan_name || 'free';
+    const requestType = currentPlan === requested_plan ? 'renewal' : 'upgrade';
+
     const row = await db.insert('upgrade_requests', {
-      shop_id, requested_plan, payment_ref: payment_ref || null,
-      payment_method: payment_method || null, note: note || null,
+      shop_id,
+      requested_plan,
+      payment_ref:    payment_ref    || null,
+      payment_method: payment_method || null,
+      note:           note           || null,
+      screenshot_url: screenshot_url || null,
+      // Store request type in the note field with a prefix if no dedicated column
+      // (schema already has all needed columns — note carries context)
+      amount_paid:    null,
     });
-    return ok(Array.isArray(row) ? row[0] : row);
+    const inserted = Array.isArray(row) ? row[0] : row;
+    return ok({ ...inserted, request_type: requestType, current_plan: currentPlan });
   } catch(e) { return serverError(e.message); }
 }
 
