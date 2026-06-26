@@ -16,6 +16,21 @@ export async function getActiveSubscription(db, shopId) {
 }
 
 /**
+ * Get the most recent subscription for a shop regardless of status.
+ * Used during reactivation to recover plan_name and custom duration
+ * from a previously expired or cancelled subscription, so the admin
+ * does not lose custom plan settings when pressing Activate.
+ * Returns null if the shop has never had any subscription.
+ */
+export async function getLastSubscription(db, shopId) {
+  const rows = await db.select(
+    'subscriptions',
+    `shop_id=eq.${shopId}&order=created_at.desc&limit=1`
+  );
+  return rows[0] ?? null;
+}
+
+/**
  * Check if a shop's subscription is valid RIGHT NOW.
  * Also handles auto-expiry if end_date has passed.
  * Returns { valid: bool, reason: string }
@@ -44,16 +59,22 @@ export async function checkSubscriptionValid(db, shopId) {
  * Creates a new active subscription, cancels the old one.
  * Designed to be called by admin or payment webhook later.
  */
-export async function assignPlan(db, shopId, planName) {
+export async function assignPlan(db, shopId, planName, overrideDurationDays = null) {
   // Fetch plan limits
   const plans = await db.select('plans', `name=eq.${planName}`);
   if (!plans.length) throw new Error(`Plan not found: ${planName}`);
   const plan = plans[0];
 
+  // Use override duration when reactivating a custom-period subscription
+  // so the admin's chosen period is preserved. Falls back to plan default.
+  const durationDays = (overrideDurationDays != null && overrideDurationDays > 0)
+    ? overrideDurationDays
+    : plan.duration_days;
+
   // Calculate new dates
   const start = new Date();
   const end   = new Date();
-  end.setDate(end.getDate() + plan.duration_days);
+  end.setDate(end.getDate() + durationDays);
 
   const fmt = (d) => d.toISOString().split('T')[0];
 

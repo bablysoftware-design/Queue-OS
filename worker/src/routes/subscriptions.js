@@ -30,13 +30,20 @@ export async function assignPlanHandler(request, env) {
   if (authError) return authError;
 
   try {
-    const { shop_id, plan_name } = await request.json();
+    const { shop_id, plan_name, duration_days } = await request.json();
 
     if (!isValidUUID(shop_id))   return badRequest('Invalid shop_id');
     if (!isValidPlan(plan_name)) return badRequest('Invalid plan. Use: free, basic, pro');
 
+    // BUG FIX: Accept optional duration_days from the admin UI so custom
+    // periods (e.g. 60-day, 90-day) survive the assign-plan flow.
+    // assignPlan() uses plan.duration_days as fallback when not provided.
+    const overrideDays = (duration_days && Number.isInteger(+duration_days) && +duration_days > 0)
+      ? +duration_days
+      : null;
+
     const db  = createClient(env);
-    const sub = await assignPlan(db, shop_id, plan_name);
+    const sub = await assignPlan(db, shop_id, plan_name, overrideDays);
 
     return ok({
       message: `Plan "${plan_name}" assign ho gaya!`,

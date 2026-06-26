@@ -174,6 +174,13 @@ export async function setCustomPlan(request, env) {
       });
     }
 
+    // BUG FIX: Always re-activate the shop when a custom plan is set.
+    // Previously, if a shop was deactivated (is_active=false) and the
+    // admin used "Custom Plan" to assign a new period, the subscription
+    // was updated but shops.is_active remained false — the shop stayed
+    // invisible to customers even though it now has a valid subscription.
+    await db.update('shops', `id=eq.${shopId}`, { is_active: true });
+
     return ok({ subscription: Array.isArray(result) ? result[0] : result });
   } catch(e) { return serverError(e.message); }
 }
@@ -236,31 +243,13 @@ export async function reviewUpgradeRequest(request, env) {
     await db.update('upgrade_requests', `id=eq.${id}`,
       { status: action, reviewed_at: new Date().toISOString(), note: note || null }
     );
-    // If approved — assign plan
+    // If approved — assign plan using assignPlan() so duration is always
+    // driven by the plan's duration_days (not hardcoded 30 days).
+    // assignPlan() also handles the cancel-then-insert ordering required
+    // by idx_subscriptions_one_active_per_shop and re-activates the shop.
     if (action === 'approved') {
-      const endDate = new Date();
-      endDate.setDate(endDate.getDate() + 30);
-      // Find the governing subscription using the same rule as
-      // getActiveSubscription(): status='active', newest first.
-      const subs = await db.select('subscriptions',
-        `shop_id=eq.${req.shop_id}&status=eq.active&order=created_at.desc&limit=1`
-      );
-      if (subs?.length) {
-        // Update the existing active row in place — no new
-        // status='active' row created, index unaffected.
-        await db.update('subscriptions', `id=eq.${subs[0].id}`,
-          { plan_name: req.requested_plan, end_date: endDate.toISOString().split('T')[0] }
-        );
-      } else {
-        // No status='active' row exists for this shop, so inserting
-        // one cannot violate idx_subscriptions_one_active_per_shop.
-        await db.insert('subscriptions', {
-          shop_id: req.shop_id, plan_name: req.requested_plan,
-          status:     'active',
-          start_date: new Date().toISOString().split('T')[0],
-          end_date:   endDate.toISOString().split('T')[0],
-        });
-      }
+      const { assignPlan } = await import('../services/subscriptionService.js');
+      await assignPlan(db, req.shop_id, req.requested_plan);
     }
     return ok({ action, request_id: id });
   } catch(e) { return serverError(e.message); }

@@ -9,7 +9,7 @@ import { requireShopAuth, requireAdmin } from '../utils/auth.js';
 import { ok, badRequest, serverError, notFound, unauthorized } from '../utils/response.js';
 import { isValidPin, isValidUUID } from '../utils/validation.js';
 import { notifyShopClosed }     from '../services/tokenService.js';
-import { assignPlan, getActiveSubscription } from '../services/subscriptionService.js';
+import { assignPlan, getActiveSubscription, getLastSubscription } from '../services/subscriptionService.js';
 
 /** POST /shops — create shop (admin only) */
 export async function createShopHandler(request, env) {
@@ -256,26 +256,53 @@ export async function activateShopHandler(request, env) {
       // Activating: ensure a valid (non-expired) subscription exists.
       // assignPlan() already sets shops.is_active=true at the end of
       // its own execution, so no separate write is needed on those paths.
-      const existing = await getActiveSubscription(db, shopId);
-      const today    = new Date().toISOString().split('T')[0];
 
-      if (!existing) {
-        // No subscription at all — create a fresh free-plan subscription.
+      // BUG FIX: Use getActiveSubscription for the "still valid" check,
+      // but fall back to getLastSubscription (any status) to recover the
+      // previous plan_name and custom duration when reactivating an expired
+      // or cancelled subscription. Without this, getActiveSubscription()
+      // returns null for expired subs and we incorrectly fall through to
+      // the "no subscription" branch, assigning a free plan and losing
+      // any Pro/Basic/custom-period the admin had set.
+      const active = await getActiveSubscription(db, shopId);
+      const today  = new Date().toISOString().split('T')[0];
+
+      if (active && active.end_date >= today) {
+        // Valid, future-dated subscription already exists — do not touch
+        // subscriptions at all, just unhide the shop.
+        await db.update('shops', `id=eq.${shopId}`, { is_active: true });
+        return ok({ is_active: true });
+      }
+
+      // No active/valid subscription — check history for plan + period info.
+      // getLastSubscription() returns the most recent row regardless of status
+      // (expired, cancelled, or even the stale active row that passed end_date).
+      const last = await getLastSubscription(db, shopId);
+
+      if (!last) {
+        // Shop has never had any subscription — provision a fresh free trial.
         await assignPlan(db, shopId, 'free');
         return ok({ is_active: true, subscription_created: true });
       }
 
-      if (existing.end_date < today) {
-        // Subscription exists but has already expired — renew on the
-        // same plan it was on (so a Pro shop stays Pro, not downgraded).
-        await assignPlan(db, shopId, existing.plan_name || 'free');
-        return ok({ is_active: true, subscription_renewed: true });
+      // Renew using the same plan and, crucially, the SAME duration the
+      // admin originally set. This preserves custom periods (e.g. 60 days)
+      // so reactivating a Pro business doesn't silently downgrade it to
+      // the plan table's default 30-day window.
+      const planName     = last.plan_name || 'free';
+      const lastStart    = last.start_date ? new Date(last.start_date) : null;
+      const lastEnd      = last.end_date   ? new Date(last.end_date)   : null;
+      let   durationDays = null;
+
+      if (lastStart && lastEnd && !isNaN(lastStart) && !isNaN(lastEnd)) {
+        const msPerDay = 86400000;
+        durationDays = Math.round((lastEnd - lastStart) / msPerDay);
+        // Clamp to a sane range: at least 1 day, at most 366 days.
+        if (durationDays < 1 || durationDays > 366) durationDays = null;
       }
 
-      // Valid, future-dated subscription already exists — do not touch
-      // subscriptions at all, just unhide the shop.
-      await db.update('shops', `id=eq.${shopId}`, { is_active: true });
-      return ok({ is_active: true });
+      await assignPlan(db, shopId, planName, durationDays);
+      return ok({ is_active: true, subscription_renewed: true, plan: planName, duration_days: durationDays });
     }
 
     // Deactivation path — unchanged. Only toggles shops.is_active.

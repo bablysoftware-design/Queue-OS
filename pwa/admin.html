@@ -690,6 +690,13 @@ button:active, .btn-primary:active, .btn-ghost:active, .btn-xs:active {
       <option value="basic">Basic — Rs.999/month</option>
       <option value="pro">Pro — Rs.2,499/month</option>
     </select>
+    <div class="field" style="margin-top:10px;margin-bottom:10px">
+      <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px">Duration (days)</label>
+      <input id="modal-plan-days" type="number" value="30" min="1" max="730"
+        style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px"
+        placeholder="30"/>
+      <div style="font-size:10px;color:var(--text2);margin-top:3px">Default is 30 days. Override to set a custom period.</div>
+    </div>
     <button class="btn-primary" onclick="confirmPlan()">Assign Plan</button>
   </div>
 </div>
@@ -860,9 +867,13 @@ function handlePlanOverlay(e) { if (e.target === document.getElementById('plan-m
 
 async function confirmPlan() {
   const plan = document.getElementById('modal-plan').value;
+  const days = parseInt(document.getElementById('modal-plan-days').value) || 30;
   try {
-    await api('POST', '/admin/assign-plan', { shop_id: selectedShopId, plan_name: plan });
-    showToast(`✅ ${plan.toUpperCase()} plan assigned`, 'success');
+    // Send duration_days so the worker can honour custom periods.
+    // The /admin/assign-plan endpoint passes this through to assignPlan()
+    // which overrides the plan table's default duration_days.
+    await api('POST', '/admin/assign-plan', { shop_id: selectedShopId, plan_name: plan, duration_days: days });
+    showToast(`✅ ${plan.toUpperCase()} plan assigned (${days} days)`, 'success');
     closePlanModal(); loadShops();
   } catch(e) { showToast(e.message, 'error'); }
 }
