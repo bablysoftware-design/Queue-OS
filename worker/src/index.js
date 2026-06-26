@@ -81,6 +81,7 @@ const ROUTES = [
   // Autocomplete search (no auth)
   { method: 'GET',    path: '/search/locations',                         handler: searchLocations },
   { method: 'GET',    path: '/search/categories',                        handler: searchCategories },
+  { method: 'GET',    path: '/public/categories',                        handler: searchCategories }, // alias for app.html
 
   // Share / QR / Slug (no auth) — specific paths before :id params
   { method: 'GET',    path: '/shops/related',                            handler: getRelatedShops },

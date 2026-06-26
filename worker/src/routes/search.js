@@ -3,8 +3,9 @@
 // Falls back gracefully if tables don't exist
 // ============================================================
 
-import { createClient }  from '../utils/db.js';
-import { ok }            from '../utils/response.js';
+import { createClient }            from '../utils/db.js';
+import { ok, badRequest, serverError } from '../utils/response.js';
+import { requireAdmin }               from '../utils/auth.js';
 
 const CITIES = [
   // Major cities
@@ -194,15 +195,12 @@ export async function searchCategories(request, env) {
 
 /** POST /admin/locations — admin adds a city or area to the locations table */
 export async function adminAddLocation(request, env) {
-  const { requireAdmin } = await import('../utils/auth.js');
   const authErr = await requireAdmin(request, env);
   if (authErr) return authErr;
   try {
     const { city, area, country = 'Pakistan' } = await request.json();
-    if (!city && !area) return (await import('../utils/response.js')).badRequest('city or area required');
-    const { createClient } = await import('../utils/db.js');
+    if (!city && !area) return badRequest('city or area required');
     const db = createClient(env);
-    const { ok, serverError } = await import('../utils/response.js');
 
     // Prevent duplicates — check existing case-insensitively
     const cityVal = city ? city.trim() : null;
@@ -220,7 +218,6 @@ export async function adminAddLocation(request, env) {
     });
     return ok({ added: Array.isArray(row) ? row[0] : row });
   } catch(err) {
-    const { serverError } = await import('../utils/response.js');
     return serverError(err.message);
   }
 }
