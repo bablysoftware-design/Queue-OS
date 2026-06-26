@@ -34,12 +34,13 @@ export async function createShopHandler(request, env) {
       address:      address      || null,
     });
 
-    // Store PIN both plain and hashed — login handles both
-    const pinHash = await hashPin(String(pin)).catch(() => null);
+    // Store PIN hashed only — never store plain text PINs.
+    // If hashing fails, throw rather than fall back to plain storage.
+    const pinHash = await hashPin(String(pin));
     await db.insert('shopkeepers', {
       shop_id:  shop.id,
-      pin:      String(pin),
-      ...(pinHash ? { pin_hash: pinHash } : {}),
+      pin:      '',         // always blank — login checks pin_hash only
+      pin_hash: pinHash,
     });
 
     // Assign free trial plan — mirrors register.js approval flow.
@@ -324,7 +325,7 @@ export async function adminResetPinHandler(request, env) {
     const db      = createClient(env);
     const newHash = await hashPin(String(new_pin));
     await db.update('shopkeepers', `shop_id=eq.${shopId}`, {
-      pin:      String(new_pin),
+      pin:      '',          // clear any legacy plain-text PIN
       pin_hash: newHash,
     });
     return ok({ message: 'PIN reset successfully' });

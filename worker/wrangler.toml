@@ -8,7 +8,10 @@ compatibility_date = "2024-01-01"
 
 # ─── Scheduled task: expire subscriptions daily ────────────
 [triggers]
-crons = ["0 0 * * *"]   # Runs daily at midnight UTC
+crons = [
+  "0 19 * * *",   # Token reset: midnight PKT (UTC+5 = 19:00 UTC prev day)
+  "0 18 * * *",   # Subscription expiry check: 11 PM PKT (avoids 5am PKT expiry surprise)
+]
 
 # ─── Environment Variables ─────────────────────────────────
 # Set these via: wrangler secret put VARIABLE_NAME

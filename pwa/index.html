@@ -1721,6 +1721,7 @@ function handleLogout() {
   localStorage.removeItem('saf_shop_name');
   localStorage.removeItem('saf_is_open');
   localStorage.removeItem('saf_session_token');
+  localStorage.removeItem('saf_login_ts');
   clearInterval(state.refreshTimer);
   state = { shopId:null, shopName:null, isOpen:false, refreshTimer:null, sessionToken:null };
   document.getElementById('login-phone').value = '';
@@ -3478,7 +3479,7 @@ window.viewScreenshot = viewScreenshot;
     showDashboard();
   } else {
     console.log('[BOOT] no session — showing login. id=', id, 'tok=', tok?.slice(0,8));
-    ['saf_shop_id','saf_shop_name','saf_is_open','saf_session_token'].forEach(k => localStorage.removeItem(k));
+    ['saf_shop_id','saf_shop_name','saf_is_open','saf_session_token','saf_login_ts'].forEach(k => localStorage.removeItem(k));
     showScreen('login-screen');
   }
 

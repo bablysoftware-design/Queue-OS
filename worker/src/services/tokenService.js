@@ -173,7 +173,8 @@ export async function advanceQueue(db, shopId, env) {
       `🏪 دکان: ${shopName}\n` +
       `🎫 آپ کا ٹوکن: *${next.token_number}*\n` +
       `⏱️ ابھی آئیں!\n\n_Saf Queue_`,
-      env
+      env,
+      shopId  // pass shopId for per-recipient rate limiting
     );
   }
 

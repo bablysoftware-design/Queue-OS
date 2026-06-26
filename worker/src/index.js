@@ -171,7 +171,7 @@ export default {
     const { pathname } = new URL(request.url);
     //
     if (pathname === '/ping') return new Response(JSON.stringify({ok:true,build:'20260508125258',route:'index.js'}), {headers:{'Content-Type':'application/json'}});
-    if (method === 'OPTIONS') return preflight();
+    if (method === 'OPTIONS') return preflight(request);
     const handler = matchRoute(method, pathname);
     if (!handler) return notFound(`Route not found: ${method} ${pathname}`);
     return handler(request, env, ctx);
@@ -179,6 +179,8 @@ export default {
 
   async scheduled(event, env, ctx) {
     const db = createClient(env);
+    // Two crons: "0 18 * * *" = subscription expiry, "0 19 * * *" = token reset
+    // Both are safe to run together if cron strings ever overlap or change.
     await Promise.all([
       expireStaleSubscriptions(db),
       resetDailyTokens(db),
