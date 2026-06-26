@@ -5,7 +5,7 @@
 import { hashPin }         from '../utils/crypto.js';
 import { createClient }    from '../utils/db.js';
 import { assignPlan }      from '../services/subscriptionService.js';
-import { ok, badRequest, serverError } from '../utils/response.js';
+import { ok, badRequest, serverError, unauthorized } from '../utils/response.js';
 import { isValidPin }      from '../utils/validation.js';
 
 export async function submitRegistration(request, env) {
@@ -58,7 +58,7 @@ export async function submitRegistration(request, env) {
 export async function listRegistrations(request, env) {
   const secret = request.headers.get('x-admin-secret');
   if (secret !== env.ADMIN_SECRET) {
-    return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), { status: 401 });
+    return unauthorized('Unauthorized');
   }
   try {
     const db   = createClient(env);
@@ -70,7 +70,7 @@ export async function listRegistrations(request, env) {
 export async function approveRegistration(request, env) {
   const secret = request.headers.get('x-admin-secret');
   if (secret !== env.ADMIN_SECRET) {
-    return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), { status: 401 });
+    return unauthorized('Unauthorized');
   }
   try {
     const regId = new URL(request.url).pathname.split('/')[3];
@@ -109,7 +109,7 @@ export async function approveRegistration(request, env) {
 export async function rejectRegistration(request, env) {
   const secret = request.headers.get('x-admin-secret');
   if (secret !== env.ADMIN_SECRET) {
-    return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), { status: 401 });
+    return unauthorized('Unauthorized');
   }
   try {
     const regId = new URL(request.url).pathname.split('/')[3];

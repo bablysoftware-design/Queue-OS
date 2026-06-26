@@ -132,7 +132,7 @@ export async function deleteVoiceNotePublic(request, env) {
 export async function cleanupOrphanVoiceNotes(request, env) {
   const secret = request.headers.get('x-admin-secret');
   if (!secret || secret !== env.ADMIN_SECRET) {
-    return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), { status: 401 });
+    return unauthorized('Unauthorized');
   }
 
   try {
@@ -204,12 +204,9 @@ export async function cleanupOrphanVoiceNotes(request, env) {
       } catch (e) { /* best-effort — continue */ }
     }
 
-    return new Response(JSON.stringify({
-      success: true,
-      data: { scanned: objects?.length || 0, protected: protectedPaths.size, deleted },
-    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    return ok({ scanned: objects?.length || 0, protected: protectedPaths.size, deleted });
 
   } catch (err) {
-    return new Response(JSON.stringify({ success: false, error: err.message }), { status: 500 });
+    return serverError(err.message);
   }
 }

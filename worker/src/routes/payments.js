@@ -5,7 +5,7 @@
 
 import { assignPlan }    from '../services/subscriptionService.js';
 import { createClient }  from '../utils/db.js';
-import { ok, badRequest, serverError } from '../utils/response.js';
+import { ok, badRequest, serverError, unauthorized } from '../utils/response.js';
 
 /**
  * POST /payments/easypaisa
@@ -70,7 +70,7 @@ export async function jazzcashWebhook(request, env) {
 export async function manualPayment(request, env) {
   const secret = request.headers.get('x-admin-secret');
   if (secret !== env.ADMIN_SECRET) {
-    return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), { status: 401 });
+    return unauthorized('Unauthorized');
   }
 
   try {

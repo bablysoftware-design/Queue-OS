@@ -166,16 +166,65 @@ function matchRoute(method, pathname) {
   return null;
 }
 
+// CORS headers applied to EVERY response at the top level.
+// This is the single authoritative place — even if a route handler
+// forgets to use the response helpers, or throws an uncaught error,
+// the browser will still receive the ACAO header and can read the response.
+const CORS = {
+  'Access-Control-Allow-Origin':  '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-secret, x-session-token, x-audio-duration',
+};
+
+function addCors(response) {
+  // Clone the response and inject CORS headers.
+  // Uses Response constructor to preserve status, statusText, and body.
+  const r = new Response(response.body, response);
+  r.headers.set('Access-Control-Allow-Origin',  '*');
+  r.headers.set('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
+  r.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-admin-secret, x-session-token, x-audio-duration');
+  return r;
+}
+
 export default {
   async fetch(request, env, ctx) {
-    const { method }   = request;
-    const { pathname } = new URL(request.url);
-    //
-    if (pathname === '/ping') return new Response(JSON.stringify({ok:true,build:'20260508125258',route:'index.js'}), {headers:{'Content-Type':'application/json'}});
-    if (method === 'OPTIONS') return preflight(request);
-    const handler = matchRoute(method, pathname);
-    if (!handler) return notFound(`Route not found: ${method} ${pathname}`);
-    return handler(request, env, ctx);
+    try {
+      const { method }   = request;
+      const { pathname } = new URL(request.url);
+
+      // Preflight — always first
+      if (method === 'OPTIONS') {
+        return new Response(null, { status: 204, headers: CORS });
+      }
+
+      // Health check
+      if (pathname === '/ping') {
+        return new Response(
+          JSON.stringify({ ok: true, build: '20260627000000', route: 'index.js' }),
+          { headers: { 'Content-Type': 'application/json', ...CORS } }
+        );
+      }
+
+      const handler = matchRoute(method, pathname);
+      if (!handler) {
+        return new Response(
+          JSON.stringify({ success: false, error: `Route not found: ${method} ${pathname}` }),
+          { status: 404, headers: { 'Content-Type': 'application/json', ...CORS } }
+        );
+      }
+
+      // Run handler, then guarantee CORS on whatever it returns
+      const response = await handler(request, env, ctx);
+      return addCors(response);
+
+    } catch (err) {
+      // Uncaught error — return CORS-enabled 500 so browser can read the error
+      console.error('[WORKER] Uncaught error:', err?.message || err);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Internal server error' }),
+        { status: 500, headers: { 'Content-Type': 'application/json', ...CORS } }
+      );
+    }
   },
 
   async scheduled(event, env, ctx) {
