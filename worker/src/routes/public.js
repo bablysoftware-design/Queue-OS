@@ -6,6 +6,7 @@
 // ============================================================
 
 import { createClient }  from '../utils/db.js';
+import { deleteVoiceNote } from './voice_notes.js';
 import { createToken }   from '../services/tokenService.js';
 import { checkSubscriptionValid, checkFeatureAllowed } from '../services/subscriptionService.js';
 import { sanitizeParam, sanitizeSearch, sanitizeName, isRateLimited } from '../utils/sanitize.js';
@@ -288,8 +289,13 @@ export async function publicCancelToken(request, env) {
     const tokens = await db.select('tokens', `id=eq.${token_id}&shop_id=eq.${shop_id}`);
     if (!tokens.length) return notFound('ٹوکن نہیں ملا');
     if (tokens[0].status !== 'waiting') return badRequest('صرف انتظار والا ٹوکن منسوخ ہو سکتا ہے');
+    // FIX: clean up voice note on cancel to avoid orphaned storage files
+    if (tokens[0].voice_note_url) {
+      deleteVoiceNote(env.SUPABASE_URL?.trim(), env.SUPABASE_KEY?.trim(), tokens[0].voice_note_url);
+    }
     await db.update('tokens', `id=eq.${token_id}`, {
-      status: 'cancelled', cancelled_at: new Date().toISOString()
+      status: 'cancelled', cancelled_at: new Date().toISOString(),
+      voice_note_url: null, voice_note_duration: null, customer_note: null,
     });
     return ok({ cancelled: true });
   } catch (err) { return serverError(err.message); }

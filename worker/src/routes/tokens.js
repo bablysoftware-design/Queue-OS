@@ -4,7 +4,7 @@
 // ============================================================
 
 import { createToken, advanceQueue, getQueueState,
-         markNoShow, getShopStats, getCustomerPosition,
+         markNoShow, getShopStats, getShopAnalytics, getCustomerPosition,
          cancelToken }            from '../services/tokenService.js';
 import { createClient }           from '../utils/db.js';
 import { requireShopAuth }        from '../utils/auth.js';

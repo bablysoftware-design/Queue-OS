@@ -2,6 +2,7 @@
 // routes/plans.js — Plan pricing management + upgrade requests
 // ============================================================
 import { createClient }  from '../utils/db.js';
+import { assignPlan }    from '../services/subscriptionService.js';
 import { requireAdmin, requireShopAuth }  from '../utils/auth.js';
 import { ok, badRequest, notFound, serverError } from '../utils/response.js';
 import { isValidUUID }   from '../utils/validation.js';
@@ -127,6 +128,7 @@ export async function setCustomPlan(request, env) {
     // Build update object — only include fields that were explicitly provided
     const updateData = {
       plan_name,
+      start_date: new Date().toISOString().split('T')[0], // FIX: reset start_date so duration is calculated from today, not original start
       end_date:   endStr,
       updated_at: new Date().toISOString(),
     };
@@ -248,7 +250,6 @@ export async function reviewUpgradeRequest(request, env) {
     // assignPlan() also handles the cancel-then-insert ordering required
     // by idx_subscriptions_one_active_per_shop and re-activates the shop.
     if (action === 'approved') {
-      const { assignPlan } = await import('../services/subscriptionService.js');
       await assignPlan(db, req.shop_id, req.requested_plan);
     }
     return ok({ action, request_id: id });

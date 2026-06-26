@@ -1,4 +1,4 @@
-import { triggerPositionNotifications, notifyTokenCalled } from './pushService.js';
+import { triggerPositionNotifications, notifyTokenCalled, sendPush, payloadTokenCreated } from './pushService.js';
 import { deleteVoiceNote } from '../routes/voice_notes.js';
 // ============================================================
 // services/tokenService.js — Queue token management
@@ -76,9 +76,16 @@ export async function createToken(
   }
 
   // Also check daily plan limit
-  const today = new Date().toISOString().split('T')[0];
+  // FIX: use Pakistan Standard Time (UTC+5) for "today" so the daily reset
+  // aligns with local midnight (not UTC midnight = 5am PKT). Without this,
+  // tokens issued between midnight-5am PKT fall into UTC "yesterday" and
+  // don't count, letting shops exceed max_tokens_per_day.
+  const pktOffset = 5 * 60 * 60 * 1000; // UTC+5 in ms
+  const nowPKT    = new Date(Date.now() + pktOffset);
+  const todayPKT  = nowPKT.toISOString().split('T')[0];      // YYYY-MM-DD in PKT
+  const todayUTC  = new Date(`${todayPKT}T00:00:00+05:00`).toISOString(); // midnight PKT as UTC
   const todayTotal = await db.select('tokens',
-    `shop_id=eq.${shopId}&created_at=gte.${today}T00:00:00&select=id`
+    `shop_id=eq.${shopId}&created_at=gte.${todayUTC}&select=id`
   );
   if (todayTotal.length >= sub.max_tokens_per_day) {
     throw new Error('آج کے ٹوکن کی حد پوری ہو گئی۔');
@@ -123,7 +130,9 @@ export async function createToken(
  * Sends WhatsApp notification to next customer.
  */
 export async function advanceQueue(db, shopId, env) {
-  const called = await db.select('tokens', `shop_id=eq.${shopId}&status=eq.called&limit=1`);
+  // FIX: order by called_at desc so the most recently called token is completed first.
+  // Without order, an older manual-called token could block the queue indefinitely.
+  const called = await db.select('tokens', `shop_id=eq.${shopId}&status=eq.called&order=called_at.desc&limit=1`);
   if (called.length) {
     const _ct = called[0];
     if (_ct.voice_note_url && env) deleteVoiceNote(env.SUPABASE_URL?.trim(), env.SUPABASE_KEY?.trim(), _ct.voice_note_url);

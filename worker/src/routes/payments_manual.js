@@ -4,6 +4,7 @@ import { createToken }   from '../services/tokenService.js';
 import { requireAdmin, requireShopOrAdmin } from '../utils/auth.js';
 import { sanitizeParam, sanitizeName, isRateLimited } from '../utils/sanitize.js';
 import { ok, badRequest, notFound, serverError } from '../utils/response.js';
+import { deleteVoiceNote } from './voice_notes.js';
 
 /**
  * POST /public/payment-request

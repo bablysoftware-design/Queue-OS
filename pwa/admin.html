@@ -827,7 +827,12 @@ function renderShops() {
       <div class="shop-phone">${esc(s.owner_phone || '—')}</div>
       <div><span class="badge ${s.is_active ? 'active' : 'inactive'}">${s.is_active ? '● Active' : '● Inactive'}</span></div>
       <div><span class="badge ${plan}">${plan.toUpperCase()}</span></div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2)">${expiry}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2)">${expiry !== '—' ? (() => {
+        const days = Math.ceil((new Date(expiry) - new Date()) / 86400000);
+        const color = days < 0 ? '#ef4444' : days <= 5 ? '#f59e0b' : 'var(--text2)';
+        const label = days < 0 ? \`EXPIRED \${Math.abs(days)}d ago\` : days === 0 ? 'Expires today' : \`\${days}d left\`;
+        return \`<span style="color:\${color}">\${expiry} <span style="opacity:.7">(\${label})</span></span>\`;
+      })() : '—'}</div>
       <div class="action-group">
         <button class="btn-xs plan" data-id="${s.id}" data-name="${esc(s.name)}" onclick="openPlanModal(this.dataset.id,this.dataset.name)">Plan</button>
         <button class="btn-xs ${s.is_active ? 'off' : 'on'}" data-id="${s.id}" data-active="${!s.is_active}" onclick="toggleActive(this.dataset.id,this.dataset.active==='true')">${s.is_active ? 'Deactivate' : 'Activate'}</button>
@@ -860,6 +865,17 @@ async function addShop() {
 function openPlanModal(id, name) {
   selectedShopId = id;
   document.getElementById('modal-shop-name').value = name;
+  // Pre-fill with current plan and remaining days so admin sees context
+  const shop = shops.find(s => s.id === id);
+  if (shop) {
+    document.getElementById('modal-plan').value = shop.sub?.plan_name || 'free';
+    if (shop.sub?.end_date) {
+      const daysLeft = Math.max(1, Math.ceil((new Date(shop.sub.end_date) - new Date()) / 86400000));
+      document.getElementById('modal-plan-days').value = daysLeft > 0 ? daysLeft : 30;
+    } else {
+      document.getElementById('modal-plan-days').value = 30;
+    }
+  }
   document.getElementById('plan-modal').classList.add('show');
 }
 function closePlanModal() { document.getElementById('plan-modal').classList.remove('show'); selectedShopId = null; }
