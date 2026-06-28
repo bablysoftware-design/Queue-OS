@@ -830,12 +830,12 @@ function renderShops() {
       <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2)">${expiry !== '—' ? (() => {
         const days = Math.ceil((new Date(expiry) - new Date()) / 86400000);
         const color = days < 0 ? '#ef4444' : days <= 5 ? '#f59e0b' : 'var(--text2)';
-        const label = days < 0 ? \`EXPIRED \${Math.abs(days)}d ago\` : days === 0 ? 'Expires today' : \`\${days}d left\`;
-        return \`<span style="color:\${color}">\${expiry} <span style="opacity:.7">(\${label})</span></span>\`;
+        const label = days < 0 ? ('EXPIRED ' + Math.abs(days) + 'd ago') : days === 0 ? 'Expires today' : (days + 'd left');
+        return '<span style="color:' + color + '">' + expiry + ' <span style="opacity:.7">(' + label + ')</span></span>';
       })() : '—'}</div>
       <div class="action-group">
         <button class="btn-xs plan" data-id="${s.id}" data-name="${esc(s.name)}" onclick="openPlanModal(this.dataset.id,this.dataset.name)">Plan</button>
-        <button class="btn-xs ${s.is_active ? 'off' : 'on'}" data-id="${s.id}" data-active="${!s.is_active}" onclick="toggleActive(this.dataset.id,this.dataset.active==='true')">${s.is_active ? 'Deactivate' : 'Activate'}</button>
+        <button class="btn-xs ${s.is_active ? 'off' : 'on'}" data-id="${s.id}" data-active="${!s.is_active}" onclick="toggleActive('${s.id}',${!s.is_active},'${esc(s.name)}','${s.sub?.plan_name||'free'}')">${s.is_active ? 'Deactivate' : 'Activate'}</button>
         <button class="btn-xs link" data-id="${s.id}" data-name="${esc(s.name)}" onclick="copyLink(this.dataset.id,this.dataset.name)">🔗 Link</button>
         <button class="btn-xs link" data-id="${s.id}" onclick="shareWhatsApp(this.dataset.id)" style="background:rgba(37,211,102,0.15);border-color:rgba(37,211,102,0.4);color:#25d366">💬 WA</button>
         <button class="btn-xs link" data-id="${s.id}" data-name="${esc(s.name)}" onclick="downloadQR(this.dataset.id,this.dataset.name)" style="background:rgba(212,175,55,0.1);border-color:rgba(212,175,55,0.3)">📱 QR</button>
@@ -894,12 +894,124 @@ async function confirmPlan() {
   } catch(e) { showToast(e.message, 'error'); }
 }
 
-async function toggleActive(id, state) {
+// ── Activation Modal ────────────────────────────────────────────
+let _activateShopId   = null;
+let _activateShopName = '';
+let _activateDays     = 30;
+
+function openActivateModal(id, name, currentPlan) {
+  _activateShopId   = id;
+  _activateShopName = name;
+  _activateDays     = 30;
+
+  document.getElementById('activate-modal-shopname').textContent = name;
+
+  // Pre-select plan
+  const sel = document.getElementById('activate-plan-select');
+  if (sel && currentPlan) {
+    for (const opt of sel.options) {
+      if (opt.value === currentPlan) { opt.selected = true; break; }
+    }
+  }
+
+  // Reset preset buttons
+  selectDuration(30);
+
+  document.getElementById('activate-custom-days').value = '';
+  document.getElementById('activate-modal').style.display = 'flex';
+}
+window.openActivateModal = openActivateModal;
+
+function closeActivateModal() {
+  document.getElementById('activate-modal').style.display = 'none';
+  _activateShopId = null;
+}
+window.closeActivateModal = closeActivateModal;
+
+function selectDuration(days, fromCustom = false) {
+  if (days != null && days >= 1) _activateDays = days;
+
+  // Highlight active preset
+  document.querySelectorAll('.dur-btn').forEach(btn => {
+    const isActive = parseInt(btn.dataset.days) === _activateDays && !fromCustom;
+    btn.style.background = isActive ? 'rgba(232,184,75,.15)' : 'transparent';
+    btn.style.color      = isActive ? 'var(--gold)' : 'var(--text2)';
+    btn.style.borderColor = isActive ? 'rgba(232,184,75,.5)' : 'var(--border)';
+    btn.style.fontWeight  = isActive ? '700' : '600';
+  });
+  if (!fromCustom) document.getElementById('activate-custom-days').value = '';
+
+  updateActivateSummary();
+}
+window.selectDuration = selectDuration;
+
+function updateActivateSummary() {
+  const plan = document.getElementById('activate-plan-select')?.value || 'free';
+  const days = _activateDays;
+  const summary = document.getElementById('activate-summary');
+  if (!summary) return;
+
+  const start = new Date();
+  const end   = new Date(start.getTime() + days * 86400000);
+  const fmt   = d => d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+
+  summary.innerHTML = `
+    <div style="margin-bottom:4px">
+      <span style="color:var(--gold);font-weight:700">${plan.toUpperCase()}</span> plan
+      for <span style="color:var(--text);font-weight:700">${days} day${days===1?'':'s'}</span>
+    </div>
+    <div>Active: ${fmt(start)} → ${fmt(end)}</div>`;
+}
+
+// Update summary when plan dropdown changes
+document.getElementById('activate-plan-select')?.addEventListener('change', updateActivateSummary);
+
+async function confirmActivate() {
+  if (!_activateShopId) return;
+  const btn  = document.getElementById('activate-confirm-btn');
+  const plan = document.getElementById('activate-plan-select')?.value || 'free';
+  const days = _activateDays;
+
+  if (!days || days < 1) { showToast('Select a valid duration', 'error'); return; }
+
+  btn.disabled    = true;
+  btn.textContent = 'Activating...';
   try {
-    await api('PATCH', `/admin/shops/${id}/activate`, { is_active: state });
-    showToast(state ? '✅ Shop activated' : '🔴 Shop deactivated', state ? 'success' : '');
+    await api('PATCH', `/admin/shops/${_activateShopId}/activate`, {
+      is_active:    true,
+      plan_name:    plan,
+      duration_days: days,
+    });
+    showToast(`✅ ${_activateShopName} activated — ${plan.toUpperCase()} for ${days} days`, 'success');
+    closeActivateModal();
     loadShops();
-  } catch(e) { showToast(e.message, 'error'); }
+  } catch(e) {
+    showToast(e.message, 'error');
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = '✓ Activate';
+  }
+}
+window.confirmActivate = confirmActivate;
+
+// Close modal on backdrop click
+document.getElementById('activate-modal')?.addEventListener('click', function(e) {
+  if (e.target === this) closeActivateModal();
+});
+
+async function toggleActive(id, state, shopName, currentPlan) {
+  if (state) {
+    // Activating — show duration picker modal
+    openActivateModal(id, shopName || id.slice(0, 8), currentPlan || 'free');
+  } else {
+    // Deactivating — simple confirm then proceed
+    if (!confirm('Deactivate this shop?')) return;
+    try {
+      await api('PATCH', `/admin/shops/${id}/activate`, { is_active: false });
+      showToast('🔴 Shop deactivated', '');
+      loadShops();
+    } catch(e) { showToast(e.message, 'error'); }
+  }
 }
 
 async function copyLink(id, name) {
@@ -1600,5 +1712,42 @@ window.startRegPolling  = startRegPolling;
 window.scrollToPending  = scrollToPending;
 window.stopRegPolling  = stopRegPolling;
 </script>
+<!-- ── Activation Modal ─────────────────────────────────────── -->
+<div id="activate-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(12px);z-index:9999;align-items:center;justify-content:center;padding:20px">
+  <div style="background:linear-gradient(160deg,rgba(17,24,39,.97),rgba(8,12,20,.98));border:1px solid rgba(232,184,75,.2);border-radius:20px;padding:24px;width:100%;max-width:360px;animation:sheetUp .3s cubic-bezier(.16,1,.3,1) both">
+    <div style="font-size:18px;font-weight:700;margin-bottom:4px">Activate Shop</div>
+    <div id="activate-modal-shopname" style="font-size:12px;color:var(--text2);margin-bottom:18px"></div>
+
+    <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">Plan</div>
+    <select id="activate-plan-select" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:'Sora',sans-serif;font-size:13px;margin-bottom:14px">
+      <option value="free">Free</option>
+      <option value="basic">Basic</option>
+      <option value="pro" selected>Pro</option>
+    </select>
+
+    <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">Duration</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:10px" id="duration-presets">
+      <button class="dur-btn" data-days="30"  onclick="selectDuration(30)"  style="padding:8px;border-radius:8px;border:1px solid var(--border);background:rgba(232,184,75,.1);color:var(--gold);font-family:'Sora',sans-serif;font-size:12px;font-weight:700;cursor:pointer">30d</button>
+      <button class="dur-btn" data-days="60"  onclick="selectDuration(60)"  style="padding:8px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text2);font-family:'Sora',sans-serif;font-size:12px;font-weight:600;cursor:pointer">60d</button>
+      <button class="dur-btn" data-days="90"  onclick="selectDuration(90)"  style="padding:8px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text2);font-family:'Sora',sans-serif;font-size:12px;font-weight:600;cursor:pointer">90d</button>
+      <button class="dur-btn" data-days="365" onclick="selectDuration(365)" style="padding:8px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text2);font-family:'Sora',sans-serif;font-size:12px;font-weight:600;cursor:pointer">1yr</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px">
+      <span style="font-size:12px;color:var(--text2)">Custom:</span>
+      <input id="activate-custom-days" type="number" min="1" max="366" placeholder="days"
+        style="width:80px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:'Sora',sans-serif;font-size:13px"
+        oninput="selectDuration(parseInt(this.value)||null, true)"/>
+      <span style="font-size:12px;color:var(--text3)">days</span>
+    </div>
+
+    <div id="activate-summary" style="background:rgba(232,184,75,.08);border:1px solid rgba(232,184,75,.2);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.5"></div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button onclick="closeActivateModal()" style="padding:12px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:transparent;color:rgba(241,245,249,.6);font-family:'Sora',sans-serif;font-size:13px;font-weight:600;cursor:pointer">Cancel</button>
+      <button id="activate-confirm-btn" onclick="confirmActivate()" style="padding:12px;border:none;border-radius:12px;background:var(--gold);color:#0d1422;font-family:'Sora',sans-serif;font-size:13px;font-weight:700;cursor:pointer">✓ Activate</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
