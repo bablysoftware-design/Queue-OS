@@ -250,7 +250,12 @@ export async function activateShopHandler(request, env) {
   try {
     const shopId    = new URL(request.url).pathname.split('/')[3];
     if (!isValidUUID(shopId)) return badRequest('Invalid shop_id');
-    const { is_active } = await request.json();
+    const body       = await request.json();
+    const is_active  = body.is_active;
+    const bodyPlan   = body.plan_name   || null;   // optional admin override
+    const bodyDays   = body.duration_days != null
+                         ? parseInt(body.duration_days, 10)
+                         : null;                   // optional duration override
     const db = createClient(env);
 
     if (is_active) {
@@ -302,8 +307,18 @@ export async function activateShopHandler(request, env) {
         if (durationDays < 1 || durationDays > 366) durationDays = null;
       }
 
-      await assignPlan(db, shopId, planName, durationDays);
-      return ok({ is_active: true, subscription_renewed: true, plan: planName, duration_days: durationDays });
+      // Admin UI override — if the admin explicitly chose a duration and/or
+      // plan in the activation modal, those take precedence over the auto-
+      // detected values from the subscription history.
+      const finalPlan = (bodyPlan && ['free','basic','pro'].includes(bodyPlan))
+                          ? bodyPlan
+                          : planName;
+      const finalDays = (bodyDays != null && bodyDays >= 1 && bodyDays <= 366)
+                          ? bodyDays
+                          : durationDays;
+
+      await assignPlan(db, shopId, finalPlan, finalDays);
+      return ok({ is_active: true, subscription_renewed: true, plan: finalPlan, duration_days: finalDays });
     }
 
     // Deactivation path — unchanged. Only toggles shops.is_active.
