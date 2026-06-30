@@ -2523,9 +2523,13 @@ async function loadUpgradePlans() {
       sel.innerHTML = '<option value="basic">Basic</option><option value="pro">Pro</option>';
       return;
     }
-    sel.innerHTML = data.map(p =>
-      `<option value="${p.name}">${p.display_name || p.name} — Rs ${p.price}/mo${p.description ? ' · ' + p.description : ''}</option>`
-    ).join('');
+    sel.innerHTML = data.map(p => {
+      const tokensTxt = (p.max_tokens_per_day == null)
+        ? 'unlimited tokens/day'
+        : `up to ${p.max_tokens_per_day} tokens/day`;
+      const limitTxt = p.description ? `${p.description} — ${tokensTxt}` : tokensTxt;
+      return `<option value="${p.name}">${p.display_name || p.name} — Rs ${p.price}/mo · ${limitTxt}</option>`;
+    }).join('');
   } catch(e) {
     // fallback to static if fetch fails
     sel.innerHTML = '<option value="basic">Basic</option><option value="pro">Pro</option>';
