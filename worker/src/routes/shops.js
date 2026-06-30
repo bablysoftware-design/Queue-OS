@@ -273,9 +273,22 @@ export async function activateShopHandler(request, env) {
       const active = await getActiveSubscription(db, shopId);
       const today  = new Date().toISOString().split('T')[0];
 
-      if (active && active.end_date >= today) {
-        // Valid, future-dated subscription already exists — do not touch
-        // subscriptions at all, just unhide the shop.
+      // Only take the "already valid, do nothing" shortcut when the admin
+      // did NOT explicitly request a plan/duration override. If the admin
+      // opened the activation modal and chose a plan + duration, that is
+      // deliberate intent and must always be honored — even if a
+      // technically-still-valid subscription already exists (e.g. it
+      // expires in a few days and the admin is proactively renewing it
+      // for a fresh period). Previously this branch unconditionally
+      // short-circuited on any future-dated end_date, silently discarding
+      // the admin's explicit duration_days/plan_name selection.
+      const hasExplicitOverride = (bodyDays != null && bodyDays >= 1 && bodyDays <= 366)
+                                || (bodyPlan && ['free','basic','pro'].includes(bodyPlan));
+
+      if (active && active.end_date >= today && !hasExplicitOverride) {
+        // Valid, future-dated subscription already exists and admin did not
+        // request a specific renewal — do not touch subscriptions at all,
+        // just unhide the shop.
         await db.update('shops', `id=eq.${shopId}`, { is_active: true });
         return ok({ is_active: true });
       }

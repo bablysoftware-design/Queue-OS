@@ -1005,7 +1005,7 @@ async function toggleActive(id, state, shopName, currentPlan) {
     openActivateModal(id, shopName || id.slice(0, 8), currentPlan || 'free');
   } else {
     // Deactivating — simple confirm then proceed
-    if (!confirm('Deactivate this shop?')) return;
+    if (!await showConfirm({ icon:'🔴', title:'Deactivate Shop?', body:'Customers will no longer be able to join the queue until reactivated.', ok:'Deactivate', cancel:'Cancel', okDanger:true })) return;
     try {
       await api('PATCH', `/admin/shops/${id}/activate`, { is_active: false });
       showToast('🔴 Shop deactivated', '');
@@ -1098,7 +1098,7 @@ async function saveSupportSettings() {
 }
 
 async function deleteShop(id, name) {
-  if (!confirm(`Permanently delete "${name}"? This cannot be undone.`)) return;
+  if (!await showConfirm({ icon:'🗑', title:'Delete Shop?', body:`Permanently delete <strong>${esc(name)}</strong>? This cannot be undone.`, ok:'Delete', cancel:'Cancel', okDanger:true })) return;
   try {
     await api('DELETE', `/admin/shops/${id}`);
     showToast(`🗑 ${name} deleted`, 'success');
@@ -1175,7 +1175,7 @@ async function approveReg(id) {
 }
 
 async function rejectReg(id) {
-  if (!confirm('Reject this registration request?')) return;
+  if (!await showConfirm({ icon:'✗', title:'Reject Registration?', body:'This business registration request will be declined.', ok:'Reject', cancel:'Cancel', okDanger:true })) return;
   try {
     await api('POST', `/admin/registrations/${id}/reject`);
     showToast('Registration rejected', '');
@@ -1514,6 +1514,39 @@ function scrollToPending() {
   const sec = document.getElementById('pending-section');
   if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
+
+// ── Styled confirm() replacement ────────────────────────────────
+function showConfirm({ icon='❓', title='', body='', ok='Confirm', cancel='Cancel', okDanger=false } = {}) {
+  return new Promise(resolve => {
+    let overlay = document.getElementById('inline-confirm-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'inline-confirm-overlay';
+      Object.assign(overlay.style, {
+        position:'fixed', inset:'0', background:'rgba(0,0,0,.8)',
+        backdropFilter:'blur(12px)', zIndex:'9997',
+        display:'none', alignItems:'center', justifyContent:'center', padding:'20px'
+      });
+      document.body.appendChild(overlay);
+    }
+    overlay.innerHTML = `
+      <div style="background:linear-gradient(160deg,rgba(17,24,39,.97),rgba(8,12,20,.98));border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:24px;width:100%;max-width:340px;animation:sheetUp .3s cubic-bezier(.16,1,.3,1) both">
+        <div style="font-size:28px;text-align:center;margin-bottom:12px">${icon}</div>
+        <div style="font-size:16px;font-weight:700;color:var(--text);text-align:center;margin-bottom:8px">${title}</div>
+        <div style="font-size:13px;color:var(--text2);text-align:center;line-height:1.6;margin-bottom:20px">${body}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <button id="inline-confirm-cancel" style="padding:12px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:transparent;color:rgba(241,245,249,.6);font-family:'Sora',sans-serif;font-size:13px;font-weight:600;cursor:pointer">${cancel}</button>
+          <button id="inline-confirm-ok" style="padding:12px;border:none;border-radius:12px;background:${okDanger?'rgba(248,113,113,.9)':'var(--gold)'};color:${okDanger?'#fff':'#0d1422'};font-family:'Sora',sans-serif;font-size:13px;font-weight:700;cursor:pointer">${ok}</button>
+        </div>
+      </div>`;
+    overlay.style.display = 'flex';
+    const close = (result) => { overlay.style.display = 'none'; resolve(result); };
+    document.getElementById('inline-confirm-ok').onclick     = () => close(true);
+    document.getElementById('inline-confirm-cancel').onclick = () => close(false);
+    overlay.onclick = (e) => { if (e.target === overlay) close(false); };
+  });
+}
+window.showConfirm = showConfirm;
 
 function showToast(msg, type = '') {
   const el = document.getElementById('toast');
