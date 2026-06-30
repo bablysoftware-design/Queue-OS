@@ -2607,6 +2607,7 @@ async function loadSubscriptionInfo() {
     const { data } = await api('GET', `/subscriptions?shop_id=${state.shopId}`);
     if (!data) return;
     state.currentPlan = data.plan_name || 'free';
+    state.currentSubStartDate = data.start_date || data.created_at || null;
     const badge    = document.getElementById('current-plan-badge');
     const nameEl   = document.getElementById('current-plan-name');
     const expiryEl = document.getElementById('current-plan-expiry');
@@ -2710,6 +2711,21 @@ async function checkMyUpgradeStatus() {
     const { data } = await api('GET', `/upgrade-requests/status?shop_id=${state.shopId}`);
     const req = data?.request;
     if (!req) { msg.style.display = 'none'; return; }
+
+    // Suppress stale request status: if the shop's current subscription
+    // started AFTER this request was last reviewed (or after it was
+    // created, for still-pending ones that got bypassed), the request
+    // is no longer relevant — the plan was changed through some other
+    // path (e.g. admin's direct Activate-with-duration modal) and this
+    // old request's outcome would be misleading to keep showing.
+    // We already have the current subscription's start_date from
+    // loadSubscriptionInfo() via state.currentSubStartDate.
+    const reqTimestamp = req.reviewed_at || req.created_at;
+    if (state.currentSubStartDate && reqTimestamp &&
+        new Date(state.currentSubStartDate) > new Date(reqTimestamp)) {
+      msg.style.display = 'none';
+      return;
+    }
 
     msg.style.display = 'block';
     if (req.status === 'approved') {
@@ -3037,9 +3053,10 @@ function toggleSettings() {
   if (show) {
     // Scroll settings into view smoothly
     setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
-    // Load live plan prices, then load subscription info to pre-select current plan
-    loadUpgradePlans().then(() => { loadSubscriptionInfo(); });
-    checkMyUpgradeStatus();
+    // Load live plan prices, then subscription info, THEN check upgrade
+    // request status — the staleness check inside checkMyUpgradeStatus()
+    // depends on state.currentSubStartDate being populated first.
+    loadUpgradePlans().then(() => loadSubscriptionInfo()).then(() => checkMyUpgradeStatus());
     loadPaymentInstructions();
     api('GET', `/shops/${state.shopId}`)
       .then(({ data }) => {
