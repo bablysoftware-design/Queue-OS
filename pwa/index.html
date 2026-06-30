@@ -1485,6 +1485,7 @@ button[style*="color:#f87171"] {
           <div>
             <div id="current-plan-name" style="font-weight:700;color:var(--gold)"></div>
             <div id="current-plan-expiry" style="color:var(--text2);font-size:11px;margin-top:2px"></div>
+            <div id="current-plan-limits" style="color:var(--text3);font-size:10px;margin-top:2px"></div>
           </div>
         </div>
 
@@ -2600,6 +2601,12 @@ async function loadSubscriptionInfo() {
     const expiryEl = document.getElementById('current-plan-expiry');
     if (badge)  badge.style.display  = 'flex';
     if (nameEl) nameEl.textContent   = `${data.plan_name?.toUpperCase() || 'FREE'} Plan`;
+    const limitsEl = document.getElementById('current-plan-limits');
+    if (limitsEl) {
+      const tokensLimit = data.max_tokens_per_day != null ? data.max_tokens_per_day : '—';
+      const queueLimit  = data.max_queue_size     != null ? data.max_queue_size     : '—';
+      limitsEl.textContent = `📋 ${tokensLimit} tokens/day · ${queueLimit} max queue size`;
+    }
     if (expiryEl) {
       const end = data.end_date ? new Date(data.end_date) : null;
       const today = new Date();

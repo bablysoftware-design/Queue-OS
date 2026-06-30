@@ -1,15 +1,17 @@
 <!DOCTYPE html>
-<html lang="ur" dir="rtl">
+<html lang="en" dir="ltr" id="reg-html">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="theme-color" content="#050810"/>
-<title>بزنس رجسٹریشن — WaitMate</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
+<title id="reg-page-title">Business Registration — WaitMate</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Noto+Nastaliq+Urdu:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
 <style>
 :root{--void:#050810;--surface:#0d1424;--glass:rgba(13,20,36,.8);--border:rgba(212,175,55,.12);--gold:#D4AF37;--gold2:#F5C842;--gold3:#FFE066;--cyan:#00D4FF;--red:#FF4560;--green:#00E396;--text:#EDE8D0;--muted:rgba(237,232,208,.4);}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Noto Nastaliq Urdu',serif;background:var(--void);color:var(--text);min-height:100vh;direction:rtl;}
+body{font-family:'Sora',sans-serif;background:var(--void);color:var(--text);min-height:100vh;direction:ltr;}
+body.rtl-mode{font-family:'Noto Nastaliq Urdu',serif;direction:rtl;}
+body.rtl-mode .field input,body.rtl-mode .field select{direction:rtl;text-align:right;}
 #particle-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;}
 .holo-grid{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(212,175,55,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(212,175,55,.04) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;}
 .container{position:relative;z-index:1;max-width:500px;margin:0 auto;padding:32px 20px 60px;}
@@ -29,7 +31,7 @@ h1{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;background:li
 
 .field{margin-bottom:16px;}
 .field label{display:block;font-size:11px;color:var(--muted);margin-bottom:7px;letter-spacing:.5px;}
-.field input,.field select{width:100%;background:rgba(5,8,16,.6);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:inherit;font-size:14px;outline:none;transition:border-color .3s,box-shadow .3s;direction:ltr;text-align:right;}
+.field input,.field select{width:100%;background:rgba(5,8,16,.6);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:inherit;font-size:14px;outline:none;transition:border-color .3s,box-shadow .3s;}
 .field input:focus,.field select:focus{border-color:var(--gold);box-shadow:0 0 16px rgba(212,175,55,.15);}
 .field input::placeholder{color:var(--muted);}
 .field select option{background:var(--surface);color:var(--text);}
@@ -71,99 +73,124 @@ h1{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;background:li
 <div class="container">
 
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-    <button onclick="history.length>1?history.back():window.location.href='/'" style="padding:8px 16px;border:1px solid rgba(212,175,55,.3);border-radius:100px;background:transparent;color:rgba(237,232,208,.6);font-family:inherit;font-size:12px;cursor:pointer;transition:all .2s" onmouseover="this.style.color='#D4AF37';this.style.borderColor='#D4AF37'" onmouseout="this.style.color='rgba(237,232,208,.6)';this.style.borderColor='rgba(212,175,55,.3)'">← واپس</button>
-    <div style="font-size:11px;color:rgba(237,232,208,.4)">WaitMate</div>
+    <button onclick="history.length>1?history.back():window.location.href='/'" id="reg-back-btn" style="padding:8px 16px;border:1px solid rgba(212,175,55,.3);border-radius:100px;background:transparent;color:rgba(237,232,208,.6);font-family:inherit;font-size:12px;cursor:pointer;transition:all .2s" onmouseover="this.style.color='#D4AF37';this.style.borderColor='#D4AF37'" onmouseout="this.style.color='rgba(237,232,208,.6)';this.style.borderColor='rgba(212,175,55,.3)'" data-en="← Back" data-ur="← واپس">← Back</button>
+    <button onclick="toggleRegLang()" id="reg-lang-btn" style="padding:7px 14px;border:1px solid rgba(212,175,55,.3);border-radius:100px;background:rgba(212,175,55,.06);color:#D4AF37;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">اردو</button>
   </div>
   <div class="header">
     <div class="orb"><div class="orb-inner">🏪</div></div>
     <h1>WaitMate</h1>
-    <p>Your Smart Queue Partner — اپنا بزنس رجسٹر کریں</p>
+    <p data-en="Your Smart Queue Partner — Register your business" data-ur="Your Smart Queue Partner — اپنا بزنس رجسٹر کریں">Your Smart Queue Partner — Register your business</p>
   </div>
 
   <div class="card" id="form-card">
-    <div class="card-title">بزنس رجسٹریشن</div>
+    <div class="card-title" data-en="Business Registration" data-ur="بزنس رجسٹریشن">Business Registration</div>
 
     <div class="field">
-      <label>بزنس کا نام *</label>
-      <input id="r-name" type="text" placeholder="مثال: علی باربر شاپ"/>
+      <label data-en="Business Name *" data-ur="بزنس کا نام *">Business Name *</label>
+      <input id="r-name" type="text" placeholder="e.g. Ali Barber Shop" data-en-ph="e.g. Ali Barber Shop" data-ur-ph="مثال: علی باربر شاپ"/>
     </div>
 
     <div class="field">
-      <label>واٹس ایپ نمبر *</label>
+      <label data-en="WhatsApp Number *" data-ur="واٹس ایپ نمبر *">WhatsApp Number *</label>
       <input id="r-phone" type="tel" placeholder="923001234567"/>
     </div>
 
     <div class="field">
-      <label>4 ہندسہ پن (لاگ ان کے لیے) *</label>
-      <input id="r-pin" type="number" placeholder="مثال: 1234" maxlength="4"/>
+      <label data-en="4-Digit PIN (for login) *" data-ur="4 ہندسہ پن (لاگ ان کے لیے) *">4-Digit PIN (for login) *</label>
+      <input id="r-pin" type="number" placeholder="e.g. 1234" maxlength="4" data-en-ph="e.g. 1234" data-ur-ph="مثال: 1234"/>
     </div>
 
     <div class="field" style="position:relative">
-      <label>ملک *</label>
-      <input id="r-country" type="text" placeholder="مثال: Pakistan" autocomplete="off" oninput="acLoc(this,'country','ac-cnt')"/>
+      <label data-en="Country *" data-ur="ملک *">Country *</label>
+      <input id="r-country" type="text" placeholder="e.g. Pakistan" autocomplete="off" oninput="acLoc(this,'country','ac-cnt')" data-en-ph="e.g. Pakistan" data-ur-ph="مثال: Pakistan"/>
       <div id="ac-cnt" class="ac-drop"></div>
     </div>
 
     <div class="field" style="position:relative">
-      <label>شہر *</label>
-      <input id="r-city" type="text" placeholder="مثال: Rawalpindi" autocomplete="off" oninput="acLoc(this,'city','ac-cty')"/>
+      <label data-en="City *" data-ur="شہر *">City *</label>
+      <input id="r-city" type="text" placeholder="e.g. Rawalpindi" autocomplete="off" oninput="acLoc(this,'city','ac-cty')" data-en-ph="e.g. Rawalpindi" data-ur-ph="مثال: Rawalpindi"/>
       <div id="ac-cty" class="ac-drop"></div>
     </div>
 
     <div class="field" style="position:relative">
-      <label>بزنس کی قسم *</label>
-      <input id="r-cat" type="text" placeholder="مثال: barber, clinic, pharmacy" autocomplete="off" oninput="this.dataset.canonicalValue=''; acCat(this,'ac-catd')"/>
+      <label data-en="Business Category *" data-ur="بزنس کی قسم *">Business Category *</label>
+      <input id="r-cat" type="text" placeholder="e.g. barber, clinic, pharmacy" autocomplete="off" oninput="this.dataset.canonicalValue=''; acCat(this,'ac-catd')" data-en-ph="e.g. barber, clinic, pharmacy" data-ur-ph="مثال: barber, clinic, pharmacy"/>
       <div id="ac-catd" class="ac-drop"></div>
     </div>
 
     <div class="field" style="position:relative">
-      <label>علاقہ *</label>
-      <input id="r-area" type="text" placeholder="مثال: North Nazimabad, Gulberg, F-7" autocomplete="off" oninput="acLoc(this,'area','ac-area')"/>
+      <label data-en="Area *" data-ur="علاقہ *">Area *</label>
+      <input id="r-area" type="text" placeholder="e.g. North Nazimabad, Gulberg, F-7" autocomplete="off" oninput="acLoc(this,'area','ac-area')" data-en-ph="e.g. North Nazimabad, Gulberg, F-7" data-ur-ph="مثال: North Nazimabad, Gulberg, F-7"/>
       <div id="ac-area" class="ac-drop"></div>
     </div>
 
     <div class="field">
-      <label>ٹوکن موڈ</label>
+      <label data-en="Token Mode" data-ur="ٹوکن موڈ">Token Mode</label>
       <div class="token-mode-row" id="token-mode-row">
         <div class="mode-card selected" id="mode-free" onclick="selectMode('free')">
           <div class="mc-icon">🆓</div>
           <div class="mc-title">Free</div>
-          <div class="mc-desc">مفت ٹوکن</div>
+          <div class="mc-desc" data-en="Free token" data-ur="مفت ٹوکن">Free token</div>
         </div>
         <div class="mode-card" id="mode-paid" onclick="selectMode('paid')">
           <div class="mc-icon">💳</div>
           <div class="mc-title">Paid</div>
-          <div class="mc-desc">ادائیگی کے ساتھ</div>
+          <div class="mc-desc" data-en="With payment" data-ur="ادائیگی کے ساتھ">With payment</div>
         </div>
       </div>
       <input type="hidden" id="r-token-mode" value="free"/>
     </div>
 
     <div class="field" id="price-field" style="display:none">
-      <label>ٹوکن قیمت (روپے) *</label>
-      <input id="r-token-price" type="number" min="1" max="9999" placeholder="مثال: 100" style="direction:ltr;text-align:left"/>
-      <div style="font-size:11px;color:rgba(237,232,208,.4);margin-top:5px">گاہک کو ٹوکن لینے سے پہلے یہ رقم ادا کرنی ہوگی</div>
+      <label data-en="Token Price (Rs) *" data-ur="ٹوکن قیمت (روپے) *">Token Price (Rs) *</label>
+      <input id="r-token-price" type="number" min="1" max="9999" placeholder="e.g. 100" data-en-ph="e.g. 100" data-ur-ph="مثال: 100"/>
+      <div style="font-size:11px;color:rgba(237,232,208,.4);margin-top:5px" data-en="Customer must pay this amount before getting a token" data-ur="گاہک کو ٹوکن لینے سے پہلے یہ رقم ادا کرنی ہوگی">Customer must pay this amount before getting a token</div>
     </div>
 
-    <button class="btn-gold" id="reg-btn" onclick="submitReg()">رجسٹریشن درخواست دیں</button>
+    <button class="btn-gold" id="reg-btn" onclick="submitReg()" data-en="Submit Registration" data-ur="رجسٹریشن درخواست دیں">Submit Registration</button>
     <div class="err" id="reg-err"></div>
   </div>
 
   <div class="success-box" id="success-box">
     <div class="icon">✅</div>
-    <h2>درخواست موصول ہو گئی!</h2>
-    <p>
-      آپ کی درخواست زیر غور ہے۔<br/>
-      ایڈمن جلد منظوری دے گا۔<br/>
-      منظوری کے بعد آپ <strong id="login-domain"></strong> پر لاگ ان کر سکتے ہیں۔<br/><br/>
-      30 دن کا مفت ٹرائل خود بخود شروع ہو گا۔<br/><br/>
-      <a id="success-support-link" href="#" target="_blank" rel="noopener" style="color:#25D366;font-weight:600;text-decoration:none;font-size:13px">💬 کوئی مسئلہ؟ WhatsApp Support</a>
+    <h2 data-en="Request Received!" data-ur="درخواست موصول ہو گئی!">Request Received!</h2>
+    <p id="success-box-text">
+      <span data-en="Your request is under review." data-ur="آپ کی درخواست زیر غور ہے۔">Your request is under review.</span><br/>
+      <span data-en="Admin will approve it soon." data-ur="ایڈمن جلد منظوری دے گا۔">Admin will approve it soon.</span><br/>
+      <span data-en="After approval you can log in at" data-ur="منظوری کے بعد آپ">After approval you can log in at</span> <strong id="login-domain"></strong> <span data-en="." data-ur="پر لاگ ان کر سکتے ہیں۔">.</span><br/><br/>
+      <span data-en="A 30-day free trial will start automatically." data-ur="30 دن کا مفت ٹرائل خود بخود شروع ہو گا۔">A 30-day free trial will start automatically.</span><br/><br/>
+      <a id="success-support-link" href="#" target="_blank" rel="noopener" style="color:#25D366;font-weight:600;text-decoration:none;font-size:13px" data-en="💬 Need help? WhatsApp Support" data-ur="💬 کوئی مسئلہ؟ WhatsApp Support">💬 Need help? WhatsApp Support</a>
     </p>
   </div>
 
 </div>
 
 <script src="/categories.js"></script>
+<script>
+// ── Language toggle ──────────────────────────────────────────
+function applyRegLanguage() {
+  const lang = localStorage.getItem('reg_lang') || 'en';
+  const isUr = lang === 'ur';
+  document.body.classList.toggle('rtl-mode', isUr);
+  document.getElementById('reg-html').setAttribute('lang', isUr ? 'ur' : 'en');
+  document.getElementById('reg-html').setAttribute('dir', isUr ? 'rtl' : 'ltr');
+  document.getElementById('reg-lang-btn').textContent = isUr ? 'English' : 'اردو';
+  document.getElementById('reg-page-title').textContent = isUr ? 'بزنس رجسٹریشن — WaitMate' : 'Business Registration — WaitMate';
+
+  document.querySelectorAll('[data-en][data-ur]').forEach(el => {
+    el.textContent = isUr ? el.dataset.ur : el.dataset.en;
+  });
+  document.querySelectorAll('[data-en-ph][data-ur-ph]').forEach(el => {
+    el.placeholder = isUr ? el.dataset.urPh : el.dataset.enPh;
+  });
+}
+function toggleRegLang() {
+  const cur = localStorage.getItem('reg_lang') || 'en';
+  localStorage.setItem('reg_lang', cur === 'en' ? 'ur' : 'en');
+  applyRegLanguage();
+}
+applyRegLanguage();
+</script>
 <script>
 const canvas=document.getElementById('particle-canvas'),ctx=canvas.getContext('2d');
 let W,H,pts=[];
@@ -277,13 +304,27 @@ async function submitReg(){
   const btn     = document.getElementById('reg-btn');
   errEl.textContent = '';
 
+  const isUr = (localStorage.getItem('reg_lang') || 'en') === 'ur';
+  const RT = {
+    nameReq:   isUr ? 'بزنس کا نام ضروری ہے' : 'Business name is required',
+    phoneReq:  isUr ? 'واٹس ایپ نمبر ضروری ہے' : 'WhatsApp number is required',
+    pinReq:    isUr ? 'پن 4 ہندسوں کا ہونا چاہیے' : 'PIN must be 4 digits',
+    cityReq:   isUr ? 'شہر ضروری ہے — مثال: Karachi, Lahore' : 'City is required — e.g. Karachi, Lahore',
+    areaReq:   isUr ? 'علاقہ ضروری ہے — مثال: North Nazimabad, Gulberg' : 'Area is required — e.g. North Nazimabad, Gulberg',
+    catReq:    isUr ? 'بزنس کی قسم ضروری ہے — مثال: Barber, Clinic' : 'Business category is required — e.g. Barber, Clinic',
+    priceReq:  isUr ? 'ادا شدہ موڈ میں قیمت ضروری ہے' : 'Price is required for paid mode',
+    genericErr:isUr ? 'خرابی' : 'Error',
+    connErr:   isUr ? 'کنکشن خرابی' : 'Connection error',
+    submitBtn: isUr ? 'رجسٹریشن درخواست دیں' : 'Submit Registration',
+  };
+
   // ── Required field validation ──
-  if (!name)                      return errEl.textContent = 'بزنس کا نام ضروری ہے';
-  if (!phone)                     return errEl.textContent = 'واٹس ایپ نمبر ضروری ہے';
-  if (!pin || pin.length !== 4)   return errEl.textContent = 'پن 4 ہندسوں کا ہونا چاہیے';
-  if (!city)                      return errEl.textContent = 'شہر ضروری ہے — مثال: Karachi, Lahore';
-  if (!area)                      return errEl.textContent = 'علاقہ ضروری ہے — مثال: North Nazimabad, Gulberg';
-  if (!cat)                       return errEl.textContent = 'بزنس کی قسم ضروری ہے — مثال: Barber, Clinic';
+  if (!name)                      return errEl.textContent = RT.nameReq;
+  if (!phone)                     return errEl.textContent = RT.phoneReq;
+  if (!pin || pin.length !== 4)   return errEl.textContent = RT.pinReq;
+  if (!city)                      return errEl.textContent = RT.cityReq;
+  if (!area)                      return errEl.textContent = RT.areaReq;
+  if (!cat)                       return errEl.textContent = RT.catReq;
 
   btn.disabled = true; btn.textContent = '...';
   try {
@@ -292,8 +333,8 @@ async function submitReg(){
     if (token_mode === 'paid') {
       const price = parseInt(document.getElementById('r-token-price')?.value || '0', 10);
       if (!price || price < 1) {
-        errEl.textContent = 'ادا شدہ موڈ میں قیمت ضروری ہے';
-        btn.disabled = false; btn.textContent = 'رجسٹریشن درخواست دیں';
+        errEl.textContent = RT.priceReq;
+        btn.disabled = false; btn.textContent = RT.submitBtn;
         return;
       }
       body.token_price = price;
@@ -308,12 +349,12 @@ async function submitReg(){
       const suppEl = document.getElementById('success-support-link');
       if (suppEl) suppEl.href = waSupport(`Hi WaitMate Support, I just registered my business "${name}" and need help.`);
     } else {
-      errEl.textContent = data.error || 'خرابی';
-      btn.disabled = false; btn.textContent = 'رجسٹریشن درخواست دیں';
+      errEl.textContent = data.error || RT.genericErr;
+      btn.disabled = false; btn.textContent = RT.submitBtn;
     }
   } catch(e) {
-    errEl.textContent = 'کنکشن خرابی';
-    btn.disabled = false; btn.textContent = 'رجسٹریشن درخواست دیں';
+    errEl.textContent = RT.connErr;
+    btn.disabled = false; btn.textContent = RT.submitBtn;
   }
 }
 </script>
