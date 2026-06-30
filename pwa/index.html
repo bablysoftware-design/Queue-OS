@@ -2527,8 +2527,15 @@ async function loadUpgradePlans() {
       const tokensTxt = (p.max_tokens_per_day == null)
         ? 'unlimited tokens/day'
         : `up to ${p.max_tokens_per_day} tokens/day`;
-      const limitTxt = p.description ? `${p.description} — ${tokensTxt}` : tokensTxt;
-      return `<option value="${p.name}">${p.display_name || p.name} — Rs ${p.price}/mo · ${limitTxt}</option>`;
+      const queueTxt = (p.max_queue_size == null)
+        ? 'unlimited queue'
+        : `up to ${p.max_queue_size} in queue`;
+      // Description is intentionally NOT used here — it's free-text the
+      // admin can edit independently and frequently drifts out of sync
+      // with the real limit columns (e.g. still says "unlimited" after
+      // the actual number was lowered). Only live numeric columns are
+      // shown so this can never go stale again.
+      return `<option value="${p.name}">${p.display_name || p.name} — Rs ${p.price}/mo · ${tokensTxt} · ${queueTxt}</option>`;
     }).join('');
   } catch(e) {
     // fallback to static if fetch fails
