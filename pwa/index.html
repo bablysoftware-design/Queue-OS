@@ -1458,20 +1458,20 @@ button[style*="color:#f87171"] {
 
       <!-- Business Profile -->
       <div class="settings-section">
-        <div class="settings-section-title">Business Profile</div>
+        <div class="settings-section-title" id="lbl-business-profile">Business Profile</div>
         <div class="settings-field">
-          <label>Address</label>
+          <label id="lbl-address">Address</label>
           <input id="s-address" type="text" placeholder="Full address"/>
         </div>
         <div class="settings-field">
-          <label>Opening Hours</label>
+          <label id="lbl-opening-hours">Opening Hours</label>
           <input id="s-hours" type="text" placeholder="e.g. Mon-Sat 9am-6pm, Sun 10am-4pm"/>
         </div>
         <div class="settings-field">
-          <label>Description</label>
+          <label id="lbl-description">Description</label>
           <textarea id="s-description" rows="2" placeholder="Brief description of your business" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;resize:none"></textarea>
         </div>
-        <button class="btn-save" onclick="saveProfile()" style="margin-top:6px">Save Profile</button>
+        <button class="btn-save" id="save-profile-btn" onclick="saveProfile()" style="margin-top:6px">Save Profile</button>
         <div id="profile-msg" style="font-size:11px;color:var(--green);margin-top:4px;display:none"></div>
       </div>
 
@@ -1677,6 +1677,26 @@ function applyLanguage() {
   document.getElementById('admin-login-btn').textContent    = t('adminLogin');
   document.getElementById('install-title').textContent      = t('appName') + ' App';
   document.getElementById('install-sub').textContent        = t('installSub') || 'Add to home screen';
+
+  // Business Profile section
+  const lblBp = document.getElementById('lbl-business-profile'); if (lblBp) lblBp.textContent = t('businessProfile');
+  const lblAddr = document.getElementById('lbl-address'); if (lblAddr) lblAddr.textContent = t('addressLabel');
+  const sAddr = document.getElementById('s-address'); if (sAddr) sAddr.placeholder = t('addressPlaceholder');
+  const lblHours = document.getElementById('lbl-opening-hours'); if (lblHours) lblHours.textContent = t('openingHoursLabel');
+  const lblDesc = document.getElementById('lbl-description'); if (lblDesc) lblDesc.textContent = t('descriptionLabel');
+  const sDesc = document.getElementById('s-description'); if (sDesc) sDesc.placeholder = t('descriptionPlaceholder');
+  const saveProfBtn = document.getElementById('save-profile-btn'); if (saveProfBtn) saveProfBtn.textContent = t('saveProfileBtn');
+
+  // Renew/Upgrade Plan section
+  const payRef = document.getElementById('upgrade-payment-ref'); if (payRef) payRef.placeholder = t('paymentRefPlaceholder');
+  const upNote = document.getElementById('upgrade-note'); if (upNote) upNote.placeholder = t('additionalNotePlaceholder');
+  const ssPreview = document.getElementById('upgrade-screenshot-preview');
+  if (ssPreview && !ssPreview.dataset.uploaded) {
+    ssPreview.innerHTML = `${t('attachScreenshotHint')} <span style="color:var(--text3)">${t('recommendedHint')}</span>`;
+  }
+  const upLbl = document.getElementById('upgrade-plan-label');
+  if (upLbl && !state.currentPlan) upLbl.textContent = t('selectPlanLabel');
+  if (typeof onUpgradePlanChange === 'function') onUpgradePlanChange(); // refresh dynamic submit button text
 
   // Status text
   updateStatusToggle(state.isOpen);
@@ -2567,6 +2587,7 @@ function onUpgradeScreenshot(input) {
     const preview = document.getElementById('upgrade-screenshot-preview');
     if (preview) {
       preview.innerHTML = `<img src="${e.target.result}" style="max-width:100%;max-height:120px;border-radius:8px;margin-bottom:4px"><br><span style="font-size:10px;color:var(--green)">✓ Screenshot ready to upload</span>`;
+      preview.dataset.uploaded = 'true';
     }
     // Store base64 for submission
     input.dataset.base64 = e.target.result;
