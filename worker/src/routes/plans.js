@@ -12,7 +12,7 @@ export async function listPublicPlans(request, env) {
   try {
     const db    = createClient(env);
     const plans = await db.select('plans',
-      'select=name,display_name,price,description&order=price.asc'
+      'select=name,display_name,price,description,max_tokens_per_day,max_queue_size&order=price.asc'
     );
     // Return only paid plans (exclude free) for the upgrade dropdown
     const paid = (plans || []).filter(p => p.name !== 'free');
