@@ -1166,13 +1166,13 @@ button[style*="color:#f87171"] {
       <span id="cust-btn-txt">I'm a Customer — Get Token</span>
     </button>
 
-    <div class="divider" style="margin-top:10px">— or —</div>
+    <div class="divider" id="login-or-divider" style="margin-top:10px">— or —</div>
     <button type="button" onclick="window.location.assign('/register.html')" style="width:100%;padding:13px;border:1.5px solid rgba(52,211,153,0.5);border-radius:10px;background:rgba(52,211,153,0.07);color:#34D399;font-family:'Sora',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:0.01em;" onmouseover="this.style.background='rgba(52,211,153,0.14)'" onmouseout="this.style.background='rgba(52,211,153,0.07)'">
       <span style="font-size:16px">🏪</span>
-      <span>Apna Business Add Karein</span>
+      <span id="lbl-add-business">Register Your Business</span>
     </button>
     <div style="margin-top:10px">
-      <button onclick="showDirectory()" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:9px;background:transparent;color:var(--text3);font-family:var(--font);font-size:12px;cursor:pointer">🔍 Browse Shops Directory</button>
+      <button onclick="showDirectory()" id="lbl-browse-directory" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:9px;background:transparent;color:var(--text3);font-family:var(--font);font-size:12px;cursor:pointer">🔍 Browse Shops Directory</button>
     </div>
     <div style="text-align:center;margin-top:14px;font-size:11px;color:rgba(237,232,208,.35)">Need help? <a id="login-support-link" href="#" target="_blank" rel="noopener" style="color:var(--gold);text-decoration:none">WhatsApp Support</a></div>
   </div>
@@ -1458,20 +1458,20 @@ button[style*="color:#f87171"] {
 
       <!-- Business Profile -->
       <div class="settings-section">
-        <div class="settings-section-title">Business Profile</div>
+        <div class="settings-section-title" id="lbl-business-profile">Business Profile</div>
         <div class="settings-field">
-          <label>Address</label>
+          <label id="lbl-address">Address</label>
           <input id="s-address" type="text" placeholder="Full address"/>
         </div>
         <div class="settings-field">
-          <label>Opening Hours</label>
+          <label id="lbl-opening-hours">Opening Hours</label>
           <input id="s-hours" type="text" placeholder="e.g. Mon-Sat 9am-6pm, Sun 10am-4pm"/>
         </div>
         <div class="settings-field">
-          <label>Description</label>
+          <label id="lbl-description">Description</label>
           <textarea id="s-description" rows="2" placeholder="Brief description of your business" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;resize:none"></textarea>
         </div>
-        <button class="btn-save" onclick="saveProfile()" style="margin-top:6px">Save Profile</button>
+        <button class="btn-save" id="save-profile-btn" onclick="saveProfile()" style="margin-top:6px">Save Profile</button>
         <div id="profile-msg" style="font-size:11px;color:var(--green);margin-top:4px;display:none"></div>
       </div>
 
@@ -1677,6 +1677,36 @@ function applyLanguage() {
   document.getElementById('admin-login-btn').textContent    = t('adminLogin');
   document.getElementById('install-title').textContent      = t('appName') + ' App';
   document.getElementById('install-sub').textContent        = t('installSub') || 'Add to home screen';
+
+  // Login screen
+  const loginDiv1 = document.getElementById('login-divider');
+  if (loginDiv1) loginDiv1.textContent = t('orSeparator');
+  const loginDiv2 = document.getElementById('login-or-divider');
+  if (loginDiv2) loginDiv2.textContent = t('orSeparator');
+  const lblAddBiz = document.getElementById('lbl-add-business');
+  if (lblAddBiz) lblAddBiz.textContent = t('addBusinessBtn').replace('🏪 ', '');
+  const lblBrowse = document.getElementById('lbl-browse-directory');
+  if (lblBrowse) lblBrowse.textContent = t('browseDirectory');
+
+  // Business Profile section
+  const lblBp = document.getElementById('lbl-business-profile'); if (lblBp) lblBp.textContent = t('businessProfile');
+  const lblAddr = document.getElementById('lbl-address'); if (lblAddr) lblAddr.textContent = t('addressLabel');
+  const sAddr = document.getElementById('s-address'); if (sAddr) sAddr.placeholder = t('addressPlaceholder');
+  const lblHours = document.getElementById('lbl-opening-hours'); if (lblHours) lblHours.textContent = t('openingHoursLabel');
+  const lblDesc = document.getElementById('lbl-description'); if (lblDesc) lblDesc.textContent = t('descriptionLabel');
+  const sDesc = document.getElementById('s-description'); if (sDesc) sDesc.placeholder = t('descriptionPlaceholder');
+  const saveProfBtn = document.getElementById('save-profile-btn'); if (saveProfBtn) saveProfBtn.textContent = t('saveProfileBtn');
+
+  // Renew/Upgrade Plan section
+  const payRef = document.getElementById('upgrade-payment-ref'); if (payRef) payRef.placeholder = t('paymentRefPlaceholder');
+  const upNote = document.getElementById('upgrade-note'); if (upNote) upNote.placeholder = t('additionalNotePlaceholder');
+  const ssPreview = document.getElementById('upgrade-screenshot-preview');
+  if (ssPreview && !ssPreview.dataset.uploaded) {
+    ssPreview.innerHTML = `${t('attachScreenshotHint')} <span style="color:var(--text3)">${t('recommendedHint')}</span>`;
+  }
+  const upLbl = document.getElementById('upgrade-plan-label');
+  if (upLbl && !state.currentPlan) upLbl.textContent = t('selectPlanLabel');
+  if (typeof onUpgradePlanChange === 'function') onUpgradePlanChange(); // refresh dynamic submit button text
 
   // Status text
   updateStatusToggle(state.isOpen);
@@ -2527,8 +2557,15 @@ async function loadUpgradePlans() {
       const tokensTxt = (p.max_tokens_per_day == null)
         ? 'unlimited tokens/day'
         : `up to ${p.max_tokens_per_day} tokens/day`;
-      const limitTxt = p.description ? `${p.description} — ${tokensTxt}` : tokensTxt;
-      return `<option value="${p.name}">${p.display_name || p.name} — Rs ${p.price}/mo · ${limitTxt}</option>`;
+      const queueTxt = (p.max_queue_size == null)
+        ? 'unlimited queue'
+        : `up to ${p.max_queue_size} in queue`;
+      // Description is intentionally NOT used here — it's free-text the
+      // admin can edit independently and frequently drifts out of sync
+      // with the real limit columns (e.g. still says "unlimited" after
+      // the actual number was lowered). Only live numeric columns are
+      // shown so this can never go stale again.
+      return `<option value="${p.name}">${p.display_name || p.name} — Rs ${p.price}/mo · ${tokensTxt} · ${queueTxt}</option>`;
     }).join('');
   } catch(e) {
     // fallback to static if fetch fails
@@ -2560,6 +2597,7 @@ function onUpgradeScreenshot(input) {
     const preview = document.getElementById('upgrade-screenshot-preview');
     if (preview) {
       preview.innerHTML = `<img src="${e.target.result}" style="max-width:100%;max-height:120px;border-radius:8px;margin-bottom:4px"><br><span style="font-size:10px;color:var(--green)">✓ Screenshot ready to upload</span>`;
+      preview.dataset.uploaded = 'true';
     }
     // Store base64 for submission
     input.dataset.base64 = e.target.result;
@@ -2579,17 +2617,17 @@ function onUpgradePlanChange() {
   const current  = state.currentPlan || 'free';
   const isRenewal = selected && selected === current;
   if (isRenewal) {
-    if (btn)   btn.textContent   = '🔄 Submit Renewal Request';
-    if (lbl)   lbl.textContent   = `Renewing your current ${selected.toUpperCase()} plan`;
-    if (title) title.textContent = '🔄 Renew Plan';
+    if (btn)   btn.textContent   = t('renewBtnLabel');
+    if (lbl)   lbl.textContent   = t('renewingCurrentPlan', {plan: selected.toUpperCase()});
+    if (title) title.textContent = t('renewSectionTitle');
   } else if (selected && selected !== current) {
-    if (btn)   btn.textContent   = '📤 Submit Upgrade Request';
-    if (lbl)   lbl.textContent   = `Upgrading from ${current.toUpperCase()} → ${selected.toUpperCase()}`;
-    if (title) title.textContent = '📦 Upgrade Plan';
+    if (btn)   btn.textContent   = t('upgradeBtnLabel');
+    if (lbl)   lbl.textContent   = t('upgradingFromTo', {from: current.toUpperCase(), to: selected.toUpperCase()});
+    if (title) title.textContent = t('upgradeSectionTitle');
   } else {
-    if (btn)   btn.textContent   = '📤 Submit Request';
-    if (lbl)   lbl.textContent   = 'Select plan';
-    if (title) title.textContent = '📦 Plan & Upgrade';
+    if (btn)   btn.textContent   = t('submitRequestBtn');
+    if (lbl)   lbl.textContent   = t('selectPlanLabel');
+    if (title) title.textContent = t('planUpgradeSectionTitle');
   }
 }
 window.onUpgradePlanChange = onUpgradePlanChange;
@@ -2600,6 +2638,7 @@ async function loadSubscriptionInfo() {
     const { data } = await api('GET', `/subscriptions?shop_id=${state.shopId}`);
     if (!data) return;
     state.currentPlan = data.plan_name || 'free';
+    state.currentSubStartDate = data.start_date || data.created_at || null;
     const badge    = document.getElementById('current-plan-badge');
     const nameEl   = document.getElementById('current-plan-name');
     const expiryEl = document.getElementById('current-plan-expiry');
@@ -2703,6 +2742,21 @@ async function checkMyUpgradeStatus() {
     const { data } = await api('GET', `/upgrade-requests/status?shop_id=${state.shopId}`);
     const req = data?.request;
     if (!req) { msg.style.display = 'none'; return; }
+
+    // Suppress stale request status: if the shop's current subscription
+    // started AFTER this request was last reviewed (or after it was
+    // created, for still-pending ones that got bypassed), the request
+    // is no longer relevant — the plan was changed through some other
+    // path (e.g. admin's direct Activate-with-duration modal) and this
+    // old request's outcome would be misleading to keep showing.
+    // We already have the current subscription's start_date from
+    // loadSubscriptionInfo() via state.currentSubStartDate.
+    const reqTimestamp = req.reviewed_at || req.created_at;
+    if (state.currentSubStartDate && reqTimestamp &&
+        new Date(state.currentSubStartDate) > new Date(reqTimestamp)) {
+      msg.style.display = 'none';
+      return;
+    }
 
     msg.style.display = 'block';
     if (req.status === 'approved') {
@@ -3030,9 +3084,10 @@ function toggleSettings() {
   if (show) {
     // Scroll settings into view smoothly
     setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
-    // Load live plan prices, then load subscription info to pre-select current plan
-    loadUpgradePlans().then(() => { loadSubscriptionInfo(); });
-    checkMyUpgradeStatus();
+    // Load live plan prices, then subscription info, THEN check upgrade
+    // request status — the staleness check inside checkMyUpgradeStatus()
+    // depends on state.currentSubStartDate being populated first.
+    loadUpgradePlans().then(() => loadSubscriptionInfo()).then(() => checkMyUpgradeStatus());
     loadPaymentInstructions();
     api('GET', `/shops/${state.shopId}`)
       .then(({ data }) => {

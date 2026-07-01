@@ -44,7 +44,7 @@ export async function createToken(
 
   const shop = shops[0];
 
-  if (!shop.is_active) throw new Error('آپ کا فری ٹرائل ختم ہو گیا ہے۔ پلان لیں۔');
+  if (!shop.is_active) throw new Error('یہ دکان ابھی فعال نہیں ہے۔ کچھ دیر بعد دوبارہ کوشش کریں۔');
   // opts.bypassOpenCheck: set true for admin-approved payment requests
   // (business explicitly approving — they decide to issue regardless of open state)
   if (!shop.is_open && !opts.bypassOpenCheck) throw new Error(`${shop.name} ابھی بند ہے۔ بعد میں آئیں۔`);

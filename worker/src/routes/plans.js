@@ -77,6 +77,19 @@ export async function updatePlan(request, env) {
           limitUpdate
         );
         subscriptionsUpdated = rows?.length || 0;
+        // Also re-activate any shops in this plan that were incorrectly
+        // deactivated by the cron bug (old expired rows). If their
+        // subscription is still status='active' it means they have a valid
+        // current subscription and should be active.
+        if (subscriptionsUpdated > 0) {
+          const shopIds = (rows || []).map(r => r.shop_id).filter(Boolean);
+          if (shopIds.length) {
+            await db.update('shops',
+              `id=in.(${shopIds.join(',')})`,
+              { is_active: true }
+            );
+          }
+        }
       }
     }
 
@@ -250,7 +263,14 @@ export async function reviewUpgradeRequest(request, env) {
     // assignPlan() also handles the cancel-then-insert ordering required
     // by idx_subscriptions_one_active_per_shop and re-activates the shop.
     if (action === 'approved') {
+      // Use the requested plan's default duration. If the shop previously
+      // had a custom period, admin should use the Activate modal to set a
+      // specific duration — upgrade request approval always uses the plan
+      // default to keep the flow simple and predictable.
       await assignPlan(db, req.shop_id, req.requested_plan);
+      // Also re-activate the shop in case it was deactivated by the cron
+      // while the upgrade request was pending review.
+      await db.update('shops', `id=eq.${req.shop_id}`, { is_active: true });
     }
     return ok({ action, request_id: id });
   } catch(e) { return serverError(e.message); }
