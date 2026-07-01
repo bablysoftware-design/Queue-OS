@@ -164,7 +164,7 @@ export async function joinQueue(request, env) {
     // ── Subscription check ──────────────────────────────────
     const subCheck = await checkSubscriptionValid(db, shop_id);
     if (!subCheck.valid) {
-      return badRequest('Aapka free trial khatam ho gaya hai. Continue karne ke liye plan khareed Lein. Shukria!');
+      return badRequest('This shop subscription is not active. Please contact the shop.');
     }
 
     // ── Shop details (open check + paid mode) ───────────────
