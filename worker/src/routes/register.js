@@ -99,7 +99,11 @@ export async function approveRegistration(request, env) {
       pin_hash: reg.pin,
     });
 
-    try { await assignPlan(db, shop.id, 'free'); } catch(e) {}
+    // Provision free trial — NOT wrapped in try/catch so any DB failure
+    // surfaces as a 500 rather than silently creating a shop with no
+    // subscription. A shop with is_active=true but no subscription would
+    // immediately fail every subscription check on first business login.
+    await assignPlan(db, shop.id, 'free');
     await db.update('shop_registrations', `id=eq.${regId}`, { status: 'approved' });
 
     return ok({ message: 'دکان رجسٹر ہو گئی اور 30 دن کا فری ٹرائل شروع', shop });
