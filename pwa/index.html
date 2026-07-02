@@ -2007,6 +2007,8 @@ function callNext() {
       showToast(data.empty ? t('queueEmptyMsg') : t('tokenCalled', data.next?.token_number), data.empty ? '' : 'success');
       if (!data.empty && data.next) {
         const name = data.next.customer_name || '';
+        // Announce the called token with audio — mirrors what customer side plays
+        _announceCalledToken(data.next.token_number, name);
         startGraceTimer(name, () => {
           showToast('⚠️ Grace period ended — mark no-show?', 'error');
         });
@@ -2015,6 +2017,41 @@ function callNext() {
     })
     .catch(err => showToast(err.message, 'error'))
     .finally(() => { btn.disabled = false; btn.innerHTML = `▶ ${t('nextToken')}`; });
+}
+
+function _announceCalledToken(tokenNumber, customerName) {
+  // Audio beep — mirrors what customer side plays on status=called
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const go = () => {
+      const t0 = ctx.currentTime;
+      [[660,0],[880,0.2],[660,0.4],[1100,0.65]].forEach(([f, w]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.5, t0+w);
+        g.gain.exponentialRampToValueAtTime(0.001, t0+w+0.18);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(t0+w); o.stop(t0+w+0.2);
+      });
+      if (navigator.vibrate) navigator.vibrate([150, 60, 150]);
+    };
+    ctx.state === 'suspended' ? ctx.resume().then(go) : go();
+  } catch(e) {}
+
+  // Voice announcement
+  setTimeout(() => {
+    try {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const name = customerName ? customerName : '';
+      const text = name
+        ? `ٹوکن نمبر ${tokenNumber}۔ ${name}۔ براۓ مہربانی کاؤنٹر پر تشریف لائیں۔`
+        : `ٹوکن نمبر ${tokenNumber}۔ براۓ مہربانی کاؤنٹر پر تشریف لائیں۔`;
+      const utt = new SpeechSynthesisUtterance(text);
+      utt.rate = 0.88; utt.volume = 1.0; utt.pitch = 1.0;
+      window.speechSynthesis.speak(utt);
+    } catch(e) {}
+  }, 500);
 }
 
 function startGraceTimer(customerName, onExpire) {
@@ -2959,6 +2996,13 @@ async function confirmStartPriority(tokenId) {
     });
     showToast('🚨 Priority session started', 'success');
     refreshQueue();
+    // Scroll to the Next Customer button — that's where the business acts
+    const nextBtn = document.getElementById('next-btn');
+    if (nextBtn) {
+      nextBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   } catch(e) {
     showToast(e.message || 'Could not start priority session', 'error');
   }
