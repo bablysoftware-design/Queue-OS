@@ -1225,6 +1225,10 @@ button[style*="color:#f87171"] {
     </div>
     <div class="topbar-right">
       <div id="plan-expiry-chip" style="display:none;font-size:10px;font-weight:700;padding:3px 9px;border-radius:100px;border:1px solid;white-space:nowrap"></div>
+      <button id="mute-btn" onclick="toggleMute()" title="Toggle audio announcements"
+        style="padding:6px 10px;border:1px solid rgba(255,255,255,.12);border-radius:100px;background:transparent;color:var(--text2);font-family:inherit;font-size:14px;cursor:pointer;transition:all .2s;line-height:1">
+        🔊
+      </button>
       <button class="topbar-lang" onclick="toggleLang()" id="dash-lang-btn">اردو</button>
       <button class="status-toggle closed" id="status-toggle" onclick="toggleOpen()">
         <span class="status-dot"></span>
@@ -2020,7 +2024,8 @@ function callNext() {
 }
 
 function _announceCalledToken(tokenNumber, customerName) {
-  // Audio beep — mirrors what customer side plays on status=called
+  if (isBizMuted()) return;
+  // Audio beep
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const go = () => {
@@ -2561,7 +2566,33 @@ async function checkNewPaymentRequests() {
   } catch(e) {}
 }
 
+// ── Mute toggle ──────────────────────────────────────────────
+// Single source of truth for all business-side audio.
+// Persisted in localStorage so it survives page refresh.
+function isBizMuted() {
+  return localStorage.getItem('biz_muted') === '1';
+}
+function toggleMute() {
+  const muted = !isBizMuted();
+  localStorage.setItem('biz_muted', muted ? '1' : '0');
+  updateMuteBtn();
+  showToast(muted ? '🔇 Audio muted' : '🔊 Audio on', '');
+}
+function updateMuteBtn() {
+  const btn = document.getElementById('mute-btn');
+  if (!btn) return;
+  const muted = isBizMuted();
+  btn.textContent = muted ? '🔇' : '🔊';
+  btn.style.color = muted ? '#f87171' : 'var(--text2)';
+  btn.style.borderColor = muted ? 'rgba(248,113,113,.3)' : 'rgba(255,255,255,.12)';
+  btn.title = muted ? 'Unmute audio announcements' : 'Mute audio announcements';
+}
+window.toggleMute = toggleMute;
+// Apply on load
+updateMuteBtn();
+
 function playAlertSound() {
+  if (isBizMuted()) return;
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     [[880, 0], [1100, 0.2], [880, 0.4], [1320, 0.6]].forEach(([freq, t]) => {
@@ -2916,7 +2947,9 @@ function checkAndAnnouncePriority(session, token) {
 
   // Claim the announcement — fire and forget
   api('PATCH', `/priority/sessions/${session.id}/announce`, {})
-    .then(() => playPriorityAlert(token.token_number, token.customer_name))
+    .then(() => {
+      if (!isBizMuted()) playPriorityAlert(token.token_number, token.customer_name);
+    })
     .catch(() => {
       // Claim failed (another device beat us) — skip audio
     });
