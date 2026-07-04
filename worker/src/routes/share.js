@@ -102,3 +102,56 @@ export async function getRelatedShops(request, env) {
     return ok({ shops: related || [] });
   } catch(err) { return serverError(err.message); }
 }
+
+/**
+ * GET /public/shop-page/:idOrSlug
+ * Full data for a business's public/shareable page.
+ * Works for both claimed (active) and unclaimed shops.
+ * Returns richer data than /public/shop/:id (which is queue-focused).
+ */
+export async function getShopPage(request, env) {
+  try {
+    const url      = new URL(request.url);
+    const idOrSlug = sanitizeParam(url.pathname.split('/')[3]);
+    if (!idOrSlug) return badRequest('shop id or slug required');
+
+    const db = createClient(env);
+    const isUUID = /^[0-9a-f-]{36}$/i.test(idOrSlug);
+    const filter = isUUID
+      ? `id=eq.${idOrSlug}`
+      : `slug=eq.${idOrSlug}`;
+
+    const rows = await db.select('shops',
+      `select=id,name,slug,category,area,city,country,address,description,opening_hours,logo_url,is_open,is_active,is_claimed,current_token,avg_service_time_mins,token_mode,token_price,owner_phone&${filter}&limit=1`
+    );
+    if (!rows?.length) return notFound('Business not found');
+    const shop = rows[0];
+
+    // Mask owner_phone — only expose last 4 digits for contact display
+    const maskedPhone = shop.owner_phone && !shop.owner_phone.startsWith('unclaimed-')
+      ? '****' + shop.owner_phone.slice(-4)
+      : null;
+
+    // Get live queue stats if shop is active
+    let queueStats = null;
+    if (shop.is_active && shop.is_claimed) {
+      try {
+        const tokens = await db.select('tokens',
+          `shop_id=eq.${shop.id}&status=eq.waiting&select=id`
+        );
+        queueStats = {
+          waiting: tokens?.length || 0,
+          current_token: shop.current_token,
+          estimated_wait: (tokens?.length || 0) * (shop.avg_service_time_mins || 10),
+        };
+      } catch(e) { /* non-fatal */ }
+    }
+
+    return ok({
+      ...shop,
+      owner_phone:  maskedPhone,
+      queue_stats:  queueStats,
+      share_url:    buildShareLink(shop, env.SITE_URL),
+    });
+  } catch(err) { return serverError(err.message); }
+}

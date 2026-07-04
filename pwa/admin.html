@@ -382,6 +382,10 @@ button:active, .btn-primary:active, .btn-ghost:active, .btn-xs:active {
         ⬆ Upgrades
         <span class="pending-pill" id="upgrades-badge" style="display:none"></span>
       </button>
+      <button class="tab-btn" id="tab-claims-btn" onclick="switchAdminTab('claims')">
+        ✋ Claims
+        <span class="pending-pill" id="claims-badge" style="display:none"></span>
+      </button>
       <button class="tab-btn" id="tab-settings-btn" onclick="switchAdminTab('settings')">⚙ Settings</button>
       <button class="tab-btn" id="tab-add-btn" onclick="switchAdminTab('add')">➕ Add</button>
     </div>
@@ -597,6 +601,11 @@ button:active, .btn-primary:active, .btn-ghost:active, .btn-xs:active {
     </div>
 
     <!-- TAB: Settings -->
+    <div class="tab-pane" id="tab-claims">
+      <div class="section-title">✋ Claim Requests</div>
+      <div id="claims-list"><div class="loading-row">Loading...</div></div>
+    </div>
+
     <div class="tab-pane" id="tab-settings">
       <div class="section">
         <div class="section-title">⚙ Support Settings</div>
@@ -718,6 +727,7 @@ function doLogin() {
       document.getElementById('dash').style.display         = 'block';
       startRegPolling();
       startUpgradePolling();
+      startClaimsPolling();
       loadAll();
     })
     .catch(() => {
@@ -836,7 +846,9 @@ function renderShops() {
       <div class="action-group">
         <button class="btn-xs plan" data-id="${s.id}" data-name="${esc(s.name)}" onclick="openPlanModal(this.dataset.id,this.dataset.name)">Plan</button>
         <button class="btn-xs ${s.is_active ? 'off' : 'on'}" data-id="${s.id}" data-active="${!s.is_active}" onclick="toggleActive('${s.id}',${!s.is_active},'${esc(s.name)}','${s.sub?.plan_name||'free'}')">${s.is_active ? 'Deactivate' : 'Activate'}</button>
+        <button class="btn-xs link" onclick="openEditShop(${JSON.stringify(s).replace(/"/g,'&quot;')})">✏️ Edit</button>
         <button class="btn-xs link" data-id="${s.id}" data-name="${esc(s.name)}" onclick="copyLink(this.dataset.id,this.dataset.name)">🔗 Link</button>
+        <button class="btn-xs link" onclick="window.open('/shop.html?id=${s.id}','_blank')" title="View public page">👁 Page</button>
         <button class="btn-xs link" data-id="${s.id}" onclick="shareWhatsApp(this.dataset.id)" style="background:rgba(37,211,102,0.15);border-color:rgba(37,211,102,0.4);color:#25d366">💬 WA</button>
         <button class="btn-xs link" data-id="${s.id}" data-name="${esc(s.name)}" onclick="downloadQR(this.dataset.id,this.dataset.name)" style="background:rgba(212,175,55,0.1);border-color:rgba(212,175,55,0.3)">📱 QR</button>
         <button class="btn-xs" data-id="${s.id}" data-name="${esc(s.name)}" onclick="resetPin(this.dataset.id,this.dataset.name)" style="background:rgba(251,191,36,0.1);border-color:rgba(251,191,36,0.3);color:#FBBF24">🔑 PIN</button>
@@ -1197,7 +1209,7 @@ function esc(s) { return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':
 
 let toastT;
 function switchAdminTab(tab) {
-  ['shops','pending','plans','upgrades','settings','add'].forEach(t => {
+  ['shops','pending','plans','upgrades','settings','add','claims'].forEach(t => {
     const pane = document.getElementById(`tab-${t}`);
     const btn  = document.getElementById(`tab-${t}-btn`);
     if (pane) pane.classList.toggle('active', t === tab);
@@ -1207,6 +1219,7 @@ function switchAdminTab(tab) {
   if (tab === 'plans')    loadPlans();
   if (tab === 'upgrades') { loadUpgradeRequests(); checkUpgradeBadge(); }
   if (tab === 'settings') loadSupportSettings();
+  if (tab === 'claims')   { loadClaimRequests(); checkClaimsBadge(); }
 }
 window.switchAdminTab = switchAdminTab;
 
@@ -1561,7 +1574,138 @@ let _lastPendingCount = -1; // -1 = first load, never fire "new request" toast
 let _regPollTimer     = null;
 let _titleFlash       = null;
 
-// ── Persistent Action Bar ─────────────────────────────────────────
+// ── Edit Shop ─────────────────────────────────────────────────
+function openEditShop(s) {
+  document.getElementById('edit-shop-id').value           = s.id;
+  document.getElementById('edit-shop-name-display').textContent = s.name;
+  document.getElementById('edit-name').value              = s.name        || '';
+  document.getElementById('edit-category').value          = s.category    || '';
+  document.getElementById('edit-area').value              = s.area        || '';
+  document.getElementById('edit-city').value              = s.city        || '';
+  document.getElementById('edit-address').value           = s.address     || '';
+  document.getElementById('edit-phone').value             = (s.owner_phone || '').startsWith('unclaimed-') ? '' : (s.owner_phone || '');
+  document.getElementById('edit-hours').value             = s.opening_hours || '';
+  document.getElementById('edit-description').value       = s.description  || '';
+  document.getElementById('edit-logo').value              = s.logo_url     || '';
+  document.getElementById('edit-shop-modal').style.display = 'flex';
+}
+window.openEditShop = openEditShop;
+
+function closeEditShop() {
+  document.getElementById('edit-shop-modal').style.display = 'none';
+}
+window.closeEditShop = closeEditShop;
+
+document.getElementById('edit-shop-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeEditShop();
+});
+
+async function saveShopEdit() {
+  const id   = document.getElementById('edit-shop-id').value;
+  const btn  = document.getElementById('edit-save-btn');
+  if (!id) return;
+
+  const body = {
+    name:          document.getElementById('edit-name').value.trim(),
+    category:      document.getElementById('edit-category').value.trim(),
+    area:          document.getElementById('edit-area').value.trim(),
+    city:          document.getElementById('edit-city').value.trim(),
+    address:       document.getElementById('edit-address').value.trim(),
+    opening_hours: document.getElementById('edit-hours').value.trim(),
+    description:   document.getElementById('edit-description').value.trim(),
+    logo_url:      document.getElementById('edit-logo').value.trim() || null,
+  };
+  const phone = document.getElementById('edit-phone').value.trim();
+  if (phone) body.owner_phone = phone;
+
+  // Remove empty strings — don't overwrite with blank
+  Object.keys(body).forEach(k => { if (body[k] === '') delete body[k]; });
+
+  btn.disabled = true; btn.textContent = 'Saving...';
+  try {
+    await api('PATCH', `/admin/shops/${id}/edit`, body);
+    showToast('✅ Business updated', 'success');
+    closeEditShop();
+    loadShops();
+  } catch(e) {
+    showToast(e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = '💾 Save Changes';
+  }
+}
+window.saveShopEdit = saveShopEdit;
+
+// ── Claims ────────────────────────────────────────────────────
+let _lastClaimsCount  = -1;
+let _claimsPollTimer  = null;
+let _pendingClaimsCount = 0;
+
+function startClaimsPolling() {
+  if (_claimsPollTimer) return;
+  checkClaimsBadge();
+  _claimsPollTimer = setInterval(checkClaimsBadge, 60000);
+}
+
+async function checkClaimsBadge() {
+  try {
+    const { data } = await api('GET', '/admin/claim-requests');
+    const pending  = (data || []).filter(r => r.status === 'pending');
+    const count    = pending.length;
+    const badge    = document.getElementById('claims-badge');
+    if (badge) { badge.textContent = count || ''; badge.style.display = count ? 'inline-block' : 'none'; }
+    if (count > _lastClaimsCount && _lastClaimsCount >= 0) {
+      showToast(`✋ ${count - _lastClaimsCount} new claim request${count - _lastClaimsCount > 1 ? 's' : ''}`, 'success');
+    }
+    _lastClaimsCount   = count;
+    _pendingClaimsCount = count;
+    updateActionBar();
+  } catch(e) {}
+}
+
+async function loadClaimRequests() {
+  const el = document.getElementById('claims-list');
+  if (!el) return;
+  el.innerHTML = '<div class="loading-row">Loading...</div>';
+  try {
+    const { data } = await api('GET', '/admin/claim-requests');
+    if (!data?.length) { el.innerHTML = '<div class="empty-row">No claim requests yet</div>'; return; }
+    el.innerHTML = data.map((r, i) => {
+      const statusColor = r.status==='approved' ? 'var(--green)' : r.status==='rejected' ? 'var(--red)' : '#fbbf24';
+      return `
+      <div style="border:1px solid ${r.status==='pending'?'rgba(56,189,248,.3)':'rgba(255,255,255,.06)'};border-radius:14px;padding:14px;margin-bottom:10px;background:${r.status==='pending'?'rgba(56,189,248,.03)':'rgba(255,255,255,.01)'}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px">
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:14px;margin-bottom:2px">${esc(r.shop_name)}</div>
+            <div style="font-size:11px;color:var(--text2)">${esc(r.shop_area)}${r.shop_city ? ' · '+esc(r.shop_city) : ''} · ${esc(r.shop_cat)}</div>
+          </div>
+          <span style="font-size:10px;padding:3px 8px;border-radius:20px;border:1px solid ${statusColor};color:${statusColor}">${r.status.toUpperCase()}</span>
+        </div>
+        <div style="background:rgba(255,255,255,.03);border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:12px">
+          <div>📱 <span style="font-family:'JetBrains Mono',monospace">${esc(r.phone)}</span></div>
+          ${r.note ? `<div style="color:var(--text2);margin-top:3px">Note: ${esc(r.note)}</div>` : ''}
+          <div style="color:var(--text3);margin-top:3px;font-size:10px">${new Date(r.created_at).toLocaleString()}</div>
+        </div>
+        ${r.status === 'pending' ? `
+        <div style="display:flex;gap:8px">
+          <button onclick="reviewClaim('${r.id}','approve')" style="flex:1;padding:8px;border:none;border-radius:8px;background:var(--cyan);color:#050810;font-weight:700;font-size:12px;cursor:pointer">✓ Approve & Activate</button>
+          <button onclick="reviewClaim('${r.id}','reject')" style="flex:1;padding:8px;border:1px solid rgba(248,113,113,.4);border-radius:8px;background:transparent;color:var(--red);font-size:12px;cursor:pointer">✗ Reject</button>
+          <button onclick="window.open('/shop.html?id=${r.shop_id}','_blank')" style="padding:8px 12px;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:transparent;color:var(--text2);font-size:12px;cursor:pointer">👁</button>
+        </div>` : `<div style="font-size:11px;color:var(--text3)">Reviewed ${r.reviewed_at ? new Date(r.reviewed_at).toLocaleDateString() : ''}</div>`}
+      </div>`;
+    }).join('');
+  } catch(e) { el.innerHTML = `<div class="empty-row">Error: ${e.message}</div>`; }
+}
+window.loadClaimRequests = loadClaimRequests;
+
+async function reviewClaim(id, action) {
+  try {
+    await api('POST', `/admin/claim-requests/${id}/${action === 'approve' ? 'approve' : 'reject'}`);
+    showToast(action === 'approve' ? '✅ Claim approved — business activated' : 'Claim rejected', action === 'approve' ? 'success' : '');
+    loadClaimRequests();
+    checkClaimsBadge();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+window.reviewClaim = reviewClaim;────
 // Called after every poll cycle. Never manually dismissable —
 // disappears only when all pending counts reach zero.
 let _pendingRegsCount    = 0;
@@ -1597,6 +1741,20 @@ function updateActionBar() {
           <div class="action-item-text">
             <strong>${_pendingUpgradesCount} Upgrade Request${_pendingUpgradesCount > 1 ? 's' : ''} Pending</strong>
             Businesses waiting for plan upgrade approval
+          </div>
+        </div>
+        <span class="action-item-cta">Review →</span>
+      </div>`);
+  }
+
+  if (_pendingClaimsCount > 0) {
+    rows.push(`
+      <div class="action-item" onclick="switchAdminTab('claims')">
+        <div class="action-item-left">
+          <span class="action-item-icon">✋</span>
+          <div class="action-item-text">
+            <strong>${_pendingClaimsCount} Business Claim${_pendingClaimsCount > 1 ? 's' : ''} Pending</strong>
+            Businesses waiting to be claimed by their owners
           </div>
         </div>
         <span class="action-item-cta">Review →</span>
@@ -1706,6 +1864,7 @@ function stopRegPolling() {
         document.getElementById('dash').style.display         = 'block';
         startRegPolling();
         startUpgradePolling();
+        startClaimsPolling();
         loadAll();
       })
       .catch(err => {
@@ -1778,6 +1937,59 @@ window.stopRegPolling  = stopRegPolling;
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <button onclick="closeActivateModal()" style="padding:12px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:transparent;color:rgba(241,245,249,.6);font-family:'Sora',sans-serif;font-size:13px;font-weight:600;cursor:pointer">Cancel</button>
       <button id="activate-confirm-btn" onclick="confirmActivate()" style="padding:12px;border:none;border-radius:12px;background:var(--gold);color:#0d1422;font-family:'Sora',sans-serif;font-size:13px;font-weight:700;cursor:pointer">✓ Activate</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Edit Shop Modal ─────────────────────────────────────── -->
+<div id="edit-shop-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(12px);z-index:9998;align-items:center;justify-content:center;padding:16px;overflow-y:auto">
+  <div style="background:linear-gradient(160deg,rgba(17,24,39,.97),rgba(8,12,20,.98));border:1px solid rgba(232,184,75,.2);border-radius:20px;padding:20px;width:100%;max-width:400px;margin:auto;animation:sheetUp .3s cubic-bezier(.16,1,.3,1) both">
+    <div style="font-size:16px;font-weight:700;margin-bottom:4px">✏️ Edit Business</div>
+    <div id="edit-shop-name-display" style="font-size:12px;color:var(--text2);margin-bottom:16px"></div>
+    <input type="hidden" id="edit-shop-id"/>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:3px;font-weight:700;letter-spacing:.05em">NAME</div>
+        <input id="edit-name" type="text" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:13px"/>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:3px;font-weight:700;letter-spacing:.05em">CATEGORY</div>
+        <input id="edit-category" type="text" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:13px" placeholder="clinic, hospital…"/>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:3px;font-weight:700;letter-spacing:.05em">AREA</div>
+        <input id="edit-area" type="text" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:13px"/>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:3px;font-weight:700;letter-spacing:.05em">CITY</div>
+        <input id="edit-city" type="text" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:13px"/>
+      </div>
+    </div>
+    <div style="margin-bottom:8px">
+      <div style="font-size:10px;color:var(--text3);margin-bottom:3px;font-weight:700;letter-spacing:.05em">ADDRESS</div>
+      <input id="edit-address" type="text" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:13px"/>
+    </div>
+    <div style="margin-bottom:8px">
+      <div style="font-size:10px;color:var(--text3);margin-bottom:3px;font-weight:700;letter-spacing:.05em">PHONE / WHATSAPP</div>
+      <input id="edit-phone" type="tel" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:13px"/>
+    </div>
+    <div style="margin-bottom:8px">
+      <div style="font-size:10px;color:var(--text3);margin-bottom:3px;font-weight:700;letter-spacing:.05em">OPENING HOURS</div>
+      <input id="edit-hours" type="text" placeholder="e.g. Mon-Sat 9am-6pm" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:13px"/>
+    </div>
+    <div style="margin-bottom:8px">
+      <div style="font-size:10px;color:var(--text3);margin-bottom:3px;font-weight:700;letter-spacing:.05em">DESCRIPTION</div>
+      <textarea id="edit-description" rows="2" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:13px;resize:vertical"></textarea>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:10px;color:var(--text3);margin-bottom:3px;font-weight:700;letter-spacing:.05em">LOGO URL (optional)</div>
+      <input id="edit-logo" type="url" placeholder="https://…" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:13px"/>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button onclick="closeEditShop()" style="padding:11px;border:1px solid rgba(255,255,255,.1);border-radius:11px;background:transparent;color:var(--text2);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">Cancel</button>
+      <button id="edit-save-btn" onclick="saveShopEdit()" style="padding:11px;border:none;border-radius:11px;background:var(--gold);color:#0d1422;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">💾 Save Changes</button>
     </div>
   </div>
 </div>

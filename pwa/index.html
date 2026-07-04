@@ -2289,8 +2289,8 @@ function renderPeakHours(peaks) {
 }
 
 async function shareShopLink() {
-  const shopUrl   = `${location.origin}/customer.html?shop=${state.shopId}`;
-  // Practical invitation — sounds like a person, not an app
+  const shopUrl  = `${location.origin}/customer.html?shop=${state.shopId}`;
+  const pageUrl  = `${location.origin}/shop.html?id=${state.shopId}`;
   const waMessage = encodeURIComponent(
     `*${state.shopName}* ${t('waShareLine1')} 🏪\n\n` +
     `${t('waShareLine2')}\n` +
@@ -2317,7 +2317,19 @@ async function shareShopLink() {
             .then(()=>{document.getElementById('copy-link-btn').textContent='✅ Copied!'})
             .catch(()=>prompt('Copy this link:','${shopUrl}'))"
           style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(232,184,75,.08);border:1px solid rgba(232,184,75,.25);border-radius:12px;color:#E8B84B;font-weight:700;font-size:14px;font-family:'Sora',sans-serif;cursor:pointer;width:100%">
-          <span style="font-size:20px">🔗</span> Copy Link
+          <span style="font-size:20px">🔗</span> Copy Queue Link
+        </button>
+        <button onclick="window.open('${pageUrl}','_blank');document.body.removeChild(document.getElementById('share-sheet'))"
+          style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.25);border-radius:12px;color:#38bdf8;font-weight:700;font-size:14px;font-family:'Sora',sans-serif;cursor:pointer;width:100%">
+          <span style="font-size:20px">🌐</span> View My Business Page
+        </button>
+        <button onclick="
+          navigator.clipboard.writeText('${pageUrl}')
+            .then(()=>showToast('✅ Business page link copied!','success'))
+            .catch(()=>prompt('Copy this link:','${pageUrl}'));
+          document.body.removeChild(document.getElementById('share-sheet'))"
+          style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(56,189,248,.04);border:1px solid rgba(56,189,248,.15);border-radius:12px;color:#38bdf8;font-weight:600;font-size:13px;font-family:'Sora',sans-serif;cursor:pointer;width:100%">
+          <span style="font-size:18px">📋</span> Copy Business Page Link
         </button>
         <button onclick="document.body.removeChild(document.getElementById('share-sheet'))"
           style="padding:12px;border:1px solid rgba(255,255,255,.07);border-radius:12px;background:transparent;color:#64748B;font-size:13px;cursor:pointer;font-family:'Sora',sans-serif">
