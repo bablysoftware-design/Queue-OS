@@ -381,3 +381,35 @@ export async function getScanStats(request, env) {
     return ok(zero); // shop_scans table may not exist yet — always return safely
   }
 }
+
+/**
+ * PATCH /admin/shops/:id/edit
+ * Admin edits any shop's info — name, category, area, city, address,
+ * description, opening_hours, logo_url, token_mode, token_price, owner_phone.
+ * Deliberately separate from /activate to keep concerns isolated.
+ */
+export async function adminEditShopHandler(request, env) {
+  try {
+    const authErr = requireAdmin(request, env);
+    if (authErr) return authErr;
+    const shopId = new URL(request.url).pathname.split('/')[3];
+    if (!isValidUUID(shopId)) return badRequest('Invalid shop_id');
+
+    const body = await request.json();
+    const allowed = [
+      'name', 'category', 'area', 'city', 'country',
+      'address', 'description', 'opening_hours', 'logo_url',
+      'token_mode', 'token_price', 'owner_phone',
+    ];
+    const update = {};
+    for (const k of allowed) {
+      if (body[k] !== undefined) update[k] = body[k];
+    }
+    if (!Object.keys(update).length) return badRequest('Nothing to update');
+
+    const db      = createClient(env);
+    const updated = await db.update('shops', `id=eq.${shopId}`, update);
+    if (!updated?.length) return notFound('Shop not found');
+    return ok(updated[0]);
+  } catch(e) { return serverError(e.message); }
+}

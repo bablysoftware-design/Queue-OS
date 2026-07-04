@@ -11,7 +11,10 @@ import { createTokenHandler, nextTokenHandler,
 import { createShopHandler, getScanStats, loginShopHandler,
          toggleShopHandler, getShopHandler,
          deleteShopHandler, activateShopHandler,
-         updateShopSettingsHandler, changePinHandler } from './routes/shops.js';
+         updateShopSettingsHandler, changePinHandler,
+         adminEditShopHandler } from './routes/shops.js';
+import { submitClaimRequest, listClaimRequests,
+         approveClaimRequest, rejectClaimRequest } from './routes/claims.js';
 import { assignPlanHandler, getSubscriptionHandler,
          listShopsAdminHandler }                      from './routes/subscriptions.js';
 import { manualPayment }                                        from './routes/payments.js';
@@ -30,7 +33,8 @@ import { getPublicShops, getPublicShop,
          joinQueue, checkPosition,
          publicCancelToken, getGlobalStats, recordScan }                          from './routes/public.js';
 import { getShareLink, getShopBySlug,
-         getShopQR, getRelatedShops }                 from './routes/share.js';
+         getShopQR, getRelatedShops,
+         getShopPage }                                     from './routes/share.js';
 import { searchLocations, searchCategories }          from './routes/search.js';
 import { submitPaymentRequest, listPaymentRequests,
          approvePaymentRequest, rejectPaymentRequest,
@@ -87,6 +91,7 @@ const ROUTES = [
   { method: 'GET',    path: '/shops/related',                            handler: getRelatedShops },
   { method: 'GET',    path: '/shops/by-slug/:slug',                      handler: getShopBySlug },
   { method: 'GET',    path: '/shops/:id/share-link',                     handler: getShareLink },
+  { method: 'GET',    path: '/public/shop-page/:idOrSlug',               handler: getShopPage },
   { method: 'GET',    path: '/shops/:id/qr',                             handler: getShopQR },
 
   // Manual payment (paid token mode)
@@ -151,6 +156,11 @@ const ROUTES = [
   { method: 'GET',    path: '/admin/shops',                     handler: listShopsAdminHandler },
   { method: 'DELETE', path: '/admin/shops/:id',                 handler: deleteShopHandler },
   { method: 'PATCH',  path: '/admin/shops/:id/activate',        handler: activateShopHandler },
+  { method: 'PATCH',  path: '/admin/shops/:id/edit',            handler: adminEditShopHandler },
+  { method: 'GET',    path: '/admin/claim-requests',            handler: listClaimRequests },
+  { method: 'POST',   path: '/admin/claim-requests/:id/approve',handler: approveClaimRequest },
+  { method: 'POST',   path: '/admin/claim-requests/:id/reject', handler: rejectClaimRequest },
+  { method: 'POST',   path: '/public/shops/:id/claim',          handler: submitClaimRequest },
   { method: 'GET',    path: '/admin/registrations',             handler: listRegistrations },
   { method: 'POST',   path: '/admin/registrations/:id/approve', handler: approveRegistration },
   { method: 'POST',   path: '/admin/registrations/:id/reject',  handler: rejectRegistration },

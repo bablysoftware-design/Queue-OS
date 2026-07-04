@@ -1225,6 +1225,10 @@ button[style*="color:#f87171"] {
     </div>
     <div class="topbar-right">
       <div id="plan-expiry-chip" style="display:none;font-size:10px;font-weight:700;padding:3px 9px;border-radius:100px;border:1px solid;white-space:nowrap"></div>
+      <button id="mute-btn" onclick="toggleMute()" title="Toggle audio announcements"
+        style="padding:6px 10px;border:1px solid rgba(255,255,255,.12);border-radius:100px;background:transparent;color:var(--text2);font-family:inherit;font-size:14px;cursor:pointer;transition:all .2s;line-height:1">
+        🔊
+      </button>
       <button class="topbar-lang" onclick="toggleLang()" id="dash-lang-btn">اردو</button>
       <button class="status-toggle closed" id="status-toggle" onclick="toggleOpen()">
         <span class="status-dot"></span>
@@ -2007,6 +2011,8 @@ function callNext() {
       showToast(data.empty ? t('queueEmptyMsg') : t('tokenCalled', data.next?.token_number), data.empty ? '' : 'success');
       if (!data.empty && data.next) {
         const name = data.next.customer_name || '';
+        // Announce the called token with audio — mirrors what customer side plays
+        _announceCalledToken(data.next.token_number, name);
         startGraceTimer(name, () => {
           showToast('⚠️ Grace period ended — mark no-show?', 'error');
         });
@@ -2015,6 +2021,42 @@ function callNext() {
     })
     .catch(err => showToast(err.message, 'error'))
     .finally(() => { btn.disabled = false; btn.innerHTML = `▶ ${t('nextToken')}`; });
+}
+
+function _announceCalledToken(tokenNumber, customerName) {
+  if (isBizMuted()) return;
+  // Audio beep
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const go = () => {
+      const t0 = ctx.currentTime;
+      [[660,0],[880,0.2],[660,0.4],[1100,0.65]].forEach(([f, w]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.5, t0+w);
+        g.gain.exponentialRampToValueAtTime(0.001, t0+w+0.18);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(t0+w); o.stop(t0+w+0.2);
+      });
+      if (navigator.vibrate) navigator.vibrate([150, 60, 150]);
+    };
+    ctx.state === 'suspended' ? ctx.resume().then(go) : go();
+  } catch(e) {}
+
+  // Voice announcement
+  setTimeout(() => {
+    try {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const name = customerName ? customerName : '';
+      const text = name
+        ? `ٹوکن نمبر ${tokenNumber}۔ ${name}۔ براۓ مہربانی کاؤنٹر پر تشریف لائیں۔`
+        : `ٹوکن نمبر ${tokenNumber}۔ براۓ مہربانی کاؤنٹر پر تشریف لائیں۔`;
+      const utt = new SpeechSynthesisUtterance(text);
+      utt.rate = 0.88; utt.volume = 1.0; utt.pitch = 1.0;
+      window.speechSynthesis.speak(utt);
+    } catch(e) {}
+  }, 500);
 }
 
 function startGraceTimer(customerName, onExpire) {
@@ -2247,8 +2289,8 @@ function renderPeakHours(peaks) {
 }
 
 async function shareShopLink() {
-  const shopUrl   = `${location.origin}/customer.html?shop=${state.shopId}`;
-  // Practical invitation — sounds like a person, not an app
+  const shopUrl  = `${location.origin}/customer.html?shop=${state.shopId}`;
+  const pageUrl  = `${location.origin}/shop.html?id=${state.shopId}`;
   const waMessage = encodeURIComponent(
     `*${state.shopName}* ${t('waShareLine1')} 🏪\n\n` +
     `${t('waShareLine2')}\n` +
@@ -2275,7 +2317,19 @@ async function shareShopLink() {
             .then(()=>{document.getElementById('copy-link-btn').textContent='✅ Copied!'})
             .catch(()=>prompt('Copy this link:','${shopUrl}'))"
           style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(232,184,75,.08);border:1px solid rgba(232,184,75,.25);border-radius:12px;color:#E8B84B;font-weight:700;font-size:14px;font-family:'Sora',sans-serif;cursor:pointer;width:100%">
-          <span style="font-size:20px">🔗</span> Copy Link
+          <span style="font-size:20px">🔗</span> Copy Queue Link
+        </button>
+        <button onclick="window.open('${pageUrl}','_blank');document.body.removeChild(document.getElementById('share-sheet'))"
+          style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.25);border-radius:12px;color:#38bdf8;font-weight:700;font-size:14px;font-family:'Sora',sans-serif;cursor:pointer;width:100%">
+          <span style="font-size:20px">🌐</span> View My Business Page
+        </button>
+        <button onclick="
+          navigator.clipboard.writeText('${pageUrl}')
+            .then(()=>showToast('✅ Business page link copied!','success'))
+            .catch(()=>prompt('Copy this link:','${pageUrl}'));
+          document.body.removeChild(document.getElementById('share-sheet'))"
+          style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(56,189,248,.04);border:1px solid rgba(56,189,248,.15);border-radius:12px;color:#38bdf8;font-weight:600;font-size:13px;font-family:'Sora',sans-serif;cursor:pointer;width:100%">
+          <span style="font-size:18px">📋</span> Copy Business Page Link
         </button>
         <button onclick="document.body.removeChild(document.getElementById('share-sheet'))"
           style="padding:12px;border:1px solid rgba(255,255,255,.07);border-radius:12px;background:transparent;color:#64748B;font-size:13px;cursor:pointer;font-family:'Sora',sans-serif">
@@ -2524,7 +2578,33 @@ async function checkNewPaymentRequests() {
   } catch(e) {}
 }
 
+// ── Mute toggle ──────────────────────────────────────────────
+// Single source of truth for all business-side audio.
+// Persisted in localStorage so it survives page refresh.
+function isBizMuted() {
+  return localStorage.getItem('biz_muted') === '1';
+}
+function toggleMute() {
+  const muted = !isBizMuted();
+  localStorage.setItem('biz_muted', muted ? '1' : '0');
+  updateMuteBtn();
+  showToast(muted ? '🔇 Audio muted' : '🔊 Audio on', '');
+}
+function updateMuteBtn() {
+  const btn = document.getElementById('mute-btn');
+  if (!btn) return;
+  const muted = isBizMuted();
+  btn.textContent = muted ? '🔇' : '🔊';
+  btn.style.color = muted ? '#f87171' : 'var(--text2)';
+  btn.style.borderColor = muted ? 'rgba(248,113,113,.3)' : 'rgba(255,255,255,.12)';
+  btn.title = muted ? 'Unmute audio announcements' : 'Mute audio announcements';
+}
+window.toggleMute = toggleMute;
+// Apply on load
+updateMuteBtn();
+
 function playAlertSound() {
+  if (isBizMuted()) return;
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     [[880, 0], [1100, 0.2], [880, 0.4], [1320, 0.6]].forEach(([freq, t]) => {
@@ -2879,7 +2959,9 @@ function checkAndAnnouncePriority(session, token) {
 
   // Claim the announcement — fire and forget
   api('PATCH', `/priority/sessions/${session.id}/announce`, {})
-    .then(() => playPriorityAlert(token.token_number, token.customer_name))
+    .then(() => {
+      if (!isBizMuted()) playPriorityAlert(token.token_number, token.customer_name);
+    })
     .catch(() => {
       // Claim failed (another device beat us) — skip audio
     });
@@ -2959,6 +3041,13 @@ async function confirmStartPriority(tokenId) {
     });
     showToast('🚨 Priority session started', 'success');
     refreshQueue();
+    // Scroll to the Next Customer button — that's where the business acts
+    const nextBtn = document.getElementById('next-btn');
+    if (nextBtn) {
+      nextBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   } catch(e) {
     showToast(e.message || 'Could not start priority session', 'error');
   }
