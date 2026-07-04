@@ -1705,7 +1705,7 @@ async function reviewClaim(id, action) {
     checkClaimsBadge();
   } catch(e) { showToast(e.message, 'error'); }
 }
-window.reviewClaim = reviewClaim;────
+window.reviewClaim = reviewClaim;
 // Called after every poll cycle. Never manually dismissable —
 // disappears only when all pending counts reach zero.
 let _pendingRegsCount    = 0;

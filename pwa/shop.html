@@ -313,7 +313,7 @@ body.rtl-mode { font-family:'Noto Nastaliq Urdu',serif; direction:rtl; }
 </head>
 <body>
 
-<div class="topbar-mini">
+<div class="topbar-mini" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0;max-width:520px;margin:0 auto;gap:8px">
   <button class="btn-back" onclick="goBack()" id="lbl-back">← Back</button>
   <button class="lang-btn" onclick="toggleLang()" id="lang-btn">اردو</button>
 </div>
@@ -416,7 +416,7 @@ body.rtl-mode { font-family:'Noto Nastaliq Urdu',serif; direction:rtl; }
 </div>
 
 <script>
-const WORKER = 'https://saf-queue-worker.waitmate-dev.workers.dev';
+const WORKER = 'https://saf-queue-worker.byker-software.workers.dev';
 
 let _shop = null;
 
