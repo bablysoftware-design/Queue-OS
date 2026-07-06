@@ -16,4 +16,6 @@ Thumbs.db
 
 coverage/
 
-*.log
+*.logdata/*.xlsx
+data/*.xls
+.env

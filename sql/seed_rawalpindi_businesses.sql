@@ -1,123 +1,24 @@
 -- ============================================================
 -- seed_rawalpindi_businesses.sql
--- Seeds 103 unclaimed healthcare businesses from Rawalpindi.
--- SAFE TO RUN MULTIPLE TIMES — uses INSERT ... ON CONFLICT DO NOTHING
--- keyed on (name, area) to prevent duplicates.
+-- ── DEPRECATED ──────────────────────────────────────────────
+--
+-- This approach (giant SQL seed file) has been replaced by the
+-- reusable Node.js importer at scripts/import-businesses.js
+--
+-- To seed businesses, use:
+--
+--   node scripts/import-businesses.js \
+--     --file data/rawalpindi.xlsx \
+--     --city Rawalpindi \
+--     --dry-run        (preview first)
+--
+--   node scripts/import-businesses.js \
+--     --file data/rawalpindi.xlsx \
+--     --city Rawalpindi
+--
+-- The source Excel file is at:
+--   /mnt/user-data/uploads/WaitMate_Master_Database.xlsx
+-- Copy it to: data/rawalpindi.xlsx
+--
+-- See scripts/README.md for full documentation.
 -- ============================================================
-
--- Category mapping: normalize the varied Excel categories into
--- the system's canonical category identifiers
--- All are healthcare related → 'clinic' or 'hospital' or 'lab'
-
-INSERT INTO shops (
-  name, category, area, city, country, address,
-  owner_phone, is_active, is_claimed, is_open,
-  token_mode, current_token
-)
-VALUES
-  ('Arif Medical Complex', 'hospital', 'Jinnah Garden', 'Rawalpindi', 'Pakistan', 'Phase 1, Block C, Iqbal Avenue', '+92515148373', false, false, false, 'free', 0)
-  ('Jinnah Medical Complex', 'hospital', 'Jinnah Garden', 'Rawalpindi', 'Pakistan', 'Phase 1, Block D, Street 200', 'unclaimed-5ea6e4b2', false, false, false, 'free', 0)
-  ('Fatima Clinic (Mother & Child Care Centre)', 'clinic', 'Soan Garden', 'Rawalpindi', 'Pakistan', 'Paris Business Center, Main Boulevard', 'unclaimed-01ef7585', false, false, false, 'free', 0)
-  ('Dr Basit Dental Clinic', 'dental', 'Soan Garden', 'Rawalpindi', 'Pakistan', 'Commercial Block', 'unclaimed-78e2396c', false, false, false, 'free', 0)
-  ('Syeda Physiotherapy Clinic', 'physio', 'Soan Garden', 'Rawalpindi', 'Pakistan', 'House 53, Street 33, Block H', 'unclaimed-dcae720a', false, false, false, 'free', 0)
-  ('Dr. Physio Rehab', 'physio', 'Soan Garden', 'Rawalpindi', 'Pakistan', 'Ascon Heights II, Block C', 'unclaimed-1f9851bf', false, false, false, 'free', 0)
-  ('Sadiq Sobhi Clinic', 'clinic', 'Soan Garden', 'Rawalpindi', 'Pakistan', 'CP1 Plaza, Ramna Road, Block H', 'unclaimed-19278820', false, false, false, 'free', 0)
-  ('NB Impact Clinic', 'clinic', 'Soan Garden', 'Rawalpindi', 'Pakistan', 'House 12A, Street 3, Block F', 'unclaimed-c5ce763c', false, false, false, 'free', 0)
-  ('Silver Lining Medical & Rehab Center', 'hospital', 'Soan Garden', 'Rawalpindi', 'Pakistan', 'House 4, Street 4', 'unclaimed-4dc921d7', false, false, false, 'free', 0)
-  ('Fresh Start Recovery & Rehabilitation Center', 'hospital', 'Soan Garden', 'Rawalpindi', 'Pakistan', 'H-35, Street 14, Block H', 'unclaimed-0ade1662', false, false, false, 'free', 0)
-  ('Islamabad Rehab & Caring Center', 'hospital', 'Soan Garden', 'Rawalpindi', 'Pakistan', 'Block E', 'unclaimed-177e062f', false, false, false, 'free', 0)
-  ('Begum Naseem Kausar Welfare Trust', 'clinic', 'Soan Garden', 'Rawalpindi', 'Pakistan', '10 Bolan Road, Block B', 'unclaimed-ce4f5d7e', false, false, false, 'free', 0)
-  ('Paigham-e-Zindagi', 'hospital', 'Bagh Sardaran', 'Rawalpindi', 'Pakistan', 'Ghazni Road, Chungi No. 4', '0512555639', false, false, false, 'free', 0)
-  ('TB Hospital', 'hospital', 'Bagh Sardaran', 'Rawalpindi', 'Pakistan', 'Bagh Sardaran Road', 'unclaimed-b8dbaa9b', false, false, false, 'free', 0)
-  ('Ali Homoeopathic Clinic', 'clinic', 'Khayaban-e-Sir Syed', 'Rawalpindi', 'Pakistan', 'Cheema Plaza, Main Road', '03335257081', false, false, false, 'free', 0)
-  ('SkinDot Clinics', 'skin', 'PWD', 'Rawalpindi', 'Pakistan', 'PWD Main Road', '03421234041', false, false, false, 'free', 0)
-  ('DOD Clinics', 'dental', 'PWD', 'Rawalpindi', 'Pakistan', 'PWD', '03425155686', false, false, false, 'free', 0)
-  ('Health Care Clinic', 'clinic', 'PWD', 'Rawalpindi', 'Pakistan', 'PWD', '03064292002', false, false, false, 'free', 0)
-  ('Dr Faheem Clinic', 'clinic', 'Soan Garden', 'Rawalpindi', 'Pakistan', 'Soan Garden', '0515738335', false, false, false, 'free', 0)
-  ('Aziz Clinic', 'clinic', 'Soan Garden', 'Rawalpindi', 'Pakistan', 'Soan Garden', '03009104375', false, false, false, 'free', 0)
-  ('Ayesha Clinic', 'clinic', 'Soan Garden', 'Rawalpindi', 'Pakistan', 'Soan Garden', '03270109048', false, false, false, 'free', 0)
-  ('Zara Medical Complex', 'hospital', 'Korang Town', 'Rawalpindi', 'Pakistan', 'Korang Town', '03429719663', false, false, false, 'free', 0)
-  ('Al Noor Clinic', 'clinic', 'Korang Town', 'Rawalpindi', 'Pakistan', 'Korang Town', 'unclaimed-038ee0c8', false, false, false, 'free', 0)
-  ('Korang Town Dispensary (F.E.C.H.S.)', 'clinic', 'Korang Town', 'Rawalpindi', 'Pakistan', 'Korang Town', '0515970082', false, false, false, 'free', 0)
-  ('Dr Bismillah Clinic', 'clinic', 'Jinnah Garden', 'Rawalpindi', 'Pakistan', 'Jinnah Garden', 'unclaimed-62c269f0', false, false, false, 'free', 0)
-  ('Primax Medical Complex', 'clinic', 'Saddar', 'Rawalpindi', 'Pakistan', 'Murree Road, Saddar', '0515120400', false, false, false, 'free', 0)
-  ('Ehsan Clinic', 'clinic', 'Saddar', 'Rawalpindi', 'Pakistan', 'Saddar Bazar Chowk, near Hathi Chowk', '03335222048', false, false, false, 'free', 0)
-  ('Naeem Clinic', 'clinic', 'Saddar', 'Rawalpindi', 'Pakistan', 'Hathi Chowk, Saddar Bazar Road', '0515125425', false, false, false, 'free', 0)
-  ('Estetica Skin & Laser', 'skin', 'Satellite Town', 'Rawalpindi', 'Pakistan', 'Commercial Market, Block B', '03120111158', false, false, false, 'free', 0)
-  ('Aesthetics 8 by HA', 'skin', 'Commercial Market', 'Rawalpindi', 'Pakistan', 'Basement Sarjha Centre, 5th Road', '03190090064', false, false, false, 'free', 0)
-  ('TreatMe Medical and Dental Centre', 'dental', 'Satellite Town', 'Rawalpindi', 'Pakistan', '3rd Floor, 6th Road Centre', '03398732863', false, false, false, 'free', 0)
-  ('The Physiotherapy Clinic Rawalpindi', 'physio', 'Satellite Town', 'Rawalpindi', 'Pakistan', 'Aftab Plaza, Saidpur Road', '03476444445', false, false, false, 'free', 0)
-  ('The Physiotherapy Clinic', 'physio', 'Satellite Town', 'Rawalpindi', 'Pakistan', 'Aftab Plaza, Saidpur Road', '0514942207', false, false, false, 'free', 0)
-  ('JJ Aesthetics', 'skin', 'Satellite Town', 'Rawalpindi', 'Pakistan', 'Holy Family Road', '03223143448', false, false, false, 'free', 0)
-  ('Albucasis Aesthetic & Plastic Surgery Clinic', 'skin', '6th Road', 'Rawalpindi', 'Pakistan', '4th Floor, 6th Road Centre', '03127465102', false, false, false, 'free', 0)
-  ('Rawalpindi Physiotherapy & Rehabilitation Center', 'physio', 'Saidpur Road', 'Rawalpindi', 'Pakistan', 'Rai International Hospital', '03335330065', false, false, false, 'free', 0)
-  ('Wellspring Medical Care', 'clinic', 'Bahria Phase 7', 'Rawalpindi', 'Pakistan', 'Wallayat Complex', '03334441565', false, false, false, 'free', 0)
-  ('Al Shifa Clinic', 'clinic', 'Bahria Phase 8', 'Rawalpindi', 'Pakistan', 'Sector C, Phase 8', '03305262532', false, false, false, 'free', 0)
-  ('AHM Medical Clinic', 'clinic', 'Bahria Phase 8', 'Rawalpindi', 'Pakistan', 'Hub Commercial, Safari Valley', '03209066749', false, false, false, 'free', 0)
-  ('Modern Clinic Complex', 'hospital', 'Bahria Phase 8', 'Rawalpindi', 'Pakistan', 'Central Business District', '03335172786', false, false, false, 'free', 0)
-  ('Advance Liver & GI Centre', 'clinic', 'Satellite Town', 'Rawalpindi', 'Pakistan', 'Commercial Market Road, Block B', '0514571996', false, false, false, 'free', 0)
-  ('Abrar Surgery Hospital', 'hospital', 'Qasim Market', 'Rawalpindi', 'Pakistan', 'Main Peshawar Road', '03335133091', false, false, false, 'free', 0)
-  ('Aesthetic Plus Laser Clinic', 'skin', 'Chandni Chowk', 'Rawalpindi', 'Pakistan', 'Nazir Plaza, Murree Road', '03005018959', false, false, false, 'free', 0)
-  ('AFIP Reception Clinic', 'clinic', 'Rawalpindi Cantonment', 'Rawalpindi', 'Pakistan', 'AFIP Area', '0515176419', false, false, false, 'free', 0)
-  ('Medics Clinics & Diagnostics', 'clinic', 'Saddar', 'Rawalpindi', 'Pakistan', 'Bhakral Plaza, Mehfooz Road', 'unclaimed-65a8bc68', false, false, false, 'free', 0)
-  ('Medics Clinics & Diagnostic Center', 'lab', 'Saddar', 'Rawalpindi', 'Pakistan', 'Bhakral Plaza, AFIC Road', 'unclaimed-c064abdd', false, false, false, 'free', 0)
-  ('Satellite Specialist Clinic', 'clinic', 'Satellite Town', 'Rawalpindi', 'Pakistan', 'Saidpur Road, Block E', 'unclaimed-ed9dd70e', false, false, false, 'free', 0)
-  ('Al-Basit Skin Clinic', 'skin', 'Saddar', 'Rawalpindi', 'Pakistan', 'Adam Jee Road, Hasee Chowk', '03039439792', false, false, false, 'free', 0)
-  ('3D Lifestyle Center of Medical Aesthetics', 'skin', 'Bahria Phase 7', 'Rawalpindi', 'Pakistan', 'Bahria Springs Plaza 22', '021111232889', false, false, false, 'free', 0)
-  ('Aesthetic Skin Care Clinic', 'skin', 'Bahria Phase 2', 'Rawalpindi', 'Pakistan', 'Bahria Town Phase 2', 'unclaimed-0d9e3cfb', false, false, false, 'free', 0)
-  ('Bilal Hospital', 'hospital', 'Satellite Town', 'Rawalpindi', 'Pakistan', '38-A, Satellite Town', '0514455666', false, false, false, 'free', 0)
-  ('Maryam Memorial Hospital', 'hospital', 'Peshawar Road', 'Rawalpindi', 'Pakistan', 'Peshawar Road', '051111111127', false, false, false, 'free', 0)
-  ('Islamic International Medical Complex', 'hospital', 'Harley Street', 'Rawalpindi', 'Pakistan', 'Near MH', '0519273909', false, false, false, 'free', 0)
-  ('Hearts International Hospital', 'hospital', 'Rawal Road', 'Rawalpindi', 'Pakistan', 'Rawal Road', '0518444444', false, false, false, 'free', 0)
-  ('Al-Khidmat Raazi Hospital', 'hospital', 'Dhoke Kala Khan', 'Rawalpindi', 'Pakistan', 'Main Road', '0514577000', false, false, false, 'free', 0)
-  ('Medicare Hospital', 'hospital', 'Adiala Road', 'Rawalpindi', 'Pakistan', 'Main Adiala Road', 'unclaimed-12032e4c', false, false, false, 'free', 0)
-  ('Family Care Clinic', 'clinic', 'Adiala Road', 'Rawalpindi', 'Pakistan', 'Main Adiala Road', 'unclaimed-a9ce516f', false, false, false, 'free', 0)
-  ('Al Shifa Medical Centre', 'clinic', 'Adiala Road', 'Rawalpindi', 'Pakistan', 'Adiala Road', 'unclaimed-30354e54', false, false, false, 'free', 0)
-  ('Life Care Clinic', 'clinic', 'Dhoke Kala Khan', 'Rawalpindi', 'Pakistan', 'Main Bazaar', 'unclaimed-7e2f0186', false, false, false, 'free', 0)
-  ('City Medical Centre', 'clinic', 'Committee Chowk', 'Rawalpindi', 'Pakistan', 'Committee Chowk', 'unclaimed-1027260d', false, false, false, 'free', 0)
-  ('Al Noor Medical Centre', 'clinic', 'Committee Chowk', 'Rawalpindi', 'Pakistan', 'Main Murree Road', 'unclaimed-597ab8e4', false, false, false, 'free', 0)
-  ('Care Plus Clinic', 'clinic', 'Committee Chowk', 'Rawalpindi', 'Pakistan', 'Murree Road', 'unclaimed-95444ca2', false, false, false, 'free', 0)
-  ('City Dental Clinic', 'dental', 'Committee Chowk', 'Rawalpindi', 'Pakistan', 'Committee Chowk', 'unclaimed-a04fe1af', false, false, false, 'free', 0)
-  ('Smile Dental Care', 'dental', 'Westridge', 'Rawalpindi', 'Pakistan', 'Westridge Market', 'unclaimed-60a62a65', false, false, false, 'free', 0)
-  ('Westridge Medical Centre', 'clinic', 'Westridge', 'Rawalpindi', 'Pakistan', 'Westridge', 'unclaimed-3649f38f', false, false, false, 'free', 0)
-  ('Family Dental Clinic', 'dental', 'Westridge', 'Rawalpindi', 'Pakistan', 'Main Westridge Road', 'unclaimed-da14fccf', false, false, false, 'free', 0)
-  ('Dr. Aamir Clinic', 'clinic', 'Westridge', 'Rawalpindi', 'Pakistan', 'Westridge', 'unclaimed-51cc97af', false, false, false, 'free', 0)
-  ('Health First Clinic', 'clinic', 'Chaklala Scheme III', 'Rawalpindi', 'Pakistan', 'Main Market', 'unclaimed-fa3bdc16', false, false, false, 'free', 0)
-  ('Chughtai Lab Collection Centre', 'lab', 'Chaklala', 'Rawalpindi', 'Pakistan', 'Commercial Market', 'unclaimed-048c0d24', false, false, false, 'free', 0)
-  ('IDC Collection Centre', 'lab', 'Chaklala', 'Rawalpindi', 'Pakistan', 'Commercial Area', 'unclaimed-cba84e0b', false, false, false, 'free', 0)
-  ('Excel Labs Collection Centre', 'lab', 'Chaklala', 'Rawalpindi', 'Pakistan', 'Main Road', 'unclaimed-87db172d', false, false, false, 'free', 0)
-  ('Al-Rehman Clinic', 'clinic', 'Raja Bazar', 'Rawalpindi', 'Pakistan', 'Raja Bazar Road', 'unclaimed-8089468a', false, false, false, 'free', 0)
-  ('Al-Madina Clinic', 'clinic', 'Raja Bazar', 'Rawalpindi', 'Pakistan', 'Raja Bazar', 'unclaimed-59026713', false, false, false, 'free', 0)
-  ('Hassan Dental Clinic', 'dental', 'Raja Bazar', 'Rawalpindi', 'Pakistan', 'Raja Bazar', 'unclaimed-dea38b43', false, false, false, 'free', 0)
-  ('Medicare Dental Surgery', 'dental', 'Raja Bazar', 'Rawalpindi', 'Pakistan', 'Raja Bazar', 'unclaimed-95b08048', false, false, false, 'free', 0)
-  ('Benazir Bhutto Hospital', 'hospital', 'Satellite Town', 'Rawalpindi', 'Pakistan', 'Murree Road, Rawalpindi', '0519290301', false, false, false, 'free', 0)
-  ('Holy Family Hospital', 'hospital', 'Satellite Town', 'Rawalpindi', 'Pakistan', 'Satellite Town, Rawalpindi', '0519290346', false, false, false, 'free', 0)
-  ('District Headquarters (DHQ) Hospital', 'hospital', 'Raja Bazar', 'Rawalpindi', 'Pakistan', 'Hospital Road, Raja Bazar', '0519334422', false, false, false, 'free', 0)
-  ('Combined Military Hospital (CMH) Rawalpindi', 'hospital', 'CMH Road', 'Rawalpindi', 'Pakistan', 'Rawalpindi Cantonment', 'unclaimed-ea50bae9', false, false, false, 'free', 0)
-  ('Armed Forces Institute of Dentistry (AFID)', 'hospital', 'Rawalpindi Cantt', 'Rawalpindi', 'Pakistan', 'AFID Complex', 'unclaimed-53121325', false, false, false, 'free', 0)
-  ('Armed Forces Institute of Cardiology (AFIC)', 'hospital', 'Rawalpindi Cantt', 'Rawalpindi', 'Pakistan', 'Mall Road', 'unclaimed-e05bcfb1', false, false, false, 'free', 0)
-  ('National Institute of Rehabilitation Medicine (NIRM)', 'hospital', 'Rawalpindi', 'Rawalpindi', 'Pakistan', 'Main Murree Road', 'unclaimed-4bfab244', false, false, false, 'free', 0)
-  ('Chughtai Lab', 'lab', 'Satellite Town', 'Rawalpindi', 'Pakistan', 'Commercial Market', '03111456789', false, false, false, 'free', 0)
-  ('Chughtai Lab', 'lab', 'Bahria Phase 7', 'Rawalpindi', 'Pakistan', 'Bahria Town', '03111456789', false, false, false, 'free', 0)
-  ('Chughtai Lab', 'lab', 'PWD', 'Rawalpindi', 'Pakistan', 'PWD Main Road', '03111456789', false, false, false, 'free', 0)
-  ('Excel Labs', 'lab', 'Bahria Phase 7', 'Rawalpindi', 'Pakistan', 'Bahria Town', '051111786986', false, false, false, 'free', 0)
-  ('Excel Labs', 'lab', 'Satellite Town', 'Rawalpindi', 'Pakistan', 'Commercial Market', '051111786986', false, false, false, 'free', 0)
-  ('IDC (Islamabad Diagnostic Centre)', 'lab', 'Bahria Town', 'Rawalpindi', 'Pakistan', 'Bahria Civic Centre', '051111000432', false, false, false, 'free', 0)
-  ('IDC (Islamabad Diagnostic Centre)', 'lab', 'PWD', 'Rawalpindi', 'Pakistan', 'PWD Main Road', '051111000432', false, false, false, 'free', 0)
-  ('Advanced Diagnostic Centre', 'lab', 'Saddar', 'Rawalpindi', 'Pakistan', 'Adamjee Road', 'unclaimed-bf9ae3f9', false, false, false, 'free', 0)
-  ('Rawalpindi Medical Centre', 'clinic', 'Saddar', 'Rawalpindi', 'Pakistan', 'Bank Road', 'unclaimed-66f6300c', false, false, false, 'free', 0)
-  ('Family Health Clinic', 'clinic', 'Commercial Market', 'Rawalpindi', 'Pakistan', 'Satellite Town', 'unclaimed-d20177b7', false, false, false, 'free', 0)
-  ('City Dental Care', 'dental', 'Bahria Phase 4', 'Rawalpindi', 'Pakistan', 'Civic Centre', 'unclaimed-233a8444', false, false, false, 'free', 0)
-  ('Smile Care Dental Clinic', 'dental', 'Bahria Phase 7', 'Rawalpindi', 'Pakistan', 'Bahria Town', 'unclaimed-fe90ee76', false, false, false, 'free', 0)
-  ('Al-Rehman Medical Centre', 'clinic', 'Chaklala Scheme III', 'Rawalpindi', 'Pakistan', 'Main Market', 'unclaimed-4cfbe6a5', false, false, false, 'free', 0)
-  ('Al-Madina Health Centre', 'clinic', 'Chaklala Scheme III', 'Rawalpindi', 'Pakistan', 'Main Road', 'unclaimed-a7f87d08', false, false, false, 'free', 0)
-  ('Health Plus Clinic', 'clinic', 'Bahria Phase 8', 'Rawalpindi', 'Pakistan', 'Bahria Town', 'unclaimed-8928d9a7', false, false, false, 'free', 0)
-  ('Family Care Medical Centre', 'clinic', 'Adiala Road', 'Rawalpindi', 'Pakistan', 'Main Adiala Road', 'unclaimed-370ceee5', false, false, false, 'free', 0)
-  ('Medicare Family Clinic', 'clinic', 'Gulzar-e-Quaid', 'Rawalpindi', 'Pakistan', 'Main Commercial Area', 'unclaimed-debd9bf3', false, false, false, 'free', 0)
-  ('Life Care Medical Centre', 'clinic', 'Pakistan Town', 'Rawalpindi', 'Pakistan', 'Main Commercial Market', 'unclaimed-d8eb5a3f', false, false, false, 'free', 0)
-ON CONFLICT (owner_phone) DO NOTHING;
-
--- Update: for any unclaimed shops that were just inserted, ensure
--- the auto-slug trigger fires (it runs on INSERT so no action needed).
--- Verify count:
-SELECT COUNT(*) AS unclaimed_count FROM shops WHERE is_claimed = false;

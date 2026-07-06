@@ -770,6 +770,7 @@ async function loadShops() {
     const { data } = await api('GET', '/admin/shops');
     // Subscription data now bundled in API response — no N+1 calls
     shops = data || [];
+    _shopsCache = shops; // safe lookup for openEditShopById
     renderStats();
     renderShops();
     document.getElementById('last-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
@@ -846,7 +847,7 @@ function renderShops() {
       <div class="action-group">
         <button class="btn-xs plan" data-id="${s.id}" data-name="${esc(s.name)}" onclick="openPlanModal(this.dataset.id,this.dataset.name)">Plan</button>
         <button class="btn-xs ${s.is_active ? 'off' : 'on'}" data-id="${s.id}" data-active="${!s.is_active}" onclick="toggleActive('${s.id}',${!s.is_active},'${esc(s.name)}','${s.sub?.plan_name||'free'}')">${s.is_active ? 'Deactivate' : 'Activate'}</button>
-        <button class="btn-xs link" onclick="openEditShop(${JSON.stringify(s).replace(/"/g,'&quot;')})">✏️ Edit</button>
+        <button class="btn-xs link" onclick="openEditShopById('${s.id}')">✏️ Edit</button>
         <button class="btn-xs link" data-id="${s.id}" data-name="${esc(s.name)}" onclick="copyLink(this.dataset.id,this.dataset.name)">🔗 Link</button>
         <button class="btn-xs link" onclick="window.open('/shop.html?id=${s.id}','_blank')" title="View public page">👁 Page</button>
         <button class="btn-xs link" data-id="${s.id}" onclick="shareWhatsApp(this.dataset.id)" style="background:rgba(37,211,102,0.15);border-color:rgba(37,211,102,0.4);color:#25d366">💬 WA</button>
@@ -1575,6 +1576,18 @@ let _regPollTimer     = null;
 let _titleFlash       = null;
 
 // ── Edit Shop ─────────────────────────────────────────────────
+// Safe edit shop opener — uses shop ID to look up data
+// instead of passing JSON.stringify() inline in onclick (which
+// breaks when shop names contain apostrophes or quotes)
+let _shopsCache = [];
+
+function openEditShopById(id) {
+  const s = _shopsCache.find(s => s.id === id);
+  if (!s) { showToast('Shop data not found — reload the page', 'error'); return; }
+  openEditShop(s);
+}
+window.openEditShopById = openEditShopById;
+
 function openEditShop(s) {
   document.getElementById('edit-shop-id').value           = s.id;
   document.getElementById('edit-shop-name-display').textContent = s.name;
