@@ -1609,9 +1609,7 @@ function closeEditShop() {
 }
 window.closeEditShop = closeEditShop;
 
-document.getElementById('edit-shop-modal').addEventListener('click', function(e) {
-  if (e.target === this) closeEditShop();
-});
+// edit-shop-modal listener moved to DOMContentLoaded boot handler
 
 async function saveShopEdit() {
   const id   = document.getElementById('edit-shop-id').value;
@@ -1866,8 +1864,27 @@ function stopRegPolling() {
   _regPollTimer = null;
 }
 
-// Boot
-(function boot() {
+// Boot — DOMContentLoaded ensures ALL modal elements exist before
+// any JS runs. Previously the IIFE ran at script-parse time, hit
+// null.addEventListener on edit-shop-modal (defined 40 lines below
+// the closing </script>), crashed the entire JS context, left
+// SECRET set but dash hidden — causing double-password symptom.
+document.addEventListener('DOMContentLoaded', function boot() {
+
+  // Wire modal backdrop listeners here — elements guaranteed to exist
+  const editModal = document.getElementById('edit-shop-modal');
+  if (editModal) editModal.addEventListener('click', e => { if (e.target === editModal) closeEditShop(); });
+
+  const actModal = document.getElementById('activate-modal');
+  if (actModal) actModal.addEventListener('click', e => { if (e.target === actModal) closeActivateModal(); });
+
+  const actPlan = document.getElementById('activate-plan-select');
+  if (actPlan) actPlan.addEventListener('change', updateActivateSummary);
+
+  const claimModal = document.getElementById('claim-modal-admin');
+  if (claimModal) claimModal.addEventListener('click', e => { if (e.target === claimModal) claimModal.classList.remove('show'); });
+
+  // Auto-login from saved secret
   const saved = localStorage.getItem('admin_secret');
   if (saved) {
     SECRET = saved;
@@ -1893,7 +1910,7 @@ function stopRegPolling() {
   } else {
     document.getElementById('login-screen').style.display = 'flex';
   }
-})();
+});
 
 // ── Window exports ──
 window.addLocation = addLocation;

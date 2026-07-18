@@ -24,7 +24,7 @@ export async function getPublicShops(request, env) {
     const category = sanitizeParam(url.searchParams.get('category'));
     const city     = sanitizeParam(url.searchParams.get('city'));
     const search   = sanitizeSearch(url.searchParams.get('search'));
-    const limit    = Math.min(parseInt(url.searchParams.get('limit') || '50', 10), 100);
+    const limit    = Math.min(parseInt(url.searchParams.get('limit') || '200', 10), 500);
     const offset   = Math.max(parseInt(url.searchParams.get('offset') || '0', 10), 0);
 
     const db = createClient(env);
@@ -34,7 +34,7 @@ export async function getPublicShops(request, env) {
     try {
       const result = await db.rpc('get_public_shops', {
         p_area: area || null, p_category: category || null,
-        p_city: city || null,
+        p_city: city || null, p_search: search || null,
         p_limit: limit, p_offset: offset,
       });
       const r = Array.isArray(result) ? result[0] : result;
