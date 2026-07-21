@@ -1,719 +1,530 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr" id="shop-page-html">
+<html lang="en" dir="ltr" id="shop-html">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <meta name="theme-color" content="#050810"/>
-<title id="page-title">Business — WaitMate</title>
-<meta id="meta-desc" name="description" content="Join the queue at this business on WaitMate"/>
-<meta id="og-title" property="og:title" content="Business on WaitMate"/>
-<meta id="og-desc" property="og:description" content="Skip the line — get your token online"/>
+<title id="pg-title">Business — WaitMate</title>
+<meta id="pg-desc" name="description" content="Join the queue on WaitMate"/>
+<meta id="og-title" property="og:title" content="WaitMate"/>
+<meta id="og-desc"  property="og:description" content="Skip the line"/>
 <meta property="og:type" content="website"/>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Noto+Nastaliq+Urdu:wght@400;600&display=swap" rel="stylesheet"/>
 <style>
-:root {
-  --void:    #050810;
-  --surface: #0d1422;
-  --card:    rgba(255,255,255,.04);
-  --border:  rgba(255,255,255,.08);
-  --text:    #EDE8D0;
-  --text2:   rgba(237,232,208,.6);
-  --text3:   rgba(237,232,208,.35);
-  --gold:    #E8B84B;
-  --gold2:   #fbbf24;
-  --green:   #34d399;
-  --red:     #f87171;
-  --cyan:    #38bdf8;
-  --font:    'Sora', sans-serif;
-  --radius:  16px;
+:root{
+  --void:#050810;--surface:rgba(255,255,255,.04);--border:rgba(255,255,255,.08);
+  --text:#EDE8D0;--text2:rgba(237,232,208,.6);--text3:rgba(237,232,208,.35);
+  --gold:#E8B84B;--gold2:#fbbf24;--green:#34d399;--red:#f87171;--cyan:#38bdf8;
+  --font:'Sora',sans-serif;--r:16px;
 }
-* { box-sizing:border-box; margin:0; padding:0; }
-body {
-  font-family: var(--font);
-  background: var(--void);
-  color: var(--text);
-  min-height: 100vh;
-  overscroll-behavior: none;
-}
-body.rtl-mode { font-family:'Noto Nastaliq Urdu',serif; direction:rtl; }
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100vh;background:var(--void);color:var(--text);font-family:var(--font)}
+body.rtl-mode{font-family:'Noto Nastaliq Urdu',serif;direction:rtl}
 
-/* ── Hero ──────────────────────────────────────────────────── */
-.hero {
-  min-height: 52vw;
-  max-height: 280px;
-  background: linear-gradient(160deg, #0d1a2e 0%, #050810 60%);
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: flex-end;
-  padding: 20px 20px 0;
-}
-.hero-orbs {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-.hero-orbs::before {
-  content: '';
-  position: absolute;
-  width: 280px; height: 280px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(232,184,75,.18) 0%, transparent 70%);
-  top: -80px; right: -60px;
-}
-.hero-orbs::after {
-  content: '';
-  position: absolute;
-  width: 200px; height: 200px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(56,189,248,.1) 0%, transparent 70%);
-  bottom: 0; left: -40px;
-}
-.logo-wrap {
-  width: 72px; height: 72px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, rgba(232,184,75,.25), rgba(232,184,75,.08));
-  border: 1.5px solid rgba(232,184,75,.3);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 32px;
-  position: relative; z-index: 1;
-  flex-shrink: 0;
-  overflow: hidden;
-  margin-bottom: 20px;
-}
-.logo-wrap img { width:100%; height:100%; object-fit:cover; border-radius:18px; }
-.hero-wordmark {
-  position: absolute;
-  top: 16px; right: 16px;
-  font-size: 11px;
-  font-weight: 700;
-  color: rgba(237,232,208,.3);
-  letter-spacing: .08em;
-  z-index: 1;
-  display: flex; align-items: center; gap: 6px;
-}
+/* ── Topbar ── */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;max-width:600px;margin:0 auto}
+.btn-back{padding:7px 14px;border:1px solid var(--border);border-radius:100px;background:transparent;color:var(--text2);font-family:var(--font);font-size:12px;cursor:pointer}
+.btn-lang{padding:6px 13px;border:1px solid rgba(232,184,75,.3);border-radius:100px;background:rgba(232,184,75,.06);color:var(--gold);font-family:var(--font);font-size:11px;font-weight:600;cursor:pointer}
 
-/* ── Content ───────────────────────────────────────────────── */
-.content { padding: 0 16px 100px; max-width: 520px; margin: 0 auto; }
+/* ── Hero ── */
+.hero{position:relative;background:linear-gradient(160deg,#0d1a2e,#050810);overflow:hidden;padding:24px 20px 0;max-width:600px;margin:0 auto}
+.hero::before{content:'';position:absolute;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(232,184,75,.15),transparent 70%);top:-80px;right:-60px;pointer-events:none}
+.hero-logo{width:80px;height:80px;border-radius:20px;background:linear-gradient(135deg,rgba(232,184,75,.2),rgba(232,184,75,.06));border:1.5px solid rgba(232,184,75,.3);display:flex;align-items:center;justify-content:center;font-size:36px;overflow:hidden;margin-bottom:16px;flex-shrink:0}
+.hero-logo img{width:100%;height:100%;object-fit:cover;border-radius:20px}
+.hero-wordmark{position:absolute;top:14px;right:16px;font-size:10px;font-weight:700;color:rgba(237,232,208,.25);letter-spacing:.1em}
 
-.shop-header {
-  padding: 20px 0 16px;
-  border-bottom: 1px solid var(--border);
-}
-.shop-name {
-  font-size: 24px;
-  font-weight: 800;
-  line-height: 1.2;
-  margin-bottom: 6px;
-  color: var(--text);
-}
-.shop-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-.shop-tag {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 3px 10px;
-  border-radius: 100px;
-  border: 1px solid rgba(255,255,255,.1);
-  color: var(--text2);
-  text-transform: capitalize;
-  letter-spacing: .03em;
-}
-.shop-tag.cat  { border-color:rgba(232,184,75,.3); color:var(--gold); }
-.shop-tag.open { border-color:rgba(52,211,153,.4); color:var(--green); background:rgba(52,211,153,.08); }
-.shop-tag.closed { border-color:rgba(248,113,113,.3); color:var(--red); }
-.shop-tag.unclaimed { border-color:rgba(56,189,248,.3); color:var(--cyan); }
+/* ── Content ── */
+.content{max-width:600px;margin:0 auto;padding:0 16px 120px}
+.shop-name{font-size:26px;font-weight:800;line-height:1.2;margin-bottom:8px;padding-top:16px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.tag{font-size:11px;font-weight:600;padding:3px 10px;border-radius:100px;border:1px solid rgba(255,255,255,.1);color:var(--text2)}
+.tag.cat{border-color:rgba(232,184,75,.3);color:var(--gold)}
+.tag.open{border-color:rgba(52,211,153,.4);color:var(--green);background:rgba(52,211,153,.07)}
+.tag.closed{border-color:rgba(248,113,113,.3);color:var(--red)}
+.tag.unclaimed{border-color:rgba(56,189,248,.3);color:var(--cyan)}
+.description{font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:16px}
 
-.shop-description {
-  font-size: 13px;
-  color: var(--text2);
-  line-height: 1.7;
-  margin-top: 10px;
-}
+/* ── Section ── */
+.section{margin:12px 0}
+.section-title{font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--text3);text-transform:uppercase;margin-bottom:8px}
 
-/* ── Info cards ────────────────────────────────────────────── */
-.info-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin: 16px 0;
-}
-.info-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 14px;
-}
-.info-card.full { grid-column: 1 / -1; }
-.info-icon { font-size: 18px; margin-bottom: 6px; }
-.info-label { font-size: 10px; font-weight: 700; color: var(--text3); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 3px; }
-.info-value { font-size: 13px; color: var(--text); font-weight: 500; line-height: 1.4; }
+/* ── Info cards ── */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.info-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px}
+.info-card.full{grid-column:1/-1}
+.info-icon{font-size:16px;margin-bottom:4px}
+.info-label{font-size:9px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
+.info-value{font-size:13px;color:var(--text);font-weight:500;line-height:1.4}
+.info-value a{color:var(--cyan);text-decoration:none}
 
-/* ── Queue stat strip ──────────────────────────────────────── */
-.queue-strip {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px;
-  margin: 16px 0;
-  padding: 14px;
-  background: linear-gradient(135deg,rgba(232,184,75,.07),rgba(232,184,75,.02));
-  border: 1px solid rgba(232,184,75,.2);
-  border-radius: var(--radius);
-}
-.qs { text-align: center; }
-.qs-val { font-size: 28px; font-weight: 800; color: var(--gold); line-height: 1; }
-.qs-lbl { font-size: 10px; color: var(--text3); margin-top: 4px; letter-spacing: .04em; }
+/* ── Queue strip ── */
+.queue-strip{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:14px;background:linear-gradient(135deg,rgba(232,184,75,.07),rgba(232,184,75,.02));border:1px solid rgba(232,184,75,.2);border-radius:var(--r);margin:12px 0}
+.qs-val{font-size:28px;font-weight:800;color:var(--gold);line-height:1;text-align:center}
+.qs-lbl{font-size:10px;color:var(--text3);margin-top:3px;text-align:center}
 
-/* ── CTA buttons ───────────────────────────────────────────── */
-.cta-wrap {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  padding: 12px 16px 20px;
-  background: linear-gradient(to top, var(--void) 60%, transparent);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-width: 520px;
-  margin: 0 auto;
-}
-.btn-primary {
-  width: 100%; padding: 15px;
-  border: none; border-radius: 14px;
-  background: linear-gradient(135deg, var(--gold), var(--gold2));
-  color: #0d1422; font-family: var(--font);
-  font-size: 15px; font-weight: 800;
-  cursor: pointer; letter-spacing: .01em;
-  transition: all .2s;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-}
-.btn-primary:active { transform: scale(.97); }
-.btn-secondary {
-  width: 100%; padding: 12px;
-  border: 1px solid rgba(255,255,255,.12); border-radius: 12px;
-  background: transparent;
-  color: var(--text2); font-family: var(--font);
-  font-size: 13px; font-weight: 600;
-  cursor: pointer;
-  transition: all .2s;
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-}
-.btn-secondary:active { background: rgba(255,255,255,.06); }
-.btn-claim {
-  width: 100%; padding: 13px;
-  border: 1.5px solid rgba(56,189,248,.4); border-radius: 14px;
-  background: rgba(56,189,248,.06);
-  color: var(--cyan); font-family: var(--font);
-  font-size: 14px; font-weight: 700;
-  cursor: pointer;
-  transition: all .2s;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-}
-.btn-claim:active { background: rgba(56,189,248,.14); }
+/* ── Banners ── */
+.banner{border-radius:var(--r);padding:14px;margin:10px 0;font-size:12px;line-height:1.6}
+.banner.unclaimed{background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.2)}
+.banner.unavailable{background:rgba(248,113,113,.06);border:1px solid rgba(248,113,113,.2)}
+.banner-title{font-weight:700;margin-bottom:4px}
 
-/* ── Claim modal ───────────────────────────────────────────── */
-.modal-overlay {
-  display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,.85); backdrop-filter: blur(12px);
-  z-index: 9998; align-items: center; justify-content: center; padding: 20px;
-}
-.modal-overlay.show { display: flex; }
-.modal-card {
-  background: linear-gradient(160deg, rgba(17,24,39,.97), rgba(8,12,20,.98));
-  border: 1px solid rgba(56,189,248,.2);
-  border-radius: 20px; padding: 24px;
-  width: 100%; max-width: 360px;
-  animation: slideUp .3s cubic-bezier(.16,1,.3,1) both;
-}
-@keyframes slideUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
-.modal-title { font-size:17px; font-weight:700; margin-bottom:4px; }
-.modal-sub { font-size:12px; color:var(--text2); margin-bottom:18px; line-height:1.5; }
-.modal-field { margin-bottom:12px; }
-.modal-field label { font-size:11px; color:var(--text2); display:block; margin-bottom:5px; font-weight:600; }
-.modal-field input {
-  width:100%; padding:11px 13px;
-  border:1px solid var(--border); border-radius:10px;
-  background:rgba(255,255,255,.04); color:var(--text);
-  font-family:var(--font); font-size:14px; outline:none;
-  transition: border-color .2s;
-}
-.modal-field input:focus { border-color:rgba(56,189,248,.5); }
-.modal-err { font-size:12px; color:var(--red); margin-top:8px; min-height:16px; }
-.modal-btns { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px; }
-.modal-cancel {
-  padding:11px; border:1px solid rgba(255,255,255,.1); border-radius:11px;
-  background:transparent; color:var(--text2); font-family:var(--font);
-  font-size:13px; font-weight:600; cursor:pointer;
-}
-.modal-submit {
-  padding:11px; border:none; border-radius:11px;
-  background:var(--cyan); color:#050810;
-  font-family:var(--font); font-size:13px; font-weight:700; cursor:pointer;
-  transition: opacity .2s;
-}
-.modal-submit:disabled { opacity:.5; cursor:not-allowed; }
+/* ── Maps button ── */
+.btn-maps{display:flex;align-items:center;gap:8px;padding:11px 14px;border:1px solid rgba(56,189,248,.25);border-radius:11px;background:rgba(56,189,248,.05);color:var(--cyan);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;margin-top:6px;width:100%}
 
-/* ── Success state ─────────────────────────────────────────── */
-.success-banner {
-  display:none; background:rgba(52,211,153,.08);
-  border:1px solid rgba(52,211,153,.25);
-  border-radius:var(--radius); padding:16px;
-  text-align:center; margin:16px 0;
-}
-.success-banner.show { display:block; }
+/* ── CTA bar ── */
+.cta-bar{position:fixed;bottom:0;left:0;right:0;padding:12px 16px 24px;background:linear-gradient(to top,var(--void) 60%,transparent);display:flex;flex-direction:column;gap:8px;max-width:600px;margin:0 auto}
+.btn-primary{width:100%;padding:15px;border:none;border-radius:14px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0d1422;font-family:var(--font);font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary:active{transform:scale(.97)}
+.btn-secondary{width:100%;padding:12px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:transparent;color:var(--text2);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-claim{width:100%;padding:13px;border:1.5px solid rgba(56,189,248,.4);border-radius:14px;background:rgba(56,189,248,.06);color:var(--cyan);font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
 
-/* ── Skeleton ──────────────────────────────────────────────── */
-.skeleton { background:rgba(255,255,255,.06); border-radius:8px; animation:shimmer 1.5s ease-in-out infinite; }
-@keyframes shimmer { 0%,100%{opacity:.5} 50%{opacity:.9} }
+/* ── Modal ── */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(12px);z-index:9999;align-items:center;justify-content:center;padding:20px}
+.modal.open{display:flex}
+.modal-card{background:linear-gradient(160deg,rgba(17,24,39,.97),rgba(8,12,20,.98));border:1px solid rgba(56,189,248,.2);border-radius:20px;padding:24px;width:100%;max-width:360px;animation:slideUp .3s cubic-bezier(.16,1,.3,1) both}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+.field{margin-bottom:11px}
+.field label{display:block;font-size:11px;color:var(--text2);font-weight:600;margin-bottom:4px}
+.field input{width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,.04);color:var(--text);font-family:var(--font);font-size:14px;outline:none;transition:border-color .2s}
+.field input:focus{border-color:rgba(56,189,248,.5)}
+.modal-err{font-size:12px;color:var(--red);min-height:14px;margin:6px 0}
+.modal-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.btn-cancel{padding:11px;border:1px solid rgba(255,255,255,.1);border-radius:11px;background:transparent;color:var(--text2);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer}
+.btn-submit{padding:11px;border:none;border-radius:11px;background:var(--cyan);color:#050810;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer}
+.btn-submit:disabled{opacity:.5;cursor:not-allowed}
 
-/* ── Lang toggle ───────────────────────────────────────────── */
-.lang-btn {
-  position: absolute; top: 14px; left: 14px; z-index: 2;
-  padding: 5px 12px; border-radius: 100px;
-  border: 1px solid rgba(232,184,75,.3);
-  background: rgba(232,184,75,.06); color: var(--gold);
-  font-family: var(--font); font-size: 11px; font-weight: 600; cursor: pointer;
-}
+/* ── Skeleton ── */
+.sk{background:rgba(255,255,255,.06);border-radius:8px;animation:shimmer 1.4s ease-in-out infinite}
+@keyframes shimmer{0%,100%{opacity:.5}50%{opacity:.9}}
 
-/* ── Topbar (for share/back) ───────────────────────────────── */
-.topbar-mini {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 16px 0;
-  max-width: 520px; margin: 0 auto;
-}
-.btn-back {
-  display: flex; align-items: center; gap: 6px;
-  background: rgba(255,255,255,.06); border: none;
-  padding: 7px 13px; border-radius: 100px;
-  color: var(--text2); font-family: var(--font);
-  font-size: 12px; cursor: pointer;
-}
-.btn-share-top {
-  background: rgba(232,184,75,.1); border: 1px solid rgba(232,184,75,.3);
-  padding: 7px 13px; border-radius: 100px;
-  color: var(--gold); font-family: var(--font);
-  font-size: 12px; font-weight: 600; cursor: pointer;
-}
-.watermark {
-  text-align: center;
-  padding: 10px 0 4px;
-  font-size: 11px; color: var(--text3);
-  letter-spacing: .04em;
-}
-.watermark a { color: var(--gold); text-decoration: none; font-weight: 600; }
+/* ── States ── */
+#state-loading{padding:24px 16px}
+#state-error{display:none;text-align:center;padding:80px 20px}
+#state-content{display:none}
 
-/* Loading/error states */
-#loading-state { text-align:center; padding:80px 20px; }
-#error-state { display:none; text-align:center; padding:80px 20px; }
-#shop-content { display:none; }
+.watermark{text-align:center;font-size:11px;color:var(--text3);padding:8px 0 4px;letter-spacing:.04em}
+.watermark a{color:var(--gold);text-decoration:none;font-weight:600}
 </style>
 </head>
 <body>
 
-<div class="topbar-mini" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0;max-width:520px;margin:0 auto;gap:8px">
-  <button class="btn-back" onclick="goBack()" id="lbl-back">← Back</button>
-  <button class="lang-btn" onclick="toggleLang()" id="lang-btn">اردو</button>
+<!-- Topbar -->
+<div class="topbar">
+  <button class="btn-back" id="btn-back">← Back</button>
+  <button class="btn-lang" id="btn-lang" onclick="onToggleLang()">اردو</button>
 </div>
 
-<div id="loading-state">
-  <div class="skeleton" style="height:200px;border-radius:16px;margin:16px;"></div>
-  <div style="padding:16px">
-    <div class="skeleton" style="height:28px;width:70%;margin-bottom:10px;"></div>
-    <div class="skeleton" style="height:14px;width:45%;margin-bottom:8px;"></div>
-    <div class="skeleton" style="height:14px;width:60%;"></div>
-  </div>
+<!-- Loading skeleton -->
+<div id="state-loading">
+  <div class="sk" style="height:200px;border-radius:var(--r);margin-bottom:16px"></div>
+  <div class="sk" style="height:28px;width:65%;margin-bottom:10px"></div>
+  <div class="sk" style="height:14px;width:45%;margin-bottom:8px"></div>
+  <div class="sk" style="height:14px;width:80%"></div>
 </div>
 
-<div id="error-state">
+<!-- Error state -->
+<div id="state-error">
   <div style="font-size:40px;margin-bottom:12px">🔍</div>
-  <div style="font-size:16px;font-weight:700;margin-bottom:8px" id="error-title">Business not found</div>
-  <div style="font-size:13px;color:var(--text2);margin-bottom:20px">This page may have moved or no longer exists.</div>
+  <div style="font-size:16px;font-weight:700;margin-bottom:8px" id="err-title">Business not found</div>
+  <div style="font-size:13px;color:var(--text2);margin-bottom:20px" id="err-body">This page may have moved or no longer exists.</div>
   <a href="/" style="color:var(--gold);font-size:13px;font-weight:600">← Back to WaitMate</a>
 </div>
 
-<div id="shop-content">
-  <div class="hero">
-    <div class="hero-orbs"></div>
+<!-- Main content — sections are clearly separated for easy extension -->
+<div id="state-content">
+
+  <!-- SECTION: Hero (logo + name + tags) -->
+  <div class="hero" id="section-hero">
     <div class="hero-wordmark">⚡ WaitMate</div>
-    <div class="logo-wrap" id="shop-logo">🏪</div>
+    <div class="hero-logo" id="hero-logo">🏪</div>
   </div>
 
   <div class="content">
-    <div class="shop-header">
+
+    <!-- SECTION: Identity -->
+    <div id="section-identity">
       <h1 class="shop-name" id="shop-name"></h1>
-      <div class="shop-meta" id="shop-meta"></div>
-      <div class="shop-description" id="shop-desc"></div>
+      <div class="tags" id="shop-tags"></div>
+      <p class="description" id="shop-desc"></p>
     </div>
 
-    <!-- Queue stats — only for claimed active shops -->
-    <div class="queue-strip" id="queue-strip" style="display:none">
-      <div class="qs">
-        <div class="qs-val" id="qs-waiting">0</div>
-        <div class="qs-lbl" id="lbl-qs-waiting">In Queue</div>
-      </div>
-      <div class="qs">
-        <div class="qs-val" id="qs-current">—</div>
-        <div class="qs-lbl" id="lbl-qs-current">Now Serving</div>
-      </div>
-      <div class="qs">
-        <div class="qs-val" id="qs-wait">—</div>
-        <div class="qs-lbl" id="lbl-qs-wait">Est. Wait</div>
+    <!-- SECTION: Queue stats (claimed + active only) -->
+    <div id="section-queue" style="display:none">
+      <div class="queue-strip">
+        <div><div class="qs-val" id="qs-waiting">0</div><div class="qs-lbl" id="lbl-waiting">In Queue</div></div>
+        <div><div class="qs-val" id="qs-serving">—</div><div class="qs-lbl" id="lbl-serving">Now Serving</div></div>
+        <div><div class="qs-val" id="qs-wait">—</div><div class="qs-lbl" id="lbl-wait">Est. Wait</div></div>
       </div>
     </div>
 
-    <!-- Info cards -->
-    <div class="info-grid" id="info-grid"></div>
-
-    <!-- Unclaimed banner -->
-    <div id="unclaimed-banner" style="display:none;background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.2);border-radius:var(--radius);padding:14px;margin:10px 0;font-size:12px;line-height:1.6">
-      <div style="font-weight:700;color:var(--cyan);margin-bottom:4px" id="lbl-unclaimed-title">🏷️ Unclaimed Business</div>
-      <div style="color:var(--text2)" id="lbl-unclaimed-body">This business is listed on WaitMate but hasn't been claimed yet. If you own this business, you can claim it to start managing your queue and get discovered by more customers.</div>
+    <!-- SECTION: Info cards (address, hours, phone, maps) -->
+    <div id="section-info" class="section">
+      <div class="section-title" id="lbl-info-title">Business Info</div>
+      <div class="info-grid" id="info-cards"></div>
     </div>
 
-    <div class="watermark">Powered by <a href="/">WaitMate</a> — Skip the line, not the service</div>
+    <!-- SECTION: Status banner (unclaimed / unavailable) -->
+    <div id="section-banner"></div>
+
+    <!-- SECTION: Extensibility hooks — future sections slot in here -->
+    <!-- Future: section-services, section-staff, section-reviews, section-gallery -->
+
+    <div class="watermark">Powered by <a href="/">WaitMate</a></div>
   </div>
 </div>
 
-<!-- CTA buttons -->
-<div class="cta-wrap" id="cta-wrap" style="display:none">
-  <button class="btn-primary" id="cta-get-token" onclick="goGetToken()" style="display:none">
-    🎫 <span id="lbl-get-token">Get Token — Join Queue Now</span>
+<!-- CTA bar -->
+<div class="cta-bar" id="cta-bar" style="display:none">
+  <button class="btn-primary" id="cta-token" style="display:none" onclick="goGetToken()">
+    🎫 <span id="lbl-cta-token">Get Token — Join Queue</span>
   </button>
-  <button class="btn-secondary" id="cta-share" onclick="doShare()">
-    🔗 <span id="lbl-share">Share this business</span>
+  <button class="btn-secondary" onclick="doShare()">
+    🔗 <span id="lbl-cta-share">Share this business</span>
   </button>
-  <button class="btn-claim" id="cta-claim" onclick="openClaimModal()" style="display:none">
-    ✋ <span id="lbl-claim">Claim This Business</span>
+  <button class="btn-claim" id="cta-claim" style="display:none" onclick="openClaim()">
+    ✋ <span id="lbl-cta-claim">Claim This Business</span>
   </button>
 </div>
 
 <!-- Claim modal -->
-<div class="modal-overlay" id="claim-modal">
+<div class="modal" id="modal-claim">
   <div class="modal-card">
-    <div class="modal-title" id="lbl-claim-title">Claim This Business</div>
-    <div class="modal-sub" id="lbl-claim-sub">Enter your WhatsApp number and set a 4-digit PIN. Admin will verify and approve your claim within 24 hours.</div>
-    <div class="modal-field">
-      <label id="lbl-claim-phone">WhatsApp Number</label>
-      <input id="claim-phone" type="tel" placeholder="923001234567"/>
-    </div>
-    <div class="modal-field">
-      <label id="lbl-claim-pin">4-Digit PIN (you'll use this to log in)</label>
-      <input id="claim-pin" type="number" placeholder="e.g. 1234" maxlength="4"/>
-    </div>
-    <div class="modal-field">
-      <label id="lbl-claim-note">Note (optional)</label>
-      <input id="claim-note" type="text" placeholder="e.g. I am the owner / manager"/>
-    </div>
+    <div style="font-size:16px;font-weight:700;margin-bottom:4px" id="lbl-claim-title">Claim This Business</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.5" id="lbl-claim-sub">Enter your WhatsApp number and set a 4-digit PIN. Admin will verify within 24 hours.</div>
+    <div class="field"><label id="lbl-field-phone">WhatsApp Number</label><input id="claim-phone" type="tel" placeholder="923001234567"/></div>
+    <div class="field"><label id="lbl-field-pin">4-Digit PIN (for login)</label><input id="claim-pin" type="number" placeholder="1234" maxlength="4"/></div>
+    <div class="field"><label id="lbl-field-note">Note (optional)</label><input id="claim-note" type="text" placeholder="I am the owner / manager"/></div>
     <div class="modal-err" id="claim-err"></div>
     <div class="modal-btns">
-      <button class="modal-cancel" onclick="closeClaimModal()" id="lbl-claim-cancel">Cancel</button>
-      <button class="modal-submit" id="claim-submit-btn" onclick="submitClaim()">Submit Claim</button>
+      <button class="btn-cancel" onclick="closeClaim()" id="lbl-btn-cancel">Cancel</button>
+      <button class="btn-submit" id="btn-submit-claim" onclick="submitClaim()">Submit Claim</button>
     </div>
   </div>
 </div>
 
 <script>
+// ── Config ──────────────────────────────────────────────────────
 const WORKER = 'https://saf-queue-worker.byker-software.workers.dev';
 
+// ── State ───────────────────────────────────────────────────────
 let _shop = null;
 
-// ── Language ──────────────────────────────────────────────────
-const T = {
+// ── i18n ────────────────────────────────────────────────────────
+const STRINGS = {
   en: {
-    back:'← Back', share:'Share this business', getToken:'🎫 Get Token — Join Queue Now',
-    claim:'✋ Claim This Business', claimTitle:'Claim This Business',
-    claimSub:'Enter your WhatsApp number and set a 4-digit PIN. Admin will verify your claim within 24 hours.',
-    claimPhone:'WhatsApp Number', claimPin:'4-Digit PIN (for login)',
-    claimNote:'Note (optional)', claimCancel:'Cancel', claimSubmit:'Submit Claim',
-    unclaimedTitle:'🏷️ Unclaimed Business',
-    unclaimedBody:"This business is listed on WaitMate but hasn't been claimed yet. If you own this business, you can claim it to manage your queue.",
-    inQueue:'In Queue', nowServing:'Now Serving', estWait:'Est. Wait',
-    open:'Open Now', closed:'Closed', address:'Address', hours:'Opening Hours',
-    phone:'Contact', area:'Area', city:'City',
-    poweredBy:'Powered by WaitMate — Skip the line, not the service',
-    errorTitle:'Business not found', mins:'min wait',
-    claimSuccess:'Claim submitted! Admin will review within 24 hours. You\'ll be notified on WhatsApp.',
-    submitting:'Submitting...', shareText:'Check out {name} on WaitMate — join the queue online!',
+    back:'← Back', lang:'اردو',
+    inQueue:'In Queue', serving:'Now Serving', estWait:'Est. Wait',
+    info:'Business Info', address:'Address', hours:'Opening Hours',
+    phone:'Contact', mapsBtn:'📍 Open in Google Maps',
+    share:'Share this business', getToken:'🎫 Get Token — Join Queue',
+    claim:'✋ Claim This Business',
+    claimTitle:'Claim This Business',
+    claimSub:'Enter your WhatsApp number and set a 4-digit PIN. Admin will verify within 24 hours.',
+    fieldPhone:'WhatsApp Number', fieldPin:'4-Digit PIN (for login)',
+    fieldNote:'Note (optional)', cancel:'Cancel', submit:'Submit Claim',
+    submitting:'Submitting...', claimOk:'Claim submitted! Admin will review within 24 hours.',
+    open:'Open Now', closed:'Closed', unclaimed:'Unclaimed',
+    unclaimedTitle:'🏷 Unclaimed Business',
+    unclaimedBody:"This business hasn't been claimed yet. If you own it, claim it to start managing your queue.",
+    unavailableTitle:'⏸ Currently Unavailable',
+    unavailableBody:'This business is not currently accepting queue tokens.',
+    errNotFound:'Business not found', errBody:'This page may have moved or no longer exists.',
+    errConn:'Connection error — please try again',
+    mins:'min wait',
   },
   ur: {
-    back:'← واپس', share:'یہ بزنس شیئر کریں', getToken:'🎫 ٹوکن لیں — ابھی قطار میں شامل ہوں',
-    claim:'✋ یہ بزنس کلیم کریں', claimTitle:'بزنس کلیم کریں',
-    claimSub:'اپنا واٹس ایپ نمبر اور 4 ہندسہ پن درج کریں۔ ایڈمن 24 گھنٹوں میں آپ کی درخواست کا جائزہ لے گا۔',
-    claimPhone:'واٹس ایپ نمبر', claimPin:'4 ہندسہ پن (لاگ ان کے لیے)',
-    claimNote:'نوٹ (اختیاری)', claimCancel:'منسوخ', claimSubmit:'کلیم جمع کریں',
-    unclaimedTitle:'🏷️ غیر دعویٰ شدہ بزنس',
-    unclaimedBody:'یہ بزنس WaitMate پر موجود ہے لیکن ابھی تک کلیم نہیں ہوا۔ اگر آپ اس کے مالک ہیں تو کلیم کر کے قطار مینیجمنٹ شروع کریں۔',
-    inQueue:'قطار میں', nowServing:'ابھی نمبر', estWait:'تخمینی انتظار',
-    open:'کھلا ہے', closed:'بند', address:'پتہ', hours:'کھلنے کا وقت',
-    phone:'رابطہ', area:'علاقہ', city:'شہر',
-    poweredBy:'WaitMate کی طرف سے — قطار میں کھڑے ہوئے بغیر سروس لیں',
-    errorTitle:'بزنس نہیں ملا', mins:'منٹ انتظار',
-    claimSuccess:'کلیم جمع ہو گیا! ایڈمن 24 گھنٹوں میں جائزہ لے گا۔ واٹس ایپ پر اطلاع ملے گی۔',
-    submitting:'جمع ہو رہا ہے...', shareText:'{name} کو WaitMate پر دیکھیں — آن لائن قطار میں شامل ہوں!',
+    back:'← واپس', lang:'English',
+    inQueue:'قطار میں', serving:'ابھی نمبر', estWait:'تخمینی انتظار',
+    info:'بزنس معلومات', address:'پتہ', hours:'کھلنے کا وقت',
+    phone:'رابطہ', mapsBtn:'📍 گوگل میپ پر کھولیں',
+    share:'یہ بزنس شیئر کریں', getToken:'🎫 ٹوکن لیں — قطار میں شامل ہوں',
+    claim:'✋ یہ بزنس کلیم کریں',
+    claimTitle:'بزنس کلیم کریں',
+    claimSub:'اپنا واٹس ایپ نمبر اور 4 ہندسہ پن درج کریں۔ ایڈمن 24 گھنٹوں میں جائزہ لے گا۔',
+    fieldPhone:'واٹس ایپ نمبر', fieldPin:'4 ہندسہ پن (لاگ ان کے لیے)',
+    fieldNote:'نوٹ (اختیاری)', cancel:'منسوخ', submit:'کلیم جمع کریں',
+    submitting:'جمع ہو رہا ہے...', claimOk:'کلیم جمع ہو گیا! ایڈمن 24 گھنٹوں میں جائزہ لے گا۔',
+    open:'کھلا ہے', closed:'بند', unclaimed:'غیر دعویٰ شدہ',
+    unclaimedTitle:'🏷 غیر دعویٰ شدہ بزنس',
+    unclaimedBody:'یہ بزنس ابھی تک کلیم نہیں ہوا۔ اگر آپ مالک ہیں تو کلیم کریں۔',
+    unavailableTitle:'⏸ ابھی دستیاب نہیں',
+    unavailableBody:'یہ بزنس ابھی ٹوکن نہیں دے رہا۔',
+    errNotFound:'بزنس نہیں ملا', errBody:'یہ صفحہ ہٹا دیا گیا ہو سکتا ہے۔',
+    errConn:'کنکشن خرابی — دوبارہ کوشش کریں',
+    mins:'منٹ انتظار',
   },
 };
-function getLang() { return localStorage.getItem('sq_lang') || 'en'; }
-function t(key) { return T[getLang()]?.[key] || T.en[key] || key; }
-function toggleLang() {
-  const cur = getLang();
-  localStorage.setItem('sq_lang', cur === 'en' ? 'ur' : 'en');
-  applyLang();
-}
-function applyLang() {
-  const isUr = getLang() === 'ur';
-  document.getElementById('shop-page-html').setAttribute('lang', isUr ? 'ur' : 'en');
-  document.getElementById('shop-page-html').setAttribute('dir', isUr ? 'rtl' : 'ltr');
-  document.body.classList.toggle('rtl-mode', isUr);
-  document.getElementById('lang-btn').textContent = isUr ? 'English' : 'اردو';
 
-  // Wire all translatable elements
-  const wire = (id, key) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = t(key);
-  };
-  wire('lbl-back',           'back');
-  wire('lbl-share',          'share');
-  wire('lbl-get-token',      'getToken');
-  wire('lbl-claim',          'claim');
-  wire('lbl-claim-title',    'claimTitle');
-  wire('lbl-claim-sub',      'claimSub');
-  wire('lbl-claim-phone',    'claimPhone');
-  wire('lbl-claim-pin',      'claimPin');
-  wire('lbl-claim-note',     'claimNote');
-  wire('lbl-claim-cancel',   'claimCancel');
-  wire('lbl-qs-waiting',     'inQueue');
-  wire('lbl-qs-current',     'nowServing');
-  wire('lbl-qs-wait',        'estWait');
-  wire('lbl-unclaimed-title','unclaimedTitle');
-  wire('lbl-unclaimed-body', 'unclaimedBody');
-
-  const submitBtn = document.getElementById('claim-submit-btn');
-  if (submitBtn && !submitBtn.disabled) submitBtn.textContent = t('claimSubmit');
-
-  if (_shop) renderShop(_shop); // re-render with new language
-}
-
-// ── Load shop ────────────────────────────────────────────────
-async function loadShop() {
-  const params     = new URLSearchParams(location.search);
-  const idOrSlug   = params.get('id') || params.get('slug') || location.pathname.split('/').pop();
-
-  if (!idOrSlug || idOrSlug === 'shop.html') {
-    showError('No business specified');
-    return;
-  }
-
-  try {
-    const res  = await fetch(`${WORKER}/public/shop-page/${encodeURIComponent(idOrSlug)}`);
-    const data = await res.json();
-    if (!data.success || !data.data) { showError(); return; }
-    _shop = data.data;
-    renderShop(_shop);
-  } catch(e) {
-    showError('Connection error — please try again');
-  }
-}
-
-function showError(msg) {
-  document.getElementById('loading-state').style.display = 'none';
-  const err = document.getElementById('error-state');
-  err.style.display = 'block';
-  if (msg) document.getElementById('error-title').textContent = msg;
-}
-
-function esc(s) {
-  return String(s||'').replace(/[&<>"']/g, c =>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
+function lang()    { return localStorage.getItem('sq_lang') || 'en'; }
+function t(key)    { return STRINGS[lang()]?.[key] || STRINGS.en[key] || key; }
+function esc(s)    { return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function set(id,v) { const el=document.getElementById(id); if(el) el.textContent=v; }
 function catIcon(cat) {
-  const c = (cat||'').toLowerCase();
-  if (c.includes('hospital')) return '🏥';
-  if (c.includes('dental'))   return '🦷';
-  if (c.includes('lab') || c.includes('diagnostic')) return '🔬';
-  if (c.includes('skin') || c.includes('aesthetic')) return '✨';
-  if (c.includes('physio'))   return '🩺';
-  if (c.includes('clinic'))   return '🏥';
+  const c=(cat||'').toLowerCase();
+  if(c.includes('hospital')) return '🏥';
+  if(c.includes('dental'))   return '🦷';
+  if(c.includes('lab')||c.includes('diagnostic')) return '🔬';
+  if(c.includes('pharmacy')) return '💊';
+  if(c.includes('skin')||c.includes('aesthetic')) return '✨';
+  if(c.includes('eye')||c.includes('optic'))      return '👁';
+  if(c.includes('physio'))   return '🩺';
+  if(c.includes('salon')||c.includes('barber'))   return '✂️';
+  if(c.includes('restaurant')||c.includes('cafe'))return '🍽️';
+  if(c.includes('workshop')||c.includes('repair'))return '🔧';
+  if(c.includes('clinic'))   return '🏥';
   return '🏪';
 }
+function mapsUrl(address, city) {
+  const q = [address,city].filter(Boolean).join(', ');
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+}
 
-function renderShop(s) {
-  // Update meta
-  document.getElementById('page-title').textContent     = `${s.name} — WaitMate`;
-  document.getElementById('meta-desc').setAttribute('content', `${s.description || 'Join the queue at ' + s.name + ' on WaitMate'}`);
-  document.getElementById('og-title').setAttribute('content', s.name + ' — WaitMate');
+// ── Language ─────────────────────────────────────────────────────
+function onToggleLang() {
+  localStorage.setItem('sq_lang', lang()==='en'?'ur':'en');
+  applyLang();
+  if (_shop) renderShop(_shop);
+}
+function applyLang() {
+  const isUr = lang()==='ur';
+  const html = document.getElementById('shop-html');
+  html.setAttribute('lang', isUr?'ur':'en');
+  html.setAttribute('dir',  isUr?'rtl':'ltr');
+  document.body.classList.toggle('rtl-mode', isUr);
+  set('btn-back',     t('back'));
+  set('btn-lang',     t('lang'));
+  set('lbl-waiting',  t('inQueue'));
+  set('lbl-serving',  t('serving'));
+  set('lbl-wait',     t('estWait'));
+  set('lbl-info-title',t('info'));
+  set('lbl-cta-token', t('getToken').replace('🎫 ',''));
+  set('lbl-cta-share', t('share'));
+  set('lbl-cta-claim', t('claim').replace('✋ ',''));
+  set('lbl-claim-title',t('claimTitle'));
+  set('lbl-claim-sub', t('claimSub'));
+  set('lbl-field-phone',t('fieldPhone'));
+  set('lbl-field-pin', t('fieldPin'));
+  set('lbl-field-note',t('fieldNote'));
+  set('lbl-btn-cancel',t('cancel'));
+  const submitBtn = document.getElementById('btn-submit-claim');
+  if (submitBtn && !submitBtn.disabled) submitBtn.textContent = t('submit');
+}
 
-  // Logo
-  const logoEl = document.getElementById('shop-logo');
-  if (s.logo_url) {
-    logoEl.innerHTML = `<img src="${esc(s.logo_url)}" alt="${esc(s.name)} logo" onerror="this.parentElement.textContent='${catIcon(s.category)}'"/>`;
-  } else {
-    logoEl.textContent = catIcon(s.category);
+// ── Load ─────────────────────────────────────────────────────────
+async function loadShop() {
+  const p    = new URLSearchParams(location.search);
+  const slug = p.get('id') || p.get('slug') || location.pathname.split('/').filter(Boolean).pop();
+  if (!slug || slug === 'shop.html') { showError(t('errNotFound'), t('errBody')); return; }
+
+  try {
+    const res  = await fetch(`${WORKER}/public/shop-page/${encodeURIComponent(slug)}`);
+    const json = await res.json();
+    if (!json.success || !json.data) { showError(); return; }
+    _shop = json.data;
+    renderShop(_shop);
+  } catch(e) {
+    showError(t('errConn'), t('errBody'));
   }
+}
 
-  // Name
-  document.getElementById('shop-name').textContent = s.name;
+function showError(title, body) {
+  document.getElementById('state-loading').style.display = 'none';
+  document.getElementById('state-error').style.display   = 'block';
+  if (title) set('err-title', title);
+  if (body)  set('err-body',  body);
+}
+
+// ── Render ───────────────────────────────────────────────────────
+// Each renderSection_*() is independently testable and extensible.
+// Future sections (services, staff, reviews) follow the same pattern.
+
+function renderSection_hero(s) {
+  const logo = document.getElementById('hero-logo');
+  if (s.logo_url) {
+    logo.innerHTML = `<img src="${esc(s.logo_url)}" alt="${esc(s.name)}" onerror="this.parentElement.textContent='${catIcon(s.category)}'"/>`;
+  } else {
+    logo.textContent = catIcon(s.category);
+  }
+}
+
+function renderSection_identity(s) {
+  document.getElementById('pg-title').textContent   = `${s.name} — WaitMate`;
+  document.getElementById('og-title').setAttribute('content', s.name + ' — WaitMate');
+  set('shop-name', s.name);
 
   // Tags
   const tags = [];
-  if (s.category) tags.push(`<span class="shop-tag cat">${esc(s.category)}</span>`);
-  if (s.area)     tags.push(`<span class="shop-tag">${esc(s.area)}</span>`);
-  if (s.city)     tags.push(`<span class="shop-tag">${esc(s.city)}</span>`);
-  if (!s.is_claimed) tags.push(`<span class="shop-tag unclaimed" id="lbl-unclaimed-tag">${t('unclaimedTitle').replace('🏷️ ','')}</span>`);
-  else if (s.is_claimed && s.is_active) {
+  if (s.category) tags.push(`<span class="tag cat">${esc(s.category)}</span>`);
+  if (s.area)     tags.push(`<span class="tag">${esc(s.area)}</span>`);
+  if (s.city)     tags.push(`<span class="tag">${esc(s.city)}</span>`);
+  if (!s.is_claimed) {
+    tags.push(`<span class="tag unclaimed">${t('unclaimed')}</span>`);
+  } else if (s.is_claimed && s.is_active) {
     tags.push(s.is_open
-      ? `<span class="shop-tag open">${t('open')}</span>`
-      : `<span class="shop-tag closed">${t('closed')}</span>`);
+      ? `<span class="tag open">${t('open')}</span>`
+      : `<span class="tag closed">${t('closed')}</span>`);
   }
-  document.getElementById('shop-meta').innerHTML = tags.join('');
-
-  // Description
+  document.getElementById('shop-tags').innerHTML = tags.join('');
   document.getElementById('shop-desc').textContent = s.description || '';
+}
 
-  // Queue stats
-  if (s.queue_stats && s.is_claimed && s.is_active) {
-    document.getElementById('queue-strip').style.display = 'grid';
-    document.getElementById('qs-waiting').textContent  = s.queue_stats.waiting;
-    document.getElementById('qs-current').textContent  = s.queue_stats.current_token || '—';
-    document.getElementById('qs-wait').textContent     = s.queue_stats.estimated_wait > 0
-      ? `${s.queue_stats.estimated_wait}m`
-      : '—';
-  }
+function renderSection_queue(s) {
+  const el = document.getElementById('section-queue');
+  if (!s.is_claimed || !s.is_active || !s.queue_stats) { el.style.display='none'; return; }
+  el.style.display = 'block';
+  const q = s.queue_stats;
+  set('qs-waiting', q.waiting);
+  set('qs-serving', q.current_token || '—');
+  set('qs-wait', q.estimated_wait > 0 ? `${q.estimated_wait}m` : '—');
+}
 
-  // Info cards
+function renderSection_info(s) {
   const cards = [];
-  if (s.address) cards.push(`
-    <div class="info-card full">
-      <div class="info-icon">📍</div>
-      <div class="info-label">${t('address')}</div>
-      <div class="info-value">${esc(s.address)}</div>
-    </div>`);
-  if (s.opening_hours) cards.push(`
-    <div class="info-card">
-      <div class="info-icon">🕐</div>
-      <div class="info-label">${t('hours')}</div>
-      <div class="info-value">${esc(s.opening_hours)}</div>
-    </div>`);
-  if (s.owner_phone) cards.push(`
-    <div class="info-card">
-      <div class="info-icon">📞</div>
-      <div class="info-label">${t('phone')}</div>
-      <div class="info-value">${esc(s.owner_phone)}</div>
-    </div>`);
-  document.getElementById('info-grid').innerHTML = cards.join('');
-
-  // Unclaimed banner
-  if (!s.is_claimed) {
-    document.getElementById('unclaimed-banner').style.display = 'block';
+  if (s.address) {
+    cards.push(`
+      <div class="info-card full">
+        <div class="info-icon">📍</div>
+        <div class="info-label">${t('address')}</div>
+        <div class="info-value">${esc(s.address)}</div>
+        ${s.address ? `<a class="btn-maps" href="${mapsUrl(s.address, s.city)}" target="_blank" rel="noopener">${t('mapsBtn')}</a>` : ''}
+      </div>`);
   }
+  if (s.opening_hours) {
+    cards.push(`
+      <div class="info-card">
+        <div class="info-icon">🕐</div>
+        <div class="info-label">${t('hours')}</div>
+        <div class="info-value">${esc(s.opening_hours)}</div>
+      </div>`);
+  }
+  if (s.owner_phone) {
+    cards.push(`
+      <div class="info-card">
+        <div class="info-icon">📞</div>
+        <div class="info-label">${t('phone')}</div>
+        <div class="info-value">${esc(s.owner_phone)}</div>
+      </div>`);
+  }
+  document.getElementById('info-cards').innerHTML = cards.join('');
+}
 
-  // CTAs
-  document.getElementById('cta-wrap').style.display = 'flex';
-  const tokenBtn = document.getElementById('cta-get-token');
+function renderSection_banner(s) {
+  const el = document.getElementById('section-banner');
+  if (!s.is_claimed) {
+    el.innerHTML = `
+      <div class="banner unclaimed">
+        <div class="banner-title" style="color:var(--cyan)">${t('unclaimedTitle')}</div>
+        <div style="color:var(--text2)">${t('unclaimedBody')}</div>
+      </div>`;
+  } else if (s.is_claimed && !s.is_active) {
+    el.innerHTML = `
+      <div class="banner unavailable">
+        <div class="banner-title" style="color:var(--red)">${t('unavailableTitle')}</div>
+        <div style="color:var(--text2)">${t('unavailableBody')}</div>
+      </div>`;
+  } else {
+    el.innerHTML = '';
+  }
+}
+
+function renderSection_cta(s) {
+  document.getElementById('cta-bar').style.display   = 'flex';
+  const tokenBtn = document.getElementById('cta-token');
   const claimBtn = document.getElementById('cta-claim');
-
-  if (s.is_claimed && s.is_active && s.is_open) {
-    tokenBtn.style.display = 'flex';
-  }
-  if (!s.is_claimed) {
-    claimBtn.style.display = 'flex';
-  }
-
-  // Show content
-  document.getElementById('loading-state').style.display = 'none';
-  document.getElementById('shop-content').style.display = 'block';
+  // Join queue: only if claimed, active, and open
+  tokenBtn.style.display = (s.is_claimed && s.is_active && s.is_open) ? 'flex' : 'none';
+  // Claim: only if unclaimed
+  claimBtn.style.display = (!s.is_claimed) ? 'flex' : 'none';
 }
 
+function renderShop(s) {
+  renderSection_hero(s);
+  renderSection_identity(s);
+  renderSection_queue(s);
+  renderSection_info(s);
+  renderSection_banner(s);
+  renderSection_cta(s);
+  // Future sections registered here:
+  // renderSection_services(s);
+  // renderSection_staff(s);
+  // renderSection_reviews(s);
+  // renderSection_gallery(s);
+
+  document.getElementById('state-loading').style.display = 'none';
+  document.getElementById('state-content').style.display = 'block';
+}
+
+// ── Actions ──────────────────────────────────────────────────────
 function goGetToken() {
-  if (!_shop) return;
-  window.location.href = `/customer.html?shop=${_shop.id}`;
+  if (_shop) window.location.href = `/customer.html?shop=${_shop.id}`;
 }
 
-function goBack() {
+document.getElementById('btn-back').onclick = () => {
   if (document.referrer) history.back();
   else window.location.href = '/';
-}
+};
 
 async function doShare() {
   if (!_shop) return;
-  const url  = _shop.share_url || window.location.href;
-  const text = t('shareText').replace('{name}', _shop.name);
-  if (navigator.share) {
-    try {
-      await navigator.share({ title: _shop.name, text, url });
-      return;
-    } catch(e) {}
-  }
-  // Fallback — copy to clipboard
+  const url  = `${location.origin}/shop.html?id=${_shop.id}`;
+  const text = `${_shop.name} — ${t('share')} — WaitMate`;
   try {
+    if (navigator.share) { await navigator.share({ title: _shop.name, text, url }); return; }
     await navigator.clipboard.writeText(url);
     alert('Link copied!');
-  } catch(e) {
-    prompt('Copy this link:', url);
-  }
+  } catch(e) { prompt('Copy this link:', url); }
 }
 
-// ── Claim flow ───────────────────────────────────────────────
-function openClaimModal() {
-  document.getElementById('claim-modal').classList.add('show');
+// ── Claim flow ───────────────────────────────────────────────────
+function openClaim() {
+  document.getElementById('modal-claim').classList.add('open');
   document.getElementById('claim-err').textContent = '';
   document.getElementById('claim-phone').value = '';
   document.getElementById('claim-pin').value   = '';
   document.getElementById('claim-note').value  = '';
 }
-function closeClaimModal() {
-  document.getElementById('claim-modal').classList.remove('show');
+function closeClaim() {
+  document.getElementById('modal-claim').classList.remove('open');
 }
+document.getElementById('modal-claim').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-claim')) closeClaim();
+});
 
 async function submitClaim() {
   const phone = document.getElementById('claim-phone').value.trim();
   const pin   = document.getElementById('claim-pin').value.trim();
   const note  = document.getElementById('claim-note').value.trim();
   const err   = document.getElementById('claim-err');
-  const btn   = document.getElementById('claim-submit-btn');
+  const btn   = document.getElementById('btn-submit-claim');
   err.textContent = '';
-
-  if (!phone) { err.textContent = 'WhatsApp number is required'; return; }
-  if (!pin || pin.length !== 4) { err.textContent = '4-digit PIN required'; return; }
+  if (!phone) { err.textContent = t('fieldPhone') + ' required'; return; }
+  if (!pin || pin.length !== 4) { err.textContent = t('fieldPin') + ' must be 4 digits'; return; }
   if (!_shop) return;
-
-  btn.disabled    = true;
-  btn.textContent = t('submitting');
-
+  btn.disabled = true; btn.textContent = t('submitting');
   try {
     const res  = await fetch(`${WORKER}/public/shops/${_shop.id}/claim`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone, pin, note: note || null }),
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ phone, pin, note: note||null }),
     });
     const data = await res.json();
     if (data.success) {
-      closeClaimModal();
-      const banner = document.getElementById('unclaimed-banner');
-      banner.style.background = 'rgba(52,211,153,.08)';
-      banner.style.borderColor = 'rgba(52,211,153,.25)';
-      banner.innerHTML = `<div style="font-weight:700;color:var(--green);margin-bottom:4px">✅ Claim Submitted</div>
-        <div style="color:var(--text2);font-size:12px">${t('claimSuccess')}</div>`;
+      closeClaim();
+      document.getElementById('section-banner').innerHTML = `
+        <div class="banner" style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.25)">
+          <div class="banner-title" style="color:var(--green)">✅ ${t('claimOk')}</div>
+        </div>`;
       document.getElementById('cta-claim').style.display = 'none';
     } else {
-      err.textContent = data.error || 'Submission failed — please try again';
+      err.textContent = data.error || 'Submission failed';
     }
   } catch(e) {
-    err.textContent = 'Connection error — please try again';
+    err.textContent = t('errConn');
   } finally {
-    btn.disabled    = false;
-    btn.textContent = t('claimSubmit');
+    btn.disabled = false; btn.textContent = t('submit');
   }
 }
 
-// Close claim modal on backdrop click
-document.getElementById('claim-modal').addEventListener('click', function(e) {
-  if (e.target === this) closeClaimModal();
-});
-
-// ── Boot ─────────────────────────────────────────────────────
+// ── Boot ─────────────────────────────────────────────────────────
 applyLang();
 loadShop();
 </script>
