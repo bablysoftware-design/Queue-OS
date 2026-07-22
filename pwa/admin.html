@@ -1871,7 +1871,7 @@ function stopRegPolling() {
 // Boot — DOMContentLoaded ensures ALL modal elements exist before
 // any JS runs. Previously the IIFE ran at script-parse time, hit
 // null.addEventListener on edit-shop-modal (defined 40 lines below
-// the closing </script>), crashed the entire JS context, left
+// the closing script tag), crashed the entire JS context, left
 // SECRET set but dash hidden — causing double-password symptom.
 document.addEventListener('DOMContentLoaded', function boot() {
 
