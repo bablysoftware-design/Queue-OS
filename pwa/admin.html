@@ -716,12 +716,21 @@ button:active, .btn-primary:active, .btn-ghost:active, .btn-xs:active {
 const WORKER = 'https://saf-queue-worker.byker-software.workers.dev';
 let SECRET = '', shops = [], selectedShopId = null;
 
+// Prevents stale boot auto-login failure from wiping a successful manual
+// login. Race: old saved secret in localStorage → boot fires async API
+// call → user enters correct password → doLogin() succeeds → shows dash
+// → boot's stale 401 resolves → boot catch re-shows login screen.
+// Setting _manualLoginDone=true in doLogin().then() stops boot's catch
+// from doing anything, since the user is already logged in correctly.
+let _manualLoginDone = false;
+
 function doLogin() {
   const s = document.getElementById('secret-input').value.trim();
   if (!s) return;
   SECRET = s;
   api('GET', '/admin/shops')
     .then(() => {
+      _manualLoginDone = true;
       localStorage.setItem('admin_secret', s);
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('dash').style.display         = 'block';
@@ -768,9 +777,8 @@ async function loadShops() {
   document.getElementById('shop-list').innerHTML = skRow() + skRow() + skRow();
   try {
     const { data } = await api('GET', '/admin/shops');
-    // Subscription data now bundled in API response — no N+1 calls
     shops = data || [];
-    _shopsCache = shops; // safe lookup for openEditShopById
+    _shopsCache = shops;
     renderStats();
     renderShops();
     document.getElementById('last-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
@@ -1883,6 +1891,7 @@ document.addEventListener('DOMContentLoaded', function boot() {
     SECRET = saved;
     api('GET', '/admin/shops')
       .then(() => {
+        _manualLoginDone = true; // auto-login is also a "done" state
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('dash').style.display         = 'block';
         startRegPolling();
@@ -1891,6 +1900,9 @@ document.addEventListener('DOMContentLoaded', function boot() {
         loadAll();
       })
       .catch(err => {
+        // Guard: if doLogin() already succeeded while this stale request
+        // was in-flight, do not undo the successful manual login.
+        if (_manualLoginDone) return;
         localStorage.removeItem('admin_secret');
         SECRET = '';
         document.getElementById('login-screen').style.display = 'flex';
