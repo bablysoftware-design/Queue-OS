@@ -4,7 +4,7 @@
 // ============================================================
 import { createClient }    from '../utils/db.js';
 import { requireShopAuth } from '../utils/auth.js';
-import { ok, badRequest, serverError, notFound } from '../utils/response.js';
+import { ok, badRequest, serverError, notFound, unauthorized } from '../utils/response.js';
 
 const BUCKET      = 'voice-notes';
 const MAX_BYTES   = 512 * 1024; // 512 KB — enough for 15s WebM opus

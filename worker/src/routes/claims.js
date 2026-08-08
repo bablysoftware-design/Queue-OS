@@ -109,10 +109,18 @@ export async function approveClaimRequest(request, env) {
       is_active:   true,
     });
 
-    // Create shopkeeper PIN record
+    // Create shopkeeper PIN record.
+    // pin_hash column holds the bcrypt hash — loginShopHandler checks
+    // keeper.pin_hash first (via verifyPin). The legacy `pin` column
+    // must be blank so the plain-text fallback in loginShopHandler
+    // is never reached. Previously this incorrectly stored the hash
+    // in `pin` and left `pin_hash` absent, causing login to always fail
+    // because the plain-text comparison `keeper.pin === pinStr` was
+    // comparing a bcrypt hash against the raw 4-digit PIN.
     await db.insert('shopkeepers', {
       shop_id:  req.shop_id,
-      pin:      req.pin_hash,
+      pin:      '',            // always blank — login checks pin_hash only
+      pin_hash: req.pin_hash,  // bcrypt hash from claim_requests row
     });
 
     // Mark claim request approved

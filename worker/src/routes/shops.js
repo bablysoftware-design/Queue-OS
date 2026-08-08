@@ -44,11 +44,12 @@ export async function createShopHandler(request, env) {
     });
 
     // Assign free trial plan — mirrors register.js approval flow.
-    // Without this, the shop has no subscription row and customers
-    // get "free trial khatam" error immediately on joining.
-    try { await assignPlan(db, shop.id, 'free'); } catch(e) {
-      console.error('[createShop] assignPlan failed:', e.message);
-    }
+    // NOT wrapped in try/catch: if assignPlan fails, the entire shop
+    // creation fails with a 500. A shop created without a subscription
+    // has is_active=true (schema default) but customers get
+    // 'no_subscription' errors immediately. Better to fail loudly
+    // here so admin can retry, than silently create a broken shop.
+    await assignPlan(db, shop.id, 'free');
 
     return ok({ shop, message: '30 din ka free trial shuru ho gaya!' });
   } catch (err) { return serverError(err.message); }
