@@ -49,15 +49,17 @@ test('priority announcement update is scoped to the authenticated shop', async (
   assert.equal(url.searchParams.get('priority_announced_at'), 'is.null');
 });
 
-test('a session not owned by the authenticated shop cannot be claimed', async (t) => {
+test('a session belonging to another shop produces no claim', async (t) => {
   const originalFetch = globalThis.fetch;
   t.after(() => { globalThis.fetch = originalFetch; });
 
   let requestedUrl = '';
   globalThis.fetch = async (input) => {
     requestedUrl = String(input);
-    // PostgREST returns no updated rows when the ownership filter does not match.
-    return new Response('[]', {
+    const url = new URL(requestedUrl);
+    // Simulate PostgREST filtering a row owned by otherShopId.
+    const rowMatches = url.searchParams.get('shop_id') === `eq.${otherShopId}`;
+    return new Response(JSON.stringify(rowMatches ? [{ id: sessionId }] : []), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
