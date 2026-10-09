@@ -282,10 +282,11 @@ export async function announcePrioritySession(request, env) {
     const sessionId = url.pathname.split('/')[3];
     if (!isValidUUID(sessionId)) return badRequest('Invalid session id');
 
-    // Atomic: only updates if priority_announced_at IS NULL
-    // Second concurrent device finds 0 rows → returns claimed:false
+    // Ownership is enforced in the UPDATE itself, not only by a prior read.
+    // Atomic: only the authenticated shop can claim its own active session;
+    // priority_announced_at IS NULL also deduplicates concurrent device calls.
     const updated = await db.update('priority_sessions',
-      `id=eq.${sessionId}&status=eq.active&priority_announced_at=is.null`,
+      `id=eq.${sessionId}&shop_id=eq.${auth.shop_id}&status=eq.active&priority_announced_at=is.null`,
       { priority_announced_at: new Date().toISOString() }
     );
 
