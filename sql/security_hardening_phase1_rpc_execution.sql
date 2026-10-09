@@ -80,3 +80,22 @@ WHERE n.nspname = 'public'
     'get_public_shops'
   )
 ORDER BY p.proname, args;
+
+-- This query should return zero rows after the privilege revocations.
+SELECT c.relname AS object_name,
+       c.relkind AS object_type
+FROM pg_class c
+JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public'
+  AND c.relkind IN ('r', 'p', 'v', 'm')
+  AND (
+    has_table_privilege('anon', c.oid, 'SELECT')
+    OR has_table_privilege('anon', c.oid, 'INSERT')
+    OR has_table_privilege('anon', c.oid, 'UPDATE')
+    OR has_table_privilege('anon', c.oid, 'DELETE')
+    OR has_table_privilege('authenticated', c.oid, 'SELECT')
+    OR has_table_privilege('authenticated', c.oid, 'INSERT')
+    OR has_table_privilege('authenticated', c.oid, 'UPDATE')
+    OR has_table_privilege('authenticated', c.oid, 'DELETE')
+  )
+ORDER BY c.relname;
