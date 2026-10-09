@@ -3,9 +3,11 @@
 -- the post-deployment smoke-test checklist has been completed.
 --
 -- Why this exists:
--- The Worker uses the Supabase service-role key for database access. The live
--- database currently permits anon/authenticated to execute privileged
--- SECURITY DEFINER RPCs directly. These functions should be Worker-only.
+-- The Worker uses SUPABASE_KEY; its actual secret value cannot be inspected
+-- through this audit. Before execution, an operator MUST confirm that this
+-- secret is the Supabase service_role key (not the anon key), or the app may
+-- lose database access. The live database currently permits anon/authenticated
+-- to execute privileged RPCs directly; those calls should be Worker-only.
 --
 -- This change intentionally does not alter tables, rows, function bodies,
 -- queue ordering, token numbers, or existing clinic records.
@@ -41,7 +43,9 @@ GRANT  EXECUTE ON FUNCTION public.get_shop_stats(uuid) TO service_role;
 -- The Worker is the sole application data API in this repository. Current
 -- PWA pages call the Worker and do not connect to Supabase directly. Remove
 -- direct table/view/sequence privileges from public client roles while
--- preserving service_role privileges used by the Worker.
+-- preserving service_role privileges used by the Worker. This is safe only
+-- after confirming all production Worker secrets use service_role and there
+-- are no out-of-repository clients that intentionally query Supabase directly.
 REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM PUBLIC, anon, authenticated;
 REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM PUBLIC, anon, authenticated;
 
