@@ -215,6 +215,17 @@ export async function joinQueue(request, env) {
   } catch (err) { return badRequest(err.message); }
 }
 
+// Keep the legacy `token` response key for compatibility, but never expose
+// private customer fields through this unauthenticated endpoint.
+function publicTokenSummary(token) {
+  return {
+    id: token.id,
+    token_number: token.token_number,
+    status: token.status,
+    created_at: token.created_at,
+  };
+}
+
 /**
  * GET /public/position?shop_id=xxx&token_id=xxx
  * FIX #22: return shop_closed status
@@ -234,14 +245,14 @@ export async function checkPosition(request, env) {
 
     // FIX #22: shop closed notification
     if (myToken.shop_closed_notified) {
-      return ok({ status: 'shop_closed', token: myToken });
+      return ok({ status: 'shop_closed', token: publicTokenSummary(myToken) });
     }
 
-    if (myToken.status === 'cancelled') return ok({ status: 'cancelled', token: myToken });
+    if (myToken.status === 'cancelled') return ok({ status: 'cancelled', token: publicTokenSummary(myToken) });
     if (['completed','no_show','expired'].includes(myToken.status)) {
-      return ok({ status: myToken.status, token: myToken });
+      return ok({ status: myToken.status, token: publicTokenSummary(myToken) });
     }
-    if (myToken.status === 'called') return ok({ status: 'called', token: myToken });
+    if (myToken.status === 'called') return ok({ status: 'called', token: publicTokenSummary(myToken) });
 
     const ahead = await db.select('tokens',
       `shop_id=eq.${shopId}&status=eq.waiting&token_number=lt.${myToken.token_number}&select=id`
@@ -251,7 +262,7 @@ export async function checkPosition(request, env) {
 
     // If shop is now closed mid-queue
     if (shop && !shop.is_open && myToken.status === 'waiting') {
-      return ok({ status: 'shop_closed', token: myToken });
+      return ok({ status: 'shop_closed', token: publicTokenSummary(myToken) });
     }
 
     let priority_active = false;
@@ -268,7 +279,7 @@ export async function checkPosition(request, env) {
 
     return ok({
       status:             'waiting',
-      token:              myToken,
+      token: publicTokenSummary(myToken),
       position:           ahead.length + 1,
       people_ahead:       ahead.length,
       estimated_wait:     ahead.length * (shop?.avg_service_time_mins ?? 10),
